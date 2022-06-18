@@ -112,7 +112,7 @@
     $: dialPointer = radialPoints( fader.radialPoints, 50,50,10,55,10)
 
     onMount(() => {
-// 		 this was a temporary psuedo constructor
+// 		 this was a temporary pseudo constructor
 // 		 allows the widget to be scaled and positioned by CSS
 // 		 which is actually quite cool?
         const faderRect = document.getElementById('fader.box')
@@ -161,11 +161,11 @@
                       height={fader.rx * 3.14}
                       id='fader.handle'
                       stroke=none
-                      style="filter:url(#shadow);" width={Math.exp(fader.rx,3)}
+                      style="filter:url(#shadow);" width={Math.exp(fader.rx)}
                 />
 
                 <g id='fader.readout' style='opacity:{fader.changing ? 1 : 0.7}'>
-                    <rect class='{fader.precis ? 'readoutBox zoom' : 'readoutBox'}'
+                    <rect class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
 								/>
 
                           height=1.25rem
@@ -176,9 +176,8 @@
                           y=-0.5rem
                     <text class='readout'
                           id='fader.readouttext'
-                          style='{fader.precis ?
-														 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }'>
-							{fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? 'ï' : '¹'}
+                          style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
+                        {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}></text>
 
                 </g>
             </g>
@@ -199,6 +198,7 @@
                       lengthAdjust='spacingAndGlyphs'
                       textLength={fader.h * 0.5}>{fader.label}
                 </text>
+            </g>
         </svg>
     </div>
 {/if}
@@ -211,7 +211,6 @@
     }
 
     .faderContainer {
-        å
         position: absolute;
         background: grey;
         width: 100px;

@@ -168,7 +168,7 @@
 										  'font-size: large; fill: aqua; transform: translate(1rem, -0.5rem);'
 										  : `${fader.changing ? 'fill: aqua; ':''}`
 										}">
-                {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? 'ï' : '¹'}
+                {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}
         </g>
     </svg>
 </div>
