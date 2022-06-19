@@ -41,7 +41,7 @@
 	<Fader id="fader.1" x="150" y="250" />
 	<Fader id="fader.2" x="200" y="250" />
 	<Fader id="fader.3" x="250" y="250" />
-<!--	<Dial />-->
+	<Dial />
 </main>
 
 

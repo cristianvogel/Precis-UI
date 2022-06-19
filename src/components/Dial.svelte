@@ -187,7 +187,7 @@
         width: 100px;
         height: 100px;
         top: 35%;
-        left: 15%;
+        left: 35%;
         transform: scale(1);
     }
 
