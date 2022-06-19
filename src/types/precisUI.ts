@@ -23,13 +23,13 @@ export type BoundingClientRec =
 type RGB = `rgb(${number}, ${number}, ${number})`
 type RGBA = `rgba(${number}, ${number}, ${number}, ${number})`
 type HEX = `#${string}`
-export enum PALETTE {
+export enum C {
     clear = 'transparent',
     black = 'black',
     sky = 'skyblue',
     cyan = 'cyan',
     aquaLight = 'aqua',
-    aquaVivid = 'aquamarine',
+    red = 'mediumvioletred',
     blanco = 'white',
     silver = 'silver',
     pink = 'hotpink',
@@ -42,13 +42,9 @@ export enum PALETTE {
     slate= 'slategray',
     tan = 'tan',
     deepBlue = 'midnightblue'
-}
-export type Tint = RGB | PALETTE | RGBA | HEX
-export type FillGradient = {
-    LOW: Tint,
-    MID: Tint,
-    HIGH: Tint
-}
+} //todo: improve color palette data object
+export type Tint = RGB | C | RGBA | HEX
+
 
 // Geometry
 export type FaderGeometry = {
@@ -85,7 +81,8 @@ export type Fader = {
     readonly clientRect: BoundingClientRec;
     readonly normValue:  number;
     readonly h: number;
-    readonly w: number
+    readonly w: number;
+    readonly index: number
 }
 
 //Data

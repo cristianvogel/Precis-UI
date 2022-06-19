@@ -7,7 +7,7 @@
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
     import type {BoundingClientRec, Fader, FaderGeometry, FaderTaper, FaderTag} from "../types/precisUI";
-    import {DefaultRect, PALETTE} from "../types/precisUI";
+    import {DefaultRect, C} from "../types/precisUI";
 
 
     let clientRect;
@@ -21,25 +21,27 @@
         h = DefaultRect.HEIGHT,
         rx = DefaultRect.RX
 
-    export let geometry:FaderGeometry = { x, y , width: (width | w) , height: (height | h) }
+    export let rect:FaderGeometry = { x, y , width: (width | w) , height: (height | h) }
     export let value:number = 0
     export let id:FaderTag = 'fader.1'
     export let taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'}
 
+    rx = typeof rx !== 'number' ? Number.parseFloat(rx) : rx;
+
     const fader: Fader = {
         currentValue: value,
         id,
-        geometry,
-        rx,
+        geometry: rect,
+        rx: rx,
         x: x - rx,
         y: y - rx,
         width: width + rx,
-        height: height + rx,
+        height: height,
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
         taper,
-        bg: PALETTE.clear,
+        bg: C.clear,
         set rect(faderGeometry: FaderGeometry) {
             this.geometry = faderGeometry
             this.x = faderGeometry.x
@@ -47,6 +49,9 @@
             this.width = faderGeometry.width
             this.height = faderGeometry.height
             return this.geometry
+        },
+        get index(): number {
+            return (Number.parseInt(Array.from(this.id).at(-1)))
         },
         get h(): number {
             return this.geometry.height | this.height
@@ -141,7 +146,7 @@
 // 		 allows the widget to be scaled and positioned by CSS
 // 		 which is actually quite cool?
   //       TODO: turn into a setRectFromParent method
-  //       const faderRect = document.getElementById('fader.box')
+  //       const faderRect = document.getElementById(`${id}.box`)
   //       const {top, left, width, height} = faderRect.getBoundingClientRect()
   //       fader.rect = {x: left, y: top, width: width, height: height}
     })
@@ -149,28 +154,29 @@
 </script>
 
 <div class='faderContainer'
-     id='fader.box'
+     id='{id}-box'
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
      on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
      style={fader.clientRect}
 >
 
-    <svg>
-        <defs id='fader.textures'>
-            <linearGradient id="fader.grad"
+    <svg >
+        <defs id='{id}-textures'>
+            <linearGradient id='{id}-.grad'
                             x1=0
                             x2=0
                             y1=0
                             y2={remap(fader.normValue, 0, 1, 3, 0)}>
-                <stop offset="0" stop-color={PALETTE.black}/>
-                <stop offset="80%" stop-color={PALETTE.sky}/>
+                <stop offset="0" stop-color={C.black}/>
+                <stop offset="80%"
+                      stop-color={[ C.red, C.sky, C.pink, C.aquaDark ].at(fader.index%4)}/>
             </linearGradient>
             <filter id="shadow">
                 <feDropShadow dx="0" dy="0.4" stdDeviation="0.2"/>
             </filter>
         </defs>
 
-        <g fill="url('#fader.grad')" stroke={PALETTE.whiteBis} stroke-width="0.0625rem">
+        <g fill="url('#{id}-.grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
             <rect height={fader.h + fader.rx}
                   id='fader.track'
                   on:contextmenu|preventDefault={handleMouseDownPrecision}
@@ -179,28 +185,28 @@
                   width={fader.w}
                   x=0rem
             />
-            <g id='fader.handle+readout'
+            <g id='{id}-handle+readout'
                on:contextmenu|preventDefault={handleMouseDownPrecision}
                on:mousedown|preventDefault={handleMouseDownJump}
-               stroke={PALETTE.offWhite}
+               stroke={C.offWhite}
                transform="translate({-fader.rx},{fader.h - fader.currentValue})">
-                <rect fill={PALETTE.whiteBis}
+                <rect fill={C.whiteBis}
                       height={fader.rx * 3.14}
-                      id='fader.handle'
+                      id='{id}-handle'
                       stroke=none
                       style="filter:url(#shadow);" width={Math.exp(fader.rx)}
                 />
 
-                <g id='fader.readout' style='opacity:{fader.changing ? 1 : 0.7}'>
+                <g id='{id}-readout' class='readoutBox rotated' style='opacity:{fader.changing ? 1 : 0.7}'>
                     <rect class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
                           height=1.25rem
-                          id='fader.readoutbox'
+                          id='{id}-readoutbox'
                           rx=3px
                           width=2.75rem
                           x=-0.5rem
                           y=-0.5rem />
                     <text class='readout'
-                          id='fader.readouttext'
+                          id='{id}-readouttext'
                           style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
                         {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}</text>
 
@@ -210,15 +216,15 @@
     </svg>
 </div>
 {#if fader.changing }
-    <div id='fader.label'
+    <div id='{id}-label'
          class='faderContainer'
          style={fader.clientRect + 'z-index: -1000'}>
         <svg in:fade out:fade>
-            <g id='fader.ledTexture'
+            <g id='{id}-ledTexture'
                stroke="green" fill=none stroke-width="1px"
                transform="translate({fader.w/2})">
-                <circle id='fader.active' cy=-10 cx=-0.5 r=2 fill='aqua'/>
-                <text id='fader.labeltext'
+                <circle id='{id}-active' cy=-10 cx=-0.5 r=2 fill='aqua'/>
+                <text id='{id}-labeltext'
                       class='label rotated'
                       lengthAdjust='spacingAndGlyphs'
                       textLength={fader.h * 0.5}>{fader.label}
@@ -237,12 +243,11 @@
 
     .faderContainer {
         position: absolute;
-        background: grey;
         width: 100px;
         height: 100px;
         top: 25%;
         left: 55%;
-        transform: scale(1.25);
+        transform: scale(1.5);
     }
 
     .label {
@@ -260,19 +265,27 @@
     .readout {
         font-family: 'Roboto', sans-serif;
         font-size: x-small;
-        transform: translate(-3rem, 0.5rem);
+        /*transform: translate(-3rem, 0.5rem);*/
+        transform: translate(-3rem, -0.25rem);
         stroke-width: 0;
-        fill: grey;
+        fill: aqua;
         cursor: grab;
-        z-index: -1
+    }
+
+    .readout.rotated {
+        transform: rotate(90deg)
     }
 
     .readoutBox {
-        transform: translate(-2.75rem, 0.2rem);
+        /*transform: translate(-2.75rem, 0.2rem);*/
+        transform: translate(-3rem, -0.55rem) scaleY(0.5);
         stroke-width: 0;
-        z-index: -100;
-        fill: ghostwhite;
+        fill: darkcyan;
         pointer-events: none;
+    }
+
+    .readoutBox.rotated {
+        transform: rotate(90deg)
     }
 
     .readoutBox.zoom {
