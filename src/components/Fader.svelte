@@ -6,37 +6,64 @@
     import {clamp, radialPoints, remap} from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
+    import type {BoundingClientRec, Fader, FaderGeometry, FaderTaper} from "../types/precisUI";
+    import {DefaultRect, PALETTE} from "../types/precisUI";
 
 
     let clientRect;
     let selected = null;
-    const radial = ()=>(fader.normValue * 270) + 230
+    export let
+        x = DefaultRect.X,
+        y = DefaultRect.Y,
+        width = DefaultRect.WIDTH,
+        height = DefaultRect.HEIGHT,
+        w = DefaultRect.WIDTH,
+        h = DefaultRect.HEIGHT,
+        rx = DefaultRect.RX
 
-    let fader = {
-        x: 200,
-        y: 50,
-        w: 8,
-        h: 200,
-        rx: 3,
-        value: 0,
+    export let geometry:FaderGeometry = { x, y , width: width | w , height: height | h }
+    export let value:number = 0;
+    export let id:string = 'fader'
+    export let taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'}
+
+    const fader: Fader = {
+        currentValue: value,
+        id,
+        geometry,
+        rx,
+        x: x - rx,
+        y: y - rx,
+        width: width + rx,
+        height: height + rx,
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
-        taper: { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'},
-        bg: 'transparent',
-        set rect( options ) {
-            const {x,y,width,height} = options
-            this.x=x; this.y=y; this.w=width; this.h=height;
+        taper,
+        bg: PALETTE.clear,
+        set rect(faderGeometry: FaderGeometry) {
+            this.geometry = faderGeometry
+            this.x = faderGeometry.x
+            this.y = faderGeometry.y
+            this.width = faderGeometry.width
+            this.height = faderGeometry.height
+            return this.geometry
         },
-        get radialPoints() { return (this.normValue * 270) + 230},
-        get boundingBox() {
-            return `top:${this.y}px;
-			left:${this.x}px;
-			width:${this.w + this.rx}px;
-			height:${this.h + this.rx}px;
-			background: ${this.bg};`
+        get h(): number {
+            return this.geometry.height | this.height
         },
-        get normValue() {return (this.value /  this.h)}
+        get w(): number {
+            return this.geometry.width | this.width
+        },
+        get clientRect() {
+            return <BoundingClientRec>
+                `top:${this.y}px;
+                left:${this.x}px;
+                width:${this.width}px;
+                height:${this.height}px;`
+        },
+        get normValue() {
+            return this.currentValue / this.height
+        }
     }
 
     function handleModifier (ev) {
@@ -62,14 +89,14 @@
     function handleMouseMovePrecision(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
-        const {value, taper, h, y} = fader
+        const {currentValue, taper, h, y} = fader
         if (dy === 0) return
         switch (selected.id.split('.')[0]) {
             case 'dial' :
-                fader.value = clamp( value+((dy*dy)*(Math.sign(dy)/-2)) * taper.fineStep, [0, h] )
+                fader.currentValue = clamp( currentValue+((dy*dy)*(Math.sign(dy)/-2)) * taper.fineStep, [0, h] )
                 break;
             case 'fader' :
-                fader.value = clamp( value+ -dy * taper.fineStep, [0, h] )
+                fader.currentValue = clamp( currentValue+ -dy * taper.fineStep, [0, h] )
                 break;
         }
     }
@@ -87,13 +114,13 @@
     function handleMouseMoveJump(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
-        const {value, taper, h, y, normValue } = fader
+        const {currentValue, h, normValue } = fader
         switch (selected.id.split('.')[0]) {
             case 'dial' :
-                fader.value = clamp( value + (-dy* (remap(normValue,0,1,3,0.25))), [0, h] )
+                fader.currentValue = clamp( currentValue + (-dy* (remap(normValue,0,1,3,0.25))), [0, h] )
                 break;
             case 'fader' :
-                fader.value = clamp( value + -dy, [0, h] )
+                fader.currentValue = clamp( currentValue + -dy, [0, h] )
                 break;
         }
     }
@@ -109,23 +136,23 @@
         removeEventListener('keyup', handleModifier)
     }
 
-    $: dialPointer = radialPoints( fader.radialPoints, 50,50,10,55,10)
-
     onMount(() => {
 // 		 this was a temporary pseudo constructor
 // 		 allows the widget to be scaled and positioned by CSS
 // 		 which is actually quite cool?
-        const faderRect = document.getElementById('fader.box')
-        const {top, left, width, height} = faderRect.getBoundingClientRect()
-        fader.rect = {top: top, left: left, width: width, height: height}
+  //       TODO: turn into a setRectFromParent method
+  //       const faderRect = document.getElementById('fader.box')
+  //       const {top, left, width, height} = faderRect.getBoundingClientRect()
+  //       fader.rect = {x: left, y: top, width: width, height: height}
     })
+
 </script>
 
 <div class='faderContainer'
      id='fader.box'
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
      on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
-     style={fader.boundingBox}
+     style={fader.clientRect}
 >
 
     <svg>
@@ -135,19 +162,19 @@
                             x2=0
                             y1=0
                             y2={remap(fader.normValue, 0, 1, 3, 0)}>
-                <stop offset="0" stop-color="black"/>
-                <stop offset="80%" stop-color="skyblue"/>
+                <stop offset="0" stop-color={PALETTE.black}/>
+                <stop offset="80%" stop-color={PALETTE.sky}/>
             </linearGradient>
             <filter id="shadow">
                 <feDropShadow dx="0" dy="0.4" stdDeviation="0.2"/>
             </filter>
         </defs>
 
-        <g fill="url('#fader.grad')" stroke="white" stroke-width="0.0625rem">
+        <g fill="url('#fader.grad')" stroke={PALETTE.whiteBis} stroke-width="0.0625rem">
             <rect height={fader.h + fader.rx}
                   id='fader.track'
                   on:contextmenu|preventDefault={handleMouseDownPrecision}
-                  on:mousedown|preventDefault={(ev)=>{fader.value= fader.h - ev.offsetY}}
+                  on:mousedown|preventDefault={(ev)=>{fader.currentValue= fader.h - ev.offsetY}}
                   rx=4px
                   width={fader.w}
                   x=0rem
@@ -155,9 +182,9 @@
             <g id='fader.handle+readout'
                on:contextmenu|preventDefault={handleMouseDownPrecision}
                on:mousedown|preventDefault={handleMouseDownJump}
-               stroke="antiquewhite"
-               transform="translate({-fader.rx},{fader.h - fader.value})">
-                <rect fill="white"
+               stroke={PALETTE.offWhite}
+               transform="translate({-fader.rx},{fader.h - fader.currentValue})">
+                <rect fill={PALETTE.whiteBis}
                       height={fader.rx * 3.14}
                       id='fader.handle'
                       stroke=none
@@ -166,14 +193,12 @@
 
                 <g id='fader.readout' style='opacity:{fader.changing ? 1 : 0.7}'>
                     <rect class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
-								/>
-
                           height=1.25rem
                           id='fader.readoutbox'
                           rx=3px
                           width=2.75rem
                           x=-0.5rem
-                          y=-0.5rem
+                          y=-0.5rem />
                     <text class='readout'
                           id='fader.readouttext'
                           style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
@@ -187,7 +212,7 @@
 {#if fader.changing }
     <div id='fader.label'
          class='faderContainer'
-         style={fader.boundingBox + 'z-index: -1000'}>
+         style={fader.clientRect + 'z-index: -1000'}>
         <svg in:fade out:fade>
             <g id='fader.ledTexture'
                stroke="green" fill=none stroke-width="1px"

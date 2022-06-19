@@ -1,4 +1,4 @@
-<!--
+<!-- App.svelte
 	// Precision Audio UI © Cristian Vogel 2022
 	// No unauthorised use or derivatives!
 	// contact @neverenginelabs
@@ -10,14 +10,11 @@
 		on:contextmenu|preventDefault={ (e)=>{window.focus()} }
 />
 
-<script>
-	// Precision Audio UI © Cristian Vogel 2022
-	// No unauthorised use or derivatives!
-	// @neverenginelabs
-
+<script lang="ts">
 	import Fader from "./components/Fader.svelte";
 	import Dial from "./components/Dial.svelte";
 
+	let value:number = 0;
 </script>
 <main>
 <div id='header'>
@@ -38,8 +35,8 @@
 		<a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
 	</h3>
 </div>
-	<Fader/>
-	<Dial/>
+	<Fader {value} x="50%" y="50%" />
+	<Dial />
 </main>
 
 
