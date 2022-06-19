@@ -6,11 +6,11 @@ export enum DefaultStyles {
 }
 
 export enum DefaultRect {
-    X = 200,
-    Y = 50,
+    X = '50%',
+    Y = '50%',
     WIDTH = 8,
     HEIGHT = 200,
-    RX = 3
+    RX = 2.75
 }
 
 export type BoundingClientRec =
@@ -52,10 +52,12 @@ export type FillGradient = {
 
 // Geometry
 export type FaderGeometry = {
-    x: number,
-    y: number,
-    width: number ,
-    height: number ,
+    x: number | typeof DefaultRect.X,
+    y: number | typeof DefaultRect.Y,
+    width: number | typeof DefaultRect.WIDTH,
+    height: number | typeof DefaultRect.HEIGHT,
+    w?: number,
+    h?: number
 }
 
 export type FaderTaper = {
@@ -75,8 +77,8 @@ export type Fader = {
     rx: number,
     geometry?: FaderGeometry,
     label?: string,
-    taper: FaderTaper,
-    rect: FaderGeometry,
+    taper?: FaderTaper,
+    rect?: FaderGeometry,
     bg?: Tint;
     changing?: boolean;
     precis?: boolean;
@@ -85,3 +87,7 @@ export type Fader = {
     readonly h: number;
     readonly w: number
 }
+
+//Data
+
+export type FaderTag = `fader.${number | string}`

@@ -6,7 +6,7 @@
     import {clamp, radialPoints, remap} from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
-    import type {BoundingClientRec, Fader, FaderGeometry, FaderTaper} from "../types/precisUI";
+    import type {BoundingClientRec, Fader, FaderGeometry, FaderTaper, FaderTag} from "../types/precisUI";
     import {DefaultRect, PALETTE} from "../types/precisUI";
 
 
@@ -21,9 +21,9 @@
         h = DefaultRect.HEIGHT,
         rx = DefaultRect.RX
 
-    export let geometry:FaderGeometry = { x, y , width: width | w , height: height | h }
-    export let value:number = 0;
-    export let id:string = 'fader'
+    export let geometry:FaderGeometry = { x, y , width: (width | w) , height: (height | h) }
+    export let value:number = 0
+    export let id:FaderTag = 'fader.1'
     export let taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'}
 
     const fader: Fader = {
@@ -202,7 +202,7 @@
                     <text class='readout'
                           id='fader.readouttext'
                           style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
-                        {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}></text>
+                        {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}</text>
 
                 </g>
             </g>
@@ -268,7 +268,7 @@
     }
 
     .readoutBox {
-        transform: translate(-3rem, 0.2rem);
+        transform: translate(-2.75rem, 0.2rem);
         stroke-width: 0;
         z-index: -100;
         fill: ghostwhite;

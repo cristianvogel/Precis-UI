@@ -6,8 +6,8 @@
 
 <!-- prevent default mouse actions but allow key events through -->
 <svelte:body
-		on:mousedown|preventDefault={ (e)=>{ window.focus()} }
-		on:contextmenu|preventDefault={ (e)=>{window.focus()} }
+		on:mousedown|preventDefault={ ()=>{ window.focus()} }
+		on:contextmenu|preventDefault={ ()=>{window.focus()} }
 />
 
 <script lang="ts">
@@ -16,6 +16,7 @@
 
 	let value:number = 0;
 </script>
+
 <main>
 <div id='header'>
 	<h1>
@@ -35,7 +36,7 @@
 		<a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
 	</h3>
 </div>
-	<Fader {value} x="50%" y="50%" />
+	<Fader id="e" />
 	<Dial />
 </main>
 
