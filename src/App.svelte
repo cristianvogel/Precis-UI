@@ -14,7 +14,8 @@
 	import Fader from "./components/Fader.svelte";
 	import Dial from "./components/Dial.svelte";
 
-	let value:number = 0;
+	let faderUID:number = 0;
+	let dialUID:number = 0;
 </script>
 
 <main>
@@ -26,22 +27,28 @@
 		for <a href='https://svelte.dev'>Svelte</a>
 	</h2>
 	<p>
-		Operate with both mouse buttons.<br>
-		For precision mode, hold shift during drag.
+		Mouse buttons for changing gear.<br>
+		Optionally, hold shift during drag.
 
 	</p>
 </div>
 
 <div class='footer'>
+	<svg style="height: 0.1rem;">
+		<line x1="0.5rem" y1="5%" x2="200%" y2="5%" stroke='antiqueWhite'/>
+	</svg>
 	<h3>
-		<a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
+		𝌺 <a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
 	</h3>
 </div>
-	<Fader id="fader.0" x="100" y="250" />
-	<Fader id="fader.1" x="150" y="250" />
-	<Fader id="fader.2" x="200" y="250" />
-	<Fader id="fader.3" x="250" y="250" />
-	<Dial />
+	<Fader id="fader.{faderUID++}" x="100" y="250" />
+	<Fader id="fader.{faderUID++}" x="150" y="250" />
+	<Fader id="fader.{faderUID++}" x="200" y="250" />
+	<Fader id="fader.{faderUID++}" x="250" y="250" />
+	<Dial id="dial.{dialUID++}" x="350" y="250" width="100" height="100"/>
+	<Dial id="dial.{dialUID++}" x="450" y="250" width="100" height="100" />
+	<Dial id="dial.{dialUID++}" x="350" y="350" width="100" height="100" />
+	<Dial id="dial.{dialUID++}" x="450" y="350" width="100" height="100" />
 </main>
 
 

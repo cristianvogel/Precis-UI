@@ -35,15 +35,19 @@ p {
 	font-size: small;
 	font-family: 'Helvetica Neue', sans-serif;
 	color: silver;
-	padding: 0.25rem
+	margin-left: 0.25rem;
+	padding-left: 0.25rem
 
 }
 
 .footer {
+	font-size: small;
 	position: absolute;
-	left: 80%;
-	top: 90%;
-	padding: 0.2rem
+	padding-left: 0rem
+}
+
+.footer a{
+	text-decoration: none;
 }
 a {
 	color: darkgray;

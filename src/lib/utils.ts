@@ -39,3 +39,7 @@ export function radialPoints(
     }
     return data
 }
+
+export function toNumber( value: string|number): number {
+    return typeof value !== 'number' ? Number.parseFloat(value) : value;
+}

@@ -3,45 +3,74 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {clamp, radialPoints, remap} from '../lib/utils.ts';
+    import {clamp, radialPoints, remap, toNumber } from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
+    import type {BoundingClientRec, Dial, ControlRect, DialTaper, DialTag} from "../types/precisUI";
+    import {DefaultRectDial, C} from "../types/precisUI";
 
+    export let
+        x = DefaultRectDial.X,
+        y = DefaultRectDial.Y,
+        width = DefaultRectDial.WIDTH,
+        height = DefaultRectDial.HEIGHT,
+        w = DefaultRectDial.WIDTH,
+        h = DefaultRectDial.HEIGHT,
+        rx = DefaultRectDial.RX
+
+    export let rect:ControlRect = { x, y , width: (width | w) , height: (height | h) }
+    export let value:number = 0
+    export let id:DialTag = 'dial.0'
+    export let taper:DialTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'}
 
     let clientRect;
     let selected = null;
-    const radial = ()=>(fader.normValue * 270) + 230
+    rx = toNumber(rx) //todo: improve type assertion
 
-    let fader = {
-        x: 200,
-        y: 50,
-        w: 8,
-        h: 200,
-        rx: 3,
-        value: 0,
+    const dial:Dial = {
+        currentValue: value,
+        id,
+        geometry: rect,
+        rx,
+        x: toNumber(x) - rx,
+        y: toNumber(y) - rx,
+        width: toNumber(width) + rx,
+        height: toNumber(height),
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
-        taper: { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'},
-        bg: 'transparent',
-        set rect( options ) {
-            const {x,y,width,height} = options
-            this.x=x; this.y=y; this.w=width; this.h=height;
+        taper,
+        background: C.clear,
+        get radialTrack() { return (this.normValue * 270) + 230}, //todo: make configurable
+        set rect(rect: ControlRect) {
+            this.geometry = rect
+            this.x = rect.x
+            this.y = rect.y
+            this.width = rect.width
+            this.height = rect.height
+            return this.geometry
         },
-        get radialPoints() { return (this.normValue * 270) + 230},
-        get boundingBox() {
-            return `top:${this.y}px;
-			left:${this.x}px;
-			width:${this.w + this.rx}px;
-			height:${this.h + this.rx}px;
-			background: ${this.bg};`
+        get index(): number {
+            return (Number.parseInt(Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
-        get normValue() {return (this.value /  this.h)}
+        get h(): number {
+            return this.geometry.height | this.height
+        },
+        get w(): number {
+            return this.geometry.width | this.width
+        },
+        get clientRect() {
+            return <BoundingClientRec>
+                `top:${this.y}px;left:${this.x}px;width:${this.width}px;height:${this.height}px;`
+        },
+        get normValue() {
+            return this.currentValue / this.height
+        }
     }
 
     function handleModifier (ev) {
         const shift = ev.shiftKey && ev.type==='keydown';
-        fader.precis= shift
+        dial.precis= shift
         if (shift){
             removeEventListener('mousemove', handleMouseMoveJump)
             addEventListener('mousemove', handleMouseMovePrecision)
@@ -53,7 +82,7 @@
 
     function handleMouseDownPrecision(event) {
         selected = event.target
-        fader.precis = true
+        dial.precis = true
         removeEventListener('mousemove', handleMouseMoveJump)
         addEventListener('mousemove', handleMouseMovePrecision)
         addEventListener('mouseup', handleMouseUp)
@@ -62,21 +91,21 @@
     function handleMouseMovePrecision(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
-        const {value, taper, h, y} = fader
+        const {currentValue, taper, h} = dial
         if (dy === 0) return
         switch (selected.id.split('.')[0]) {
             case 'dial' :
-                fader.value = clamp( value+((dy*dy)*(Math.sign(dy)/-2)) * taper.fineStep, [0, h] )
+                dial.currentValue = clamp( currentValue+((dy*dy)*(Math.sign(dy)/-2)) * taper.fineStep, [0, h] )
                 break;
             case 'fader' :
-                fader.value = clamp( value+ -dy * taper.fineStep, [0, h] )
+                dial.currentValue = clamp( currentValue+ -dy * taper.fineStep, [0, h] )
                 break;
         }
     }
 
     function handleMouseDownJump(event) {
         selected = event.target
-        if (fader.precis) return
+        if (dial.precis) return
         selected.focus()
         addEventListener('mousemove', handleMouseMoveJump)
         addEventListener('mouseup', handleMouseUp)
@@ -87,21 +116,21 @@
     function handleMouseMoveJump(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
-        const {value, taper, h, y, normValue } = fader
+        const {currentValue, h, normValue } = dial
         switch (selected.id.split('.')[0]) {
             case 'dial' :
-                fader.value = clamp( value + (-dy* (remap(normValue,0,1,3,0.25))), [0, h] )
+                dial.currentValue = clamp( currentValue + (-dy* (remap(normValue,0,1,3,0.25))), [0, h] )
                 break;
             case 'fader' :
-                fader.value = clamp( value + -dy, [0, h] )
+                dial.currentValue = clamp( currentValue + -dy, [0, h] )
                 break;
         }
     }
 
-    function handleMouseUp(event) {
+    function handleMouseUp() {
         selected = null
-        fader.precis = false
-        fader.changing = false
+        dial.precis = false
+        dial.changing = false
         removeEventListener('mousemove', handleMouseMovePrecision)
         removeEventListener('mousemove', handleMouseMoveJump)
         removeEventListener('mouseup', handleMouseUp)
@@ -109,66 +138,68 @@
         removeEventListener('keyup', handleModifier)
     }
 
-    $: dialPointer = radialPoints( fader.radialPoints, 50,50,10,55,10)
+    let dialPointer;
+    $: dialPointer = radialPoints( dial.radialTrack, 50,50,10,55,10)
 
     onMount(() => {
-// 		 this was a temporary psuedo constructor
-// 		 allows the widget to be scaled and positioned by CSS
-// 		 which is actually quite cool?
-        const faderRect = document.getElementById('fader.box')
-        const {top, left, width, height} = faderRect.getBoundingClientRect()
-        fader.rect = {top: top, left: left, width: width, height: height}
+        // TODO: turn into a setRectFromParent method
+        const dialContainer = document.getElementById(`${id}-box`)
+        dialContainer.setAttribute('style', dial.clientRect)
+        // console.log('dial:'+dialContainer.getAttribute('style'))
     })
 </script>
 
 
 <div class='dialContainer'
-     on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
-     on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
+     id='{id}-box'
+     on:mouseenter|preventDefault='{(e)=>{e.target.focus(); dial.changing=true}}'
+     on:mouseleave='{()=>{dial.changing=(selected !== null)}}'
      on:mousedown|preventDefault={handleMouseDownJump}
      on:contextmenu|preventDefault={handleMouseDownPrecision}
 >
     <svg>
-        <defs id='dial.textures'>
-            <radialGradient id='dial.grad'
+        <defs id='{id}-textures'>
+            <radialGradient id='{id}-grad'
                             cx=50%
                             cy=50%
-                            r={remap(fader.normValue,0,1,2,0.75)}
+                            r={remap(dial.normValue,0,1,2,0.75)}
                             fx=100%
                             gradientTransform=rotate({270/12})
             >
                 <stop offset="5%"  stop-color="darkblue" />
-                <stop offset="80%" stop-color="aqua" />
+                <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan ].at(dial.index%4)}/>
+                />
                 <stop offset="99%"  stop-color="aquamarine" />
             </radialGradient>
         </defs>
 
-        <g id='dial.radial' stroke-width=8>
-            <circle id='dial.circle'
+        <g id='{id}-radial' stroke-width=8 >
+            <circle id='{id}-circle'
                     cx=50% cy=50% r=2.5rem
-                    fill=#112211 stroke="url('#dial.grad')" />
+                    fill=#112211 stroke="url('#{id}-grad')" />
 
             {#each dialPointer as {x,y}, i}
                 {@const width = 10}
                 {#if (i < dialPointer.length-2)}
-                    <polyline id='dial.pointer'
-                              points={`${x},${y} 50,50 `}
+                    <polyline id='{id}-pointer'
+                              points={`${x},${y}, 50,50 `}
                               fill="none"
                               stroke-width={width - (i/2)}
                               stroke=rgba(250,250,250,0.5) />
                 {/if}
-                {#if (i === dialPointer.length-1) && fader.changing}
-                    <circle id='dial.led' cx=10% cy=16.1% r=2 fill=aqua in:fade out:fade/>
+                {#if (i === dialPointer.length-1) && dial.changing}
+                    <circle id='{id}-led' cx=10% cy=16.1% r=2 fill=aqua in:fade out:fade/>
                 {/if}
             {/each}
-            <text id = 'dial.readout'
+            <text id = '{id}-readout'
                   class='readout dial'
                   style="{
-										 fader.precis ?
+										 dial.precis ?
 										  'font-size: large; fill: aqua; transform: translate(1rem, -0.5rem);'
-										  : `${fader.changing ? 'fill: aqua; ':''}`
+										  : `${dial.changing ? 'fill: aqua; ':''}`
 										}">
-                {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}
+                {dial.normValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : '▹'}
+            </text>
         </g>
     </svg>
 </div>
@@ -182,13 +213,9 @@
 
     .dialContainer {
         position: absolute;
+        transform: scale(0.75);
         border-radius: 25px;
         background: grey;
-        width: 100px;
-        height: 100px;
-        top: 35%;
-        left: 35%;
-        transform: scale(1);
     }
 
     .readout {
@@ -198,7 +225,6 @@
         stroke-width: 0;
         fill: grey;
         cursor: grab;
-        z-index: -1
     }
 
     .readout.dial {

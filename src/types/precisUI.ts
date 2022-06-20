@@ -1,17 +1,22 @@
 // Precis.ui
 
 // Defs
-export enum DefaultStyles {
 
-}
-
-export enum DefaultRect {
+export enum DefaultRectFader {
     X = '50%',
     Y = '50%',
     WIDTH = 8,
     HEIGHT = 200,
     RX = 2.75
 }
+export enum DefaultRectDial {
+    X = '50%',
+    Y = '50%',
+    WIDTH = 100,
+    HEIGHT = 100,
+    RX = 2.75
+}
+
 
 export type BoundingClientRec =
             `top:${number}px;
@@ -47,35 +52,35 @@ export type Tint = RGB | C | RGBA | HEX
 
 
 // Geometry
-export type FaderGeometry = {
-    x: number | typeof DefaultRect.X,
-    y: number | typeof DefaultRect.Y,
-    width: number | typeof DefaultRect.WIDTH,
-    height: number | typeof DefaultRect.HEIGHT,
-    w?: number,
-    h?: number
+export type ControlRect = {
+    x: number | typeof DefaultRectFader.X | typeof DefaultRectDial.X,
+    y: number | typeof DefaultRectFader.Y | typeof DefaultRectDial.Y,
+    width: number | typeof DefaultRectFader.WIDTH | typeof DefaultRectDial.WIDTH,
+    height: number | typeof DefaultRectFader.HEIGHT | typeof DefaultRectDial.HEIGHT,
+    w?: number | typeof DefaultRectFader.WIDTH | typeof DefaultRectDial.WIDTH,
+    h?: number | typeof DefaultRectFader.HEIGHT | typeof DefaultRectDial.HEIGHT,
 }
 
 export type FaderTaper = {
     min: number,
     max: number,
     fineStep: number,
-    curve: 'LINEAR' | 'NONLINEAR'
+    curve: 'LINEAR' | 'NONLINEAR' //todo: implement NONLINEAR
 }
 
 export type Fader = {
-    id: string | number,
     currentValue: number,
+    id: string | number,
     x: number,
     y: number,
     width: number,
     height: number,
     rx: number,
-    geometry?: FaderGeometry,
+    geometry?: ControlRect,
     label?: string,
     taper?: FaderTaper,
-    rect?: FaderGeometry,
-    bg?: Tint;
+    rect?: ControlRect,
+    background?: Tint;
     changing?: boolean;
     precis?: boolean;
     readonly clientRect: BoundingClientRec;
@@ -85,6 +90,37 @@ export type Fader = {
     readonly index: number
 }
 
-//Data
+export type DialTaper = {
+    min: number,
+    max: number,
+    fineStep: number,
+    curve: 'LINEAR' | 'NONLINEAR' //todo: implement NONLINEAR
+}
+
+export type Dial = {
+    currentValue: number,
+    id: string | number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    rx: number,
+    geometry?: ControlRect,
+    label?: string,
+    taper?: FaderTaper,
+    rect?: ControlRect,
+    background?: Tint;
+    changing?: boolean;
+    precis?: boolean;
+    readonly radialTrack: number,
+    readonly clientRect: BoundingClientRec;
+    readonly normValue:  number;
+    readonly h: number;
+    readonly w: number;
+    readonly index: number
+}
+
+// Naming
 
 export type FaderTag = `fader.${number | string}`
+export type DialTag = `dial.${number | string}`

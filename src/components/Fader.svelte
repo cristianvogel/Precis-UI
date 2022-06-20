@@ -3,28 +3,28 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {clamp, radialPoints, remap} from '../lib/utils.ts';
+    import {clamp, remap} from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
-    import type {BoundingClientRec, Fader, FaderGeometry, FaderTaper, FaderTag} from "../types/precisUI";
-    import {DefaultRect, C} from "../types/precisUI";
+    import type {BoundingClientRec, Fader, ControlRect, FaderTaper, FaderTag} from "../types/precisUI";
+    import {DefaultRectFader, C} from "../types/precisUI";
 
+    export let
+        x = DefaultRectFader.X,
+        y = DefaultRectFader.Y,
+        width = DefaultRectFader.WIDTH,
+        height = DefaultRectFader.HEIGHT,
+        w = DefaultRectFader.WIDTH,
+        h = DefaultRectFader.HEIGHT,
+        rx = DefaultRectFader.RX
+
+    export let rect:ControlRect = { x, y , width: (width | w) , height: (height | h) }
+    export let value:number = 0
+    export let id:FaderTag = 'fader.0'
+    export let taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'}
 
     let clientRect;
     let selected = null;
-    export let
-        x = DefaultRect.X,
-        y = DefaultRect.Y,
-        width = DefaultRect.WIDTH,
-        height = DefaultRect.HEIGHT,
-        w = DefaultRect.WIDTH,
-        h = DefaultRect.HEIGHT,
-        rx = DefaultRect.RX
-
-    export let rect:FaderGeometry = { x, y , width: (width | w) , height: (height | h) }
-    export let value:number = 0
-    export let id:FaderTag = 'fader.1'
-    export let taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'}
 
     rx = typeof rx !== 'number' ? Number.parseFloat(rx) : rx;
 
@@ -41,17 +41,17 @@
         precis: false,
         changing: false,
         taper,
-        bg: C.clear,
-        set rect(faderGeometry: FaderGeometry) {
-            this.geometry = faderGeometry
-            this.x = faderGeometry.x
-            this.y = faderGeometry.y
-            this.width = faderGeometry.width
-            this.height = faderGeometry.height
+        background: C.clear,
+        set rect(rect: ControlRect) {
+            this.geometry = rect
+            this.x = rect.x
+            this.y = rect.y
+            this.width = rect.width
+            this.height = rect.height
             return this.geometry
         },
         get index(): number {
-            return (Number.parseInt(Array.from(this.id).at(-1)))
+            return (Number.parseInt(Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
         get h(): number {
             return this.geometry.height | this.height
@@ -94,7 +94,7 @@
     function handleMouseMovePrecision(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
-        const {currentValue, taper, h, y} = fader
+        const {currentValue, taper, h} = fader
         if (dy === 0) return
         switch (selected.id.split('.')[0]) {
             case 'dial' :
@@ -130,7 +130,7 @@
         }
     }
 
-    function handleMouseUp(event) {
+    function handleMouseUp() {
         selected = null
         fader.precis = false
         fader.changing = false
@@ -162,7 +162,7 @@
 
     <svg >
         <defs id='{id}-textures'>
-            <linearGradient id='{id}-.grad'
+            <linearGradient id='{id}-grad'
                             x1=0
                             x2=0
                             y1=0
@@ -176,9 +176,9 @@
             </filter>
         </defs>
 
-        <g fill="url('#{id}-.grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
+        <g fill="url('#{id}-grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
             <rect height={fader.h + fader.rx}
-                  id='fader.track'
+                  id='#{id}-track'
                   on:contextmenu|preventDefault={handleMouseDownPrecision}
                   on:mousedown|preventDefault={(ev)=>{fader.currentValue= fader.h - ev.offsetY}}
                   rx=4px
