@@ -29,7 +29,6 @@
 	<p>
 		Mouse buttons for changing gear.<br>
 		Optionally, hold shift during drag.
-
 	</p>
 </div>
 
@@ -41,14 +40,12 @@
 		𝌺 <a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
 	</h3>
 </div>
-	<Fader id="fader.{faderUID++}" x="100" y="250" />
-	<Fader id="fader.{faderUID++}" x="150" y="250" />
-	<Fader id="fader.{faderUID++}" x="200" y="250" />
-	<Fader id="fader.{faderUID++}" x="250" y="250" />
-	<Dial id="dial.{dialUID++}" x="350" y="250" width="100" height="100"/>
-	<Dial id="dial.{dialUID++}" x="450" y="250" width="100" height="100" />
-	<Dial id="dial.{dialUID++}" x="350" y="350" width="100" height="100" />
-	<Dial id="dial.{dialUID++}" x="450" y="350" width="100" height="100" />
+	{#each Array(4) as _, i }
+		<Fader id="fader.{i}" x={100+(i*50)} y="250" />
+	{/each}
+	{#each Array(4) as _, i}
+		<Dial id="dial.{i}" x={300+((i%2)*100)} y={i < 2 ? 250 : 350}  />
+	{/each}
 </main>
 
 

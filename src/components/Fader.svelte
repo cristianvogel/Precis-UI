@@ -3,11 +3,15 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {clamp, remap} from '../lib/utils.ts';
+    import {clamp, remap, toNumber} from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
     import type {BoundingClientRec, Fader, ControlRect, FaderTaper, FaderTag} from "../types/precisUI";
     import {DefaultRectFader, C} from "../types/precisUI";
+
+    let
+        clientRect,
+        selected = null;
 
     export let
         x = DefaultRectFader.X,
@@ -16,27 +20,24 @@
         height = DefaultRectFader.HEIGHT,
         w = DefaultRectFader.WIDTH,
         h = DefaultRectFader.HEIGHT,
-        rx = DefaultRectFader.RX
+        rx = DefaultRectFader.RX,
+        rect:ControlRect = { x, y , width: (width | w) , height: (height | h) },
+        value:number = 0,
+        id:FaderTag = 'fader.0',
+        taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'};
 
-    export let rect:ControlRect = { x, y , width: (width | w) , height: (height | h) }
-    export let value:number = 0
-    export let id:FaderTag = 'fader.0'
-    export let taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'}
-
-    let clientRect;
-    let selected = null;
-
-    rx = typeof rx !== 'number' ? Number.parseFloat(rx) : rx;
+    //todo: improve type assertion
+        rx = toNumber(rx)
 
     const fader: Fader = {
         currentValue: value,
         id,
         geometry: rect,
         rx: rx,
-        x: x - rx,
-        y: y - rx,
-        width: width + rx,
-        height: height,
+        x: toNumber(x) - rx,
+        y: toNumber(y) - rx,
+        width: toNumber(width) + rx,
+        height: toNumber(height),
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
@@ -142,13 +143,10 @@
     }
 
     onMount(() => {
-// 		 this was a temporary pseudo constructor
-// 		 allows the widget to be scaled and positioned by CSS
-// 		 which is actually quite cool?
-  //       TODO: turn into a setRectFromParent method
-  //       const faderRect = document.getElementById(`${id}.box`)
-  //       const {top, left, width, height} = faderRect.getBoundingClientRect()
-  //       fader.rect = {x: left, y: top, width: width, height: height}
+        // TODO: turn into a setRectFromParent method
+        const faderContainer = document.getElementById(`${id}-box`)
+        faderContainer.setAttribute('style', fader.clientRect)
+        // console.log('fader:'+faderContainer.getAttribute('style'))
     })
 
 </script>

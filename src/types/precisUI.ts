@@ -14,7 +14,8 @@ export enum DefaultRectDial {
     Y = '50%',
     WIDTH = 100,
     HEIGHT = 100,
-    RX = 2.75
+    RX = 2.75,
+    SCALE = 0.75
 }
 
 
