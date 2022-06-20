@@ -6,8 +6,8 @@
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {BoundingClientRec, Dial, ControlRect, DialTaper, DialTag} from "../types/precisUI";
-    import {DefaultRectDial, C} from "../types/precisUI";
+    import type {BoundingClientRec, Dial, ControlRect, Taper, DialTag} from "../types/precisUI";
+    import {DefaultRectDial, C, DefaultTaper} from "../types/precisUI";
 
     let
         width = DefaultRectDial.WIDTH,
@@ -18,17 +18,25 @@
         clientRect = null;
 
     export let
+        min = DefaultTaper.MIN,
+        max = DefaultTaper.MAX,
+        fineStep = DefaultTaper.FINE,
         x = DefaultRectDial.X,
         y = DefaultRectDial.Y,
         scale:number = DefaultRectDial.SCALE,
         rx = DefaultRectDial.RX,
         rect: ControlRect = {x, y, width: (width | w), height: (height | h)},
         value: number = 0,
-        id: DialTag = 'dial.0',
-        taper: DialTaper = {min: 0, max: 10, fineStep: 0.1, curve: 'LINEAR'};
+        id: DialTag = 'dial.0'
 
-    //todo: improve type assertion
+    //todo: improve type assert checks or work with DOM units like %, px etc
         rx = toNumber(rx)
+        const taper: Taper = {
+            min: toNumber(min),
+            max: toNumber(max),
+            fineStep: toNumber(fineStep),
+            curve: 'LINEAR'
+        };
 
     const dial: Dial = {
         currentValue: value,
@@ -44,9 +52,6 @@
         changing: false,
         taper,
         background: C.clear,
-        get radialTrack() {
-            return (this.normValue * 270) + 230
-        }, //todo: make configurable
         set rect(rect: ControlRect) {
             this.geometry = rect
             this.x = rect.x
@@ -55,8 +60,12 @@
             this.height = rect.height
             return this.geometry
         },
+        get radialTrack() {
+            //todo: make configurable
+            return (this.normValue * 270) + 230
+        },
         get index(): number {
-            return (Number.parseInt(Array.from(this.id).at(-1))) //todo: what if id >10 ?
+            return (Number.parseInt(<string>Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
         get h(): number {
             return this.geometry.height | this.height
@@ -68,8 +77,11 @@
             return <BoundingClientRec>
                 `top:${this.y}px;left:${this.x}px;width:${this.width}px;height:${this.height}px`
         },
-        get normValue() {
+        get normValue():number {
             return this.currentValue / this.height
+        },
+        get mappedValue():number {
+            return remap( this.normValue, 0 ,1, this.taper.min, this.taper.max)
         }
     }
 
@@ -96,15 +108,10 @@
     function handleMouseMovePrecision(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
+        if (dy === 0) {return}
         const {currentValue, taper, h} = dial
-        if (dy === 0) return
-        switch (selected.id.split('.')[0]) {
-            case 'dial' :
-                dial.currentValue = clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, h])
-                break;
-            case 'fader' :
-                dial.currentValue = clamp(currentValue + -dy * taper.fineStep, [0, h])
-                break;
+        if (taper) {
+            dial.currentValue = clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, h])
         }
     }
 
@@ -121,15 +128,9 @@
     function handleMouseMoveJump(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
+        if (dy === 0) {return}
         const {currentValue, h, normValue} = dial
-        switch (selected.id.split('.')[0]) {
-            case 'dial' :
-                dial.currentValue = clamp(currentValue + (-dy * (remap(normValue, 0, 1, 3, 0.25))), [0, h])
-                break;
-            case 'fader' :
-                dial.currentValue = clamp(currentValue + -dy, [0, h])
-                break;
-        }
+        dial.currentValue = clamp(currentValue + (-dy * (remap(normValue, 0, 1, 3, 0.25))), [0, h])
     }
 
     function handleMouseUp() {
@@ -163,7 +164,7 @@
      on:mouseleave='{()=>{dial.changing=(selected !== null)}}'
 >
     <svg>
-        <defs id='{id}-textures'>
+        <defs id='{id}-gradients'>
             <radialGradient cx=50%
                             cy=50%
                             fx=100%
@@ -172,6 +173,7 @@
                             r={remap(dial.normValue,0,1,2,0.75)}
             >
                 <stop offset="5%" stop-color="darkblue"/>
+                    <!-- todo: abstract out the colour assign -->
                 <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan ].at(dial.index%4)}/>
                 />
                 <stop offset="99%" stop-color="aquamarine"/>
@@ -193,17 +195,16 @@
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
                 {#if (i === dialPointer.length - 1) && dial.changing}
-                    <circle id='{id}-led' cx=10% cy=16.1% r=2 fill=aqua in:fade out:fade/>
+                    <circle id='{id}-LED'
+                            cx=10% cy=16.1% r=2
+                            fill=aqua
+                            in:fade out:fade/>
                 {/if}
             {/each}
-            <text class='readout dial'
+            <text class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                   id='{id}-readout'
-                  style="{
-										 dial.precis ?
-										  'font-size: large; fill: aqua; transform: translate(1rem, -0.5rem);'
-										  : `${dial.changing ? 'fill: aqua; ':''}`
-										}">
-                {dial.normValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : '▹'}
+                  style={dial.changing ? 'fill: aqua;' : ''}>
+                    {dial.mappedValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : '▹'}
             </text>
         </g>
     </svg>
@@ -224,7 +225,7 @@
 
     .readout {
         font-family: 'Roboto', sans-serif;
-        font-size: x-small;
+        font-size: small;
         transform: translate(-3rem, 0.5rem);
         stroke-width: 0;
         fill: grey;
@@ -234,5 +235,11 @@
     .readout.dial {
         transform: translate(0rem, -0.5rem);
         pointer-events: none;
+    }
+
+    .readout.dial.precis {
+        font-size: large;
+        fill: aqua;
+        transform: translate(1rem, -0.5rem);
     }
 </style>

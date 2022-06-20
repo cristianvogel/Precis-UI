@@ -14,8 +14,6 @@
 	import Fader from "./components/Fader.svelte";
 	import Dial from "./components/Dial.svelte";
 
-	let faderUID:number = 0;
-	let dialUID:number = 0;
 </script>
 
 <main>
@@ -28,7 +26,8 @@
 	</h2>
 	<p>
 		Mouse buttons for changing gear.<br>
-		Optionally, hold shift during drag.
+		Optionally, hold shift during drag.<br>
+		Double click to jump.
 	</p>
 </div>
 
@@ -41,10 +40,19 @@
 	</h3>
 </div>
 	{#each Array(4) as _, i }
-		<Fader id="fader.{i}" x={100+(i*50)} y="250" />
+		<Fader id="fader.{i}"
+			   x={100+(i*50)}
+			   y="250"
+			   min=0
+			   max={Math.pow(i + 1, 2)}/>
 	{/each}
 	{#each Array(4) as _, i}
-		<Dial id="dial.{i}" x={300+((i%2)*100)} y={i < 2 ? 250 : 350}  />
+		<Dial id="dial.{i}"
+			  x={300+((i%2)*100)}
+			  y={i < 2 ? 250 : 350}
+			  min=0
+			  max={Math.pow(i + 1, 2)}
+		/>
 	{/each}
 </main>
 

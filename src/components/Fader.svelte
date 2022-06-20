@@ -6,14 +6,17 @@
     import {clamp, remap, toNumber} from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
-    import type {BoundingClientRec, Fader, ControlRect, FaderTaper, FaderTag} from "../types/precisUI";
-    import {DefaultRectFader, C} from "../types/precisUI";
+    import type {BoundingClientRec, Fader, ControlRect, FaderTag, Taper} from "../types/precisUI";
+    import {DefaultRectFader, C, DefaultTaper} from "../types/precisUI";
 
     let
         clientRect,
         selected = null;
 
     export let
+        min = DefaultTaper.MIN,
+        max = DefaultTaper.MAX,
+        fineStep = DefaultTaper.FINE,
         x = DefaultRectFader.X,
         y = DefaultRectFader.Y,
         width = DefaultRectFader.WIDTH,
@@ -23,17 +26,22 @@
         rx = DefaultRectFader.RX,
         rect:ControlRect = { x, y , width: (width | w) , height: (height | h) },
         value:number = 0,
-        id:FaderTag = 'fader.0',
-        taper:FaderTaper  = { min: 0, max: 10, fineStep: 0.1, curve:'LINEAR'};
+        id:FaderTag = 'fader.0'
 
-    //todo: improve type assertion
+    //todo: improve type assert checks or work with DOM units like %, px etc
         rx = toNumber(rx)
+        const taper: Taper = {
+            min: toNumber(min),
+            max: toNumber(max),
+            fineStep: toNumber(fineStep),
+            curve: 'LINEAR'
+        };
 
     const fader: Fader = {
         currentValue: value,
         id,
         geometry: rect,
-        rx: rx,
+        rx,
         x: toNumber(x) - rx,
         y: toNumber(y) - rx,
         width: toNumber(width) + rx,
@@ -52,7 +60,7 @@
             return this.geometry
         },
         get index(): number {
-            return (Number.parseInt(Array.from(this.id).at(-1))) //todo: what if id >10 ?
+            return (Number.parseInt(<string>Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
         get h(): number {
             return this.geometry.height | this.height
@@ -69,6 +77,9 @@
         },
         get normValue() {
             return this.currentValue / this.height
+        },
+        get mappedValue():number {
+            return remap( this.normValue, 0 ,1, this.taper.min, this.taper.max)
         }
     }
 
@@ -95,15 +106,10 @@
     function handleMouseMovePrecision(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
-        const {currentValue, taper, h} = fader
         if (dy === 0) return
-        switch (selected.id.split('.')[0]) {
-            case 'dial' :
-                fader.currentValue = clamp( currentValue+((dy*dy)*(Math.sign(dy)/-2)) * taper.fineStep, [0, h] )
-                break;
-            case 'fader' :
-                fader.currentValue = clamp( currentValue+ -dy * taper.fineStep, [0, h] )
-                break;
+        const {currentValue, taper, h} = fader
+        if (taper) {
+            fader.currentValue = clamp(currentValue + -dy * taper.fineStep, [0, h])
         }
     }
 
@@ -159,13 +165,14 @@
 >
 
     <svg >
-        <defs id='{id}-textures'>
+        <defs id='{id}-gradients'>
             <linearGradient id='{id}-grad'
                             x1=0
                             x2=0
                             y1=0
                             y2={remap(fader.normValue, 0, 1, 3, 0)}>
                 <stop offset="0" stop-color={C.black}/>
+                <!-- todo: abstract out the colour assign -->
                 <stop offset="80%"
                       stop-color={[ C.red, C.sky, C.pink, C.aquaDark ].at(fader.index%4)}/>
             </linearGradient>
@@ -178,7 +185,7 @@
             <rect height={fader.h + fader.rx}
                   id='#{id}-track'
                   on:contextmenu|preventDefault={handleMouseDownPrecision}
-                  on:mousedown|preventDefault={(ev)=>{fader.currentValue= fader.h - ev.offsetY}}
+                  on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.h - ev.offsetY}}
                   rx=4px
                   width={fader.w}
                   x=0rem
@@ -198,15 +205,15 @@
                 <g id='{id}-readout' class='readoutBox rotated' style='opacity:{fader.changing ? 1 : 0.7}'>
                     <rect class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
                           height=1.25rem
-                          id='{id}-readoutbox'
+                          id='{id}-readout.Box'
                           rx=3px
                           width=2.75rem
                           x=-0.5rem
                           y=-0.5rem />
                     <text class='readout'
-                          id='{id}-readouttext'
+                          id='{id}-readout.Text'
                           style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
-                        {fader.normValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}</text>
+                        {fader.mappedValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}</text>
 
                 </g>
             </g>
@@ -218,11 +225,11 @@
          class='faderContainer'
          style={fader.clientRect + 'z-index: -1000'}>
         <svg in:fade out:fade>
-            <g id='{id}-ledTexture'
+            <g id='{id}-LED'
                stroke="green" fill=none stroke-width="1px"
                transform="translate({fader.w/2})">
                 <circle id='{id}-active' cy=-10 cx=-0.5 r=2 fill='aqua'/>
-                <text id='{id}-labeltext'
+                <text id='{id}-label.Text'
                       class='label rotated'
                       lengthAdjust='spacingAndGlyphs'
                       textLength={fader.h * 0.5}>{fader.label}

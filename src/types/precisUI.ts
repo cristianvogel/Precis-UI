@@ -18,6 +18,12 @@ export enum DefaultRectDial {
     SCALE = 0.75
 }
 
+export enum DefaultTaper {
+    MIN,
+    MAX,
+    FINE = 1.0e-2
+}
+
 
 export type BoundingClientRec =
             `top:${number}px;
@@ -48,11 +54,11 @@ export enum C {
     slate= 'slategray',
     tan = 'tan',
     deepBlue = 'midnightblue'
-} //todo: improve color palette data object
+} //todo: improve color palette stuff
 export type Tint = RGB | C | RGBA | HEX
 
 
-// Geometry
+// Common Geometry
 export type ControlRect = {
     x: number | typeof DefaultRectFader.X | typeof DefaultRectDial.X,
     y: number | typeof DefaultRectFader.Y | typeof DefaultRectDial.Y,
@@ -62,13 +68,14 @@ export type ControlRect = {
     h?: number | typeof DefaultRectFader.HEIGHT | typeof DefaultRectDial.HEIGHT,
 }
 
-export type FaderTaper = {
+export type Taper = {
     min: number,
     max: number,
     fineStep: number,
     curve: 'LINEAR' | 'NONLINEAR' //todo: implement NONLINEAR
 }
 
+// Widget specific
 export type Fader = {
     currentValue: number,
     id: string | number,
@@ -79,23 +86,17 @@ export type Fader = {
     rx: number,
     geometry?: ControlRect,
     label?: string,
-    taper?: FaderTaper,
+    taper?: Taper,
     rect?: ControlRect,
     background?: Tint;
     changing?: boolean;
     precis?: boolean;
     readonly clientRect: BoundingClientRec;
+    readonly mappedValue: number,
     readonly normValue:  number;
     readonly h: number;
     readonly w: number;
     readonly index: number
-}
-
-export type DialTaper = {
-    min: number,
-    max: number,
-    fineStep: number,
-    curve: 'LINEAR' | 'NONLINEAR' //todo: implement NONLINEAR
 }
 
 export type Dial = {
@@ -108,11 +109,12 @@ export type Dial = {
     rx: number,
     geometry?: ControlRect,
     label?: string,
-    taper?: FaderTaper,
+    taper?: Taper,
     rect?: ControlRect,
     background?: Tint;
     changing?: boolean;
     precis?: boolean;
+    readonly mappedValue: number,
     readonly radialTrack: number,
     readonly clientRect: BoundingClientRec;
     readonly normValue:  number;
@@ -120,8 +122,10 @@ export type Dial = {
     readonly w: number;
     readonly index: number
 }
+// Data structures
+type Point = { x: number, y: number}
+export type PointsArray = Array<Point>
 
-// Naming
-
+// Naming Dependencies
 export type FaderTag = `fader.${number | string}`
 export type DialTag = `dial.${number | string}`

@@ -1,17 +1,18 @@
+import type {PointsArray} from "../types/precisUI";
 
-export function clamp(value, range) {
+export function clamp(value, range):number {
     return Math.min(Math.max(value, range[0]), range[1]);
 }
 
-export function lerp(start, stop, amt) {
+export function lerp(start, stop, amt):number {
     return amt*(stop-start)+start;
 };
 
-export function remap(n, start1, stop1, start2, stop2) {
+export function remap(n, start1, stop1, start2, stop2):number {
     return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
 };
 
-export function degToRad(degrees) {
+export function degToRad(degrees):number {
     return degrees * (Math.PI / 180);
 };
 
@@ -26,12 +27,12 @@ export function degToRad(degrees) {
  * @param nPoints Number of points between rMin and rMax to obtain
  * @returns Multidimensional array for nPoints pairs of float coordinates for the points */
 export function radialPoints(
-    angleDegrees,  cx,  cy,  rMin,  rMax,  nPoints )
+    angleDegrees,  cx,  cy,  rMin,  rMax,  nPoints ): PointsArray
 {
     const  angleRadians = degToRad(angleDegrees - 90)
     const  sinV = Math.sin(angleRadians)
     const  cosV = Math.cos(angleRadians)
-    let data = new Array( )
+    let data:PointsArray = new Array()
     for(let i = 0; i < nPoints; i++)
     {
         const r = rMin+(rMax-rMin) * i / (nPoints-1)
