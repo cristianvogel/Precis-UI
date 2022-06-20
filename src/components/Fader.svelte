@@ -6,7 +6,7 @@
     import {clamp, remap, toNumber} from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
-    import type {BoundingClientRec, Fader, ControlRect, FaderTag, Taper} from "../types/precisUI";
+    import type {BoundingClientRec, Fader, Rect, FaderTag, Taper} from "../types/precisUI";
     import {DefaultRectFader, C, DefaultTaper} from "../types/precisUI";
 
     let
@@ -21,10 +21,7 @@
         y = DefaultRectFader.Y,
         width = DefaultRectFader.WIDTH,
         height = DefaultRectFader.HEIGHT,
-        w = DefaultRectFader.WIDTH,
-        h = DefaultRectFader.HEIGHT,
         rx = DefaultRectFader.RX,
-        rect:ControlRect = { x, y , width: (width | w) , height: (height | h) },
         value:number = 0,
         id:FaderTag = 'fader.0'
 
@@ -37,46 +34,44 @@
             curve: 'LINEAR'
         };
 
+    const rect:Rect = {
+        x: toNumber(x),
+        y: toNumber(y),
+        width: toNumber(width),
+        height: toNumber(height)
+    }
+
     const fader: Fader = {
         currentValue: value,
         id,
-        geometry: rect,
+        rect,
         rx,
-        x: toNumber(x) - rx,
-        y: toNumber(y) - rx,
-        width: toNumber(width) + rx,
-        height: toNumber(height),
+        taper,
+        get x():number { return this.rect.x },
+        get y():number {return this.rect.y},
+        set x( number:number ) { this.rect.x = number },
+        set y( number:number ) { this.rect.y = number },
+        get width():number {return this.rect.width},
+        get height():number {return this.rect.height},
+        set width(w:number) { this.rect.width = toNumber(w) + rx },
+        set height(h:number) { this.rect.height = toNumber(h) },
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
-        taper,
+
         background: C.clear,
-        set rect(rect: ControlRect) {
-            this.geometry = rect
-            this.x = rect.x
-            this.y = rect.y
-            this.width = rect.width
-            this.height = rect.height
-            return this.geometry
-        },
         get index(): number {
             return (Number.parseInt(<string>Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
-        get h(): number {
-            return this.geometry.height | this.height
-        },
-        get w(): number {
-            return this.geometry.width | this.width
-        },
-        get clientRect() {
+        get boundingBoxCSS():BoundingClientRec {
             return <BoundingClientRec>
-                `top:${this.y}px;
-                left:${this.x}px;
-                width:${this.width}px;
-                height:${this.height}px;`
+                    `top:${this.rect.y}px;
+                    left:${this.rect.x}px;
+                    width:${this.rect.width}px;
+                    height:${this.rect.height}px;`
         },
         get normValue() {
-            return this.currentValue / this.height
+            return this.currentValue / this.rect.height
         },
         get mappedValue():number {
             return remap( this.normValue, 0 ,1, this.taper.min, this.taper.max)
@@ -107,9 +102,9 @@
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
         if (dy === 0) return
-        const {currentValue, taper, h} = fader
+        const {currentValue, taper, height} = fader
         if (taper) {
-            fader.currentValue = clamp(currentValue + -dy * taper.fineStep, [0, h])
+            fader.currentValue = clamp(currentValue + -dy * taper.fineStep, [0, height])
         }
     }
 
@@ -126,15 +121,8 @@
     function handleMouseMoveJump(event) {
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
-        const {currentValue, h, normValue } = fader
-        switch (selected.id.split('.')[0]) {
-            case 'dial' :
-                fader.currentValue = clamp( currentValue + (-dy* (remap(normValue,0,1,3,0.25))), [0, h] )
-                break;
-            case 'fader' :
-                fader.currentValue = clamp( currentValue + -dy, [0, h] )
-                break;
-        }
+        const {currentValue, height, normValue } = fader
+        fader.currentValue = clamp( currentValue + (-dy /2), [0, height] )
     }
 
     function handleMouseUp() {
@@ -151,7 +139,7 @@
     onMount(() => {
         // TODO: turn into a setRectFromParent method
         const faderContainer = document.getElementById(`${id}-box`)
-        faderContainer.setAttribute('style', fader.clientRect)
+        faderContainer.setAttribute('style', fader.boundingBoxCSS)
         // console.log('fader:'+faderContainer.getAttribute('style'))
     })
 
@@ -161,7 +149,7 @@
      id='{id}-box'
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
      on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
-     style={fader.clientRect}
+     style={fader.boundingBoxCSS}
 >
 
     <svg >
@@ -182,19 +170,19 @@
         </defs>
 
         <g fill="url('#{id}-grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
-            <rect height={fader.h + fader.rx}
+            <rect height={fader.height + fader.rx}
                   id='#{id}-track'
                   on:contextmenu|preventDefault={handleMouseDownPrecision}
-                  on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.h - ev.offsetY}}
+                  on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
                   rx=4px
-                  width={fader.w}
+                  width={fader.width}
                   x=0rem
             />
             <g id='{id}-handle+readout'
                on:contextmenu|preventDefault={handleMouseDownPrecision}
                on:mousedown|preventDefault={handleMouseDownJump}
                stroke={C.offWhite}
-               transform="translate({-fader.rx},{fader.h - fader.currentValue})">
+               transform="translate({-fader.rx},{fader.height - fader.currentValue})">
                 <rect fill={C.whiteBis}
                       height={fader.rx * 3.14}
                       id='{id}-handle'
@@ -214,7 +202,6 @@
                           id='{id}-readout.Text'
                           style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
                         {fader.mappedValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}</text>
-
                 </g>
             </g>
         </g>
@@ -223,16 +210,16 @@
 {#if fader.changing }
     <div id='{id}-label'
          class='faderContainer'
-         style={fader.clientRect + 'z-index: -1000'}>
+         style={fader.boundingBoxCSS + 'z-index: -1000'}>
         <svg in:fade out:fade>
             <g id='{id}-LED'
                stroke="green" fill=none stroke-width="1px"
-               transform="translate({fader.w/2})">
+               transform="translate({fader.width/2})">
                 <circle id='{id}-active' cy=-10 cx=-0.5 r=2 fill='aqua'/>
                 <text id='{id}-label.Text'
                       class='label rotated'
                       lengthAdjust='spacingAndGlyphs'
-                      textLength={fader.h * 0.5}>{fader.label}
+                      textLength={fader.height * 0.5}>{fader.label}
                 </text>
             </g>
         </svg>
@@ -282,8 +269,7 @@
     }
 
     .readoutBox {
-        /*transform: translate(-2.75rem, 0.2rem);*/
-        transform: translate(-3rem, -0.55rem) scaleY(0.5);
+        transform: translate(-3rem, -0.5rem) scaleY(0.5);
         stroke-width: 0;
         fill: darkcyan;
         pointer-events: none;

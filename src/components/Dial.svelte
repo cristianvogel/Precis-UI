@@ -6,14 +6,10 @@
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {BoundingClientRec, Dial, ControlRect, Taper, DialTag} from "../types/precisUI";
+    import type {BoundingClientRec, Dial, Rect, Taper, DialTag} from "../types/precisUI";
     import {DefaultRectDial, C, DefaultTaper} from "../types/precisUI";
 
     let
-        width = DefaultRectDial.WIDTH,
-        height = DefaultRectDial.HEIGHT,
-        w = DefaultRectDial.WIDTH,
-        h = DefaultRectDial.HEIGHT,
         selected = null,
         clientRect = null;
 
@@ -23,43 +19,45 @@
         fineStep = DefaultTaper.FINE,
         x = DefaultRectDial.X,
         y = DefaultRectDial.Y,
+        width = DefaultRectDial.WIDTH,
+        height = DefaultRectDial.HEIGHT,
         scale:number = DefaultRectDial.SCALE,
         rx = DefaultRectDial.RX,
-        rect: ControlRect = {x, y, width: (width | w), height: (height | h)},
-        value: number = 0,
+        value:number = 0,
         id: DialTag = 'dial.0'
 
-    //todo: improve type assert checks or work with DOM units like %, px etc
-        rx = toNumber(rx)
-        const taper: Taper = {
+    //todo: improve type assert checks to work with DOM units like %, px etc
+        rx = rx as number
+        const taper:Taper = {
             min: toNumber(min),
             max: toNumber(max),
             fineStep: toNumber(fineStep),
             curve: 'LINEAR'
         };
+        const rect:Rect = {
+            x: toNumber(x),
+            y: toNumber(y),
+            width: toNumber(width),
+            height: toNumber(height)
+        }
 
     const dial: Dial = {
         currentValue: value,
         id,
-        geometry: rect,
+        rect,
         rx,
-        x: toNumber(x) - rx,
-        y: toNumber(y) - rx,
-        width: toNumber(width) + rx,
-        height: toNumber(height),
+        taper,
+        scale,
+        get x():number { return this.rect.x },
+        get y():number {return this.rect.y},
+        get width():number {return this.rect.width},
+        get height():number {return this.rect.height},
+        set width(w:number) { this.rect.width = toNumber(w) + rx },
+        set height(h:number) { this.rect.height = toNumber(h) },
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
-        taper,
         background: C.clear,
-        set rect(rect: ControlRect) {
-            this.geometry = rect
-            this.x = rect.x
-            this.y = rect.y
-            this.width = rect.width
-            this.height = rect.height
-            return this.geometry
-        },
         get radialTrack() {
             //todo: make configurable
             return (this.normValue * 270) + 230
@@ -67,18 +65,15 @@
         get index(): number {
             return (Number.parseInt(<string>Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
-        get h(): number {
-            return this.geometry.height | this.height
-        },
-        get w(): number {
-            return this.geometry.width | this.width
-        },
-        get clientRect() {
+        get boundingBoxCSS():BoundingClientRec {
             return <BoundingClientRec>
-                `top:${this.y}px;left:${this.x}px;width:${this.width}px;height:${this.height}px`
+                    `top:${this.rect.y}px;
+                    left:${this.rect.x}px;
+                    width:${this.rect.width}px;
+                    height:${this.rect.height}px;`
         },
         get normValue():number {
-            return this.currentValue / this.height
+            return this.currentValue / this.rect.height
         },
         get mappedValue():number {
             return remap( this.normValue, 0 ,1, this.taper.min, this.taper.max)
@@ -109,9 +104,9 @@
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
         if (dy === 0) {return}
-        const {currentValue, taper, h} = dial
+        const {currentValue, taper, height} = dial
         if (taper) {
-            dial.currentValue = clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, h])
+            dial.currentValue = clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
         }
     }
 
@@ -129,8 +124,8 @@
         clientRect = selected.getBoundingClientRect()
         const dy = event.movementY
         if (dy === 0) {return}
-        const {currentValue, h, normValue} = dial
-        dial.currentValue = clamp(currentValue + (-dy * (remap(normValue, 0, 1, 3, 0.25))), [0, h])
+        const {currentValue, height, normValue} = dial
+        dial.currentValue = clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
     }
 
     function handleMouseUp() {
@@ -150,11 +145,10 @@
     onMount(() => {
         // TODO: turn into a setRectFromParent method
         const dialContainer = document.getElementById(`${id}-box`)
-        dialContainer.setAttribute('style', `${dial.clientRect};transform: scale(${scale})`)
+        dialContainer.setAttribute('style', `${dial.boundingBoxCSS};transform: scale(${dial.scale})`)
         console.log('dial:'+dialContainer.getAttribute('style'))
     })
 </script>
-
 
 <div class='dialContainer'
      id='{id}-box'

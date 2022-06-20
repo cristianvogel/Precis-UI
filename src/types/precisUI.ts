@@ -24,7 +24,6 @@ export enum DefaultTaper {
     FINE = 1.0e-2
 }
 
-
 export type BoundingClientRec =
             `top:${number}px;
 			left:${number}px;
@@ -59,13 +58,11 @@ export type Tint = RGB | C | RGBA | HEX
 
 
 // Common Geometry
-export type ControlRect = {
-    x: number | typeof DefaultRectFader.X | typeof DefaultRectDial.X,
-    y: number | typeof DefaultRectFader.Y | typeof DefaultRectDial.Y,
-    width: number | typeof DefaultRectFader.WIDTH | typeof DefaultRectDial.WIDTH,
-    height: number | typeof DefaultRectFader.HEIGHT | typeof DefaultRectDial.HEIGHT,
-    w?: number | typeof DefaultRectFader.WIDTH | typeof DefaultRectDial.WIDTH,
-    h?: number | typeof DefaultRectFader.HEIGHT | typeof DefaultRectDial.HEIGHT,
+export interface Rect {
+    x: number | DefaultRectFader.X | DefaultRectDial.X,
+    y: number | DefaultRectFader.Y |  DefaultRectDial.Y,
+    width: number | DefaultRectFader.WIDTH |  DefaultRectDial.WIDTH,
+    height: number | DefaultRectFader.HEIGHT |  DefaultRectDial.HEIGHT,
 }
 
 export type Taper = {
@@ -75,52 +72,36 @@ export type Taper = {
     curve: 'LINEAR' | 'NONLINEAR' //todo: implement NONLINEAR
 }
 
-// Widget specific
-export type Fader = {
+interface BaseControl {
     currentValue: number,
-    id: string | number,
+    rect: Rect,
+    rx: number,
+    taper: Taper,
+    changing?: boolean,
+    precis?: boolean,
     x: number,
     y: number,
-    width: number,
-    height: number,
-    rx: number,
-    geometry?: ControlRect,
-    label?: string,
-    taper?: Taper,
-    rect?: ControlRect,
-    background?: Tint;
-    changing?: boolean;
-    precis?: boolean;
-    readonly clientRect: BoundingClientRec;
+    background?: Tint
+    readonly boundingBoxCSS: BoundingClientRec,
     readonly mappedValue: number,
-    readonly normValue:  number;
-    readonly h: number;
-    readonly w: number;
+    readonly normValue:  number,
     readonly index: number
 }
-
-export type Dial = {
-    currentValue: number,
-    id: string | number,
-    x: number,
-    y: number,
+// Widget specific
+export interface Fader extends BaseControl {
+    id: FaderTag,
     width: number,
     height: number,
-    rx: number,
-    geometry?: ControlRect,
     label?: string,
-    taper?: Taper,
-    rect?: ControlRect,
-    background?: Tint;
-    changing?: boolean;
-    precis?: boolean;
-    readonly mappedValue: number,
+}
+
+export interface Dial extends BaseControl  {
+    id: DialTag,
+    scale: number,
+    width: number,
+    height: number,
+    label?: string,
     readonly radialTrack: number,
-    readonly clientRect: BoundingClientRec;
-    readonly normValue:  number;
-    readonly h: number;
-    readonly w: number;
-    readonly index: number
 }
 // Data structures
 type Point = { x: number, y: number}
