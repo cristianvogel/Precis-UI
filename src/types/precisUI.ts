@@ -1,6 +1,6 @@
 // Precis.ui
 
-// Defs
+// Geometry Defs
 export enum Default {
     EMPTY,
     SCALE,
@@ -68,7 +68,25 @@ export type Taper = {
     curve: 'LINEAR' | 'NONLINEAR' //todo: implement NONLINEAR
 }
 
-interface BaseControl {
+export type ActionOptions = {
+    mode: 'NORMAL' | 'PRECIS'
+}
+
+// Controllers
+export enum WidgetType {
+    DIAL,
+    FADER
+}
+
+interface UserActions  {
+
+    handleMouseDown(arg0:MouseEvent):void,
+    handleMouseMove(arg:MouseEvent):void,
+    handleMouseUp():void,
+    handleModifier(arg:KeyboardEvent):void
+}
+
+interface BaseControl extends UserActions{
     currentValue: number,
     rect: Rect,
     scale: number,
@@ -82,10 +100,11 @@ interface BaseControl {
     readonly boundingBoxCSS: BoundingRectCSS,
     readonly mappedValue: number,
     readonly normValue:  number,
-    readonly index: number
+    readonly index: number,
 }
+
 // Widget specific
-export interface Fader extends BaseControl {
+export interface Fader extends BaseControl  {
     id: FaderTag,
     width: number,
     height: number,
@@ -99,10 +118,11 @@ export interface Dial extends BaseControl  {
     label?: string,
     readonly radialTrack: number,
 }
-// Data structures
-type Point = { x: number, y: number}
-export type PointsArray = Array<Point>
 
 // Naming Dependencies
 export type FaderTag = `fader.${number | string}`
 export type DialTag = `dial.${number | string}`
+
+// Data structures
+type Point = { x: number, y: number}
+export type PointsArray = Array<Point>

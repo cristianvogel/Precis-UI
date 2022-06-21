@@ -6,12 +6,13 @@
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {BoundingRectCSS, Dial, Rect, Taper, DialTag} from "../types/precisUI";
-    import { C, DefaultTaper, Default} from "../types/precisUI";
+    import type {ActionOptions, BoundingRectCSS, Dial, DialTag, Rect, Taper} from "../types/precisUI";
+    import {C, Default, DefaultTaper, WidgetType} from "../types/precisUI";
+    import {addListenersFor, removeListenersFor} from "../lib/Events";
 
     let
-        selected = null,
-        clientRect = null;
+        selected:HTMLElement | null = null,
+        clientRect:DOMRect | null = null;
 
     export let
         min = DefaultTaper.MIN,
@@ -42,6 +43,39 @@
         }
 
     const dial: Dial = {
+        handleMouseDown: (event: MouseEvent) => {
+            const mode = (event.type)
+            console.log( `Event type ${mode} -> ${event.button}`)
+            dial.precis = (mode === 'contextmenu')
+            selected = event.target as HTMLElement
+            selected.focus()
+            addListenersFor(dial, WidgetType.DIAL)
+        },
+
+        handleMouseMove: (event:MouseEvent) => {
+                clientRect = (selected as Element).getBoundingClientRect()
+                const dy = event.movementY
+                if (dy === 0) {return}
+                const {currentValue, height, normValue} = dial
+                if (dial.precis) {
+                    dial.currentValue =
+                        clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
+                } else {
+                    dial.currentValue =
+                        clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
+                }
+        },
+
+        handleMouseUp: () => {
+            selected = null
+            dial.precis = false
+            dial.changing = false
+            removeListenersFor(dial, WidgetType.DIAL)
+        },
+
+        handleModifier(arg: KeyboardEvent) {
+        },
+
         currentValue: value,
         id,
         rect,
@@ -82,64 +116,37 @@
         }
     }
 
-    function handleModifier(ev) {
-        const shift = ev.shiftKey && ev.type === 'keydown';
-        dial.precis = shift
-        if (shift) {
-            removeEventListener('mousemove', handleMouseMoveJump)
-            addEventListener('mousemove', handleMouseMovePrecision)
-        } else {
-            removeEventListener('mousemove', handleMouseMovePrecision)
-            addEventListener('mousemove', handleMouseMoveJump)
-        }
-    }
+    // function handleModifier(ev) {
+    //     const shift = ev.shiftKey && ev.type === 'keydown';
+    //     dial.precis = shift
+    //     if (shift) {
+    //         removeEventListener('mousemove', handleMouseMoveJump)
+    //         addEventListener('mousemove', handleMouseMovePrecision)
+    //     } else {
+    //         removeEventListener('mousemove', handleMouseMovePrecision)
+    //         addEventListener('mousemove', handleMouseMoveJump)
+    //     }
+    // }
 
-    function handleMouseDownPrecision(event) {
-        selected = event.target
-        dial.precis = true
-        removeEventListener('mousemove', handleMouseMoveJump)
-        addEventListener('mousemove', handleMouseMovePrecision)
-        addEventListener('mouseup', handleMouseUp)
-    }
+    // function handleMouseDownPrecision(event) {
+    //     selected = event.target
+    //     dial.precis = true
+    //     removeEventListener('mousemove', dial.handleMouseMoveJump)
+    //     addEventListener('mousemove', handleMouseMovePrecision)
+    //     addEventListener('mouseup', handleMouseUp)
+    // }
 
-    function handleMouseMovePrecision(event) {
-        clientRect = selected.getBoundingClientRect()
-        const dy = event.movementY
-        if (dy === 0) {return}
-        const {currentValue, taper, height} = dial
-        if (taper) {
-            dial.currentValue = clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
-        }
-    }
+    // function handleMouseMovePrecision(event) {
+    //     clientRect = selected.getBoundingClientRect()
+    //     const dy = event.movementY
+    //     if (dy === 0) {return}
+    //     const {currentValue, taper, height} = dial
+    //     if (taper) {
+    //         dial.currentValue = clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
+    //     }
+    // }
 
-    function handleMouseDownJump(event) {
-        selected = event.target
-        if (dial.precis) return
-        selected.focus()
-        addEventListener('mousemove', handleMouseMoveJump)
-        addEventListener('mouseup', handleMouseUp)
-        addEventListener('keydown', handleModifier)
-        addEventListener('keyup', handleModifier)
-    }
 
-    function handleMouseMoveJump(event) {
-        clientRect = selected.getBoundingClientRect()
-        const dy = event.movementY
-        if (dy === 0) {return}
-        const {currentValue, height, normValue} = dial
-        dial.currentValue = clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
-    }
-
-    function handleMouseUp() {
-        selected = null
-        dial.precis = false
-        dial.changing = false
-        removeEventListener('mousemove', handleMouseMovePrecision)
-        removeEventListener('mousemove', handleMouseMoveJump)
-        removeEventListener('mouseup', handleMouseUp)
-        removeEventListener('keydown', handleModifier)
-        removeEventListener('keyup', handleModifier)
-    }
 
     let dialPointer;
     $: dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 10)
@@ -154,8 +161,8 @@
 
 <div class='dialContainer'
      id='{id}-container'
-     on:contextmenu|preventDefault={handleMouseDownPrecision}
-     on:mousedown|preventDefault={handleMouseDownJump}
+     on:contextmenu|preventDefault={dial.handleMouseDown}
+     on:mousedown|preventDefault={dial.handleMouseDown}
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); dial.changing=true}}'
      on:mouseleave='{()=>{dial.changing=(selected !== null)}}'
 >

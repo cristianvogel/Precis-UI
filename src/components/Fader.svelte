@@ -244,7 +244,7 @@
     }
 
     .label {
-        font-family: 'Helvetica Neue', sans-serif;
+        font-family: 'Roboto', sans-serif;
         font-size: xx-small;
         stroke: none;
         fill: grey;
