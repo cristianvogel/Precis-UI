@@ -4,7 +4,7 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules/*", "__sapper__/*", "public/*"],
   "compilerOptions": {
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "strictNullChecks": true,
     "lib": [
       "es2021",

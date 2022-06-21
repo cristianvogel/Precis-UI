@@ -12,6 +12,11 @@ export enum Default {
     RX = 2.75,
     DIAL_SCALE_FACTOR = 0.75,
     FADER_SCALE_FACTOR = 1.25,
+    DIAL_TICKMARKS_COUNT=11,
+    DIAL_TICKMARKS_RADIAL_OFFSET=135,
+    DIAL_TICKMARKS_rMIN= -5,
+    DIAL_TICKMARKS_rMAX= 1,
+    DIAL_BACKGROUND= 'grey',
 }
 
 export enum DefaultTaper {
@@ -20,6 +25,7 @@ export enum DefaultTaper {
     FINE = 1.0e-2
 }
 
+export type TickMark = { x1:number, y1:number, x2:number, y2:number}
 export type BoundingRectCSS =
             `top:${number}px;
 			left:${number}px;
@@ -93,7 +99,7 @@ interface BaseControl extends UserActions{
     precis: boolean,
     x: number,
     y: number,
-    background?: Tint
+    background?: string | Tint,
     readonly boundingBoxCSS: BoundingRectCSS,
     readonly mappedValue: number,
     readonly normValue:  number,

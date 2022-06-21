@@ -1,4 +1,5 @@
-import type {PointsArray} from "../types/precisUI";
+import type {PointsArray, TickMark} from "../types/precisUI";
+import {Default} from "../types/precisUI";
 
 export function clamp(value, range):number {
     return Math.min(Math.max(value, range[0]), range[1]);
@@ -40,6 +41,30 @@ export function radialPoints(
     }
     return data
 }
+
+export function radialTickMarkAt( i:number,
+                                  steps:number = 11,
+                                  offsetDegrees:number = Default.DIAL_TICKMARKS_RADIAL_OFFSET ): TickMark {
+    let cx: number, cy: number, rMin: any, rMax: any, nPoints: Default.DIAL_TICKMARKS_rMIN;
+        cx = 50;
+        cy = 50;
+        rMin = 50 + Default.DIAL_TICKMARKS_rMIN;
+        rMax = 50 + Default.DIAL_TICKMARKS_rMAX;
+        nPoints = 8;
+
+    let rotator = 270 / Math.max(0, steps-1)
+    let points:PointsArray = radialPoints((i * rotator) - offsetDegrees, cx,cy,rMin,rMax,nPoints)
+    // @ts-ignore
+    const x1 = points.at(-1).x
+    // @ts-ignore
+    const x2 = points.at(3).x
+    // @ts-ignore
+    const y1 = points.at(-1).y
+    // @ts-ignore
+    const y2 = points.at(3).y
+    return {x1, x2, y1, y2}
+}
+
 
 export function toNumber( value: string|number): number {
     return typeof value !== 'number' ? Number.parseFloat(value) : value;

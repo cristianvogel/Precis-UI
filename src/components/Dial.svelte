@@ -6,9 +6,10 @@
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {BoundingRectCSS, Dial, DialTag, Rect, Taper} from "../types/precisUI";
+    import type {BoundingRectCSS, Dial, DialTag, Rect, Taper, Tint} from "../types/precisUI";
     import {C, Default, DefaultTaper, WidgetType} from "../types/precisUI";
     import {addListenersFor, removeListenersFor} from "../lib/Events";
+    import {radialTickMarkAt} from "../lib/utils";
 
     let
         selected:(HTMLElement | null) = null,
@@ -21,7 +22,7 @@
         x = Default.X,
         y = Default.Y,
         width = Default.DIAL_SQUARE,
-
+        background = Default.DIAL_BACKGROUND,
         scale:number = Default.DIAL_SCALE_FACTOR,
         rx:number = Default.RX,
         value:number = 0,
@@ -80,6 +81,7 @@
         rx,
         taper,
         scale,
+        background,
         get x():number { return this.rect.x },
         get y():number {return this.rect.y},
         set x( number:number ) { this.rect.x = number },
@@ -91,7 +93,6 @@
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
-        background: C.clear,
         get radialTrack() {
             //todo: make configurable
             return (this.normValue * 270) + 230
@@ -119,8 +120,13 @@
 
     onMount(() => {
         // TODO: turn into a setRectFromParent method
+        console.log('bg:'+ background)
         const dialContainer = document.getElementById(`${id}-container`)
-        dialContainer.setAttribute('style', `${dial.boundingBoxCSS};transform: scale(${dial.scale})`)
+        const initStyle:string =
+            `${dial.boundingBoxCSS};
+            transform: scale(${dial.scale});
+            background: ${dial.background};`
+        dialContainer.setAttribute('style', initStyle)
         console.log('dial:'+dialContainer.getAttribute('style'))
     })
 </script>
@@ -133,7 +139,7 @@
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); dial.changing=true}}'
      on:mouseleave='{()=>{dial.changing=(selected !== null)}}'
 >
-    <svg>
+    <svg transform=scale(0.9)>
         <defs id='{id}-gradients'>
             <radialGradient cx=50%
                             cy=50%
@@ -150,11 +156,24 @@
             </radialGradient>
         </defs>
 
-        <g id='{id}-radial' stroke-width=8>
-            <circle cx=50%
-                    cy=50% fill=#112211 id='{id}-circle'
-                    r=2.5rem stroke="url('#{id}-grad')"/>
-
+        <g id='{id}-dialBody' stroke-width=8>
+            <circle id='{id}-circleFigure'
+                    cx=50%
+                    cy=50% fill=#112211
+                    r={(dial.rx * 0.9) +'rem'} stroke="url('#{id}-grad')"
+            />
+            <g id='{id}-ticks'>
+                {#each Array(Default.DIAL_TICKMARKS_COUNT) as tick, i}
+                    {@const tickMarks = radialTickMarkAt(i)}
+                    <line x1={tickMarks.x1}
+                          x2={tickMarks.x2}
+                          y1={tickMarks.y1}
+                          y2={tickMarks.y2}
+                          stroke-width='2px'
+                          stroke = {i<(dial.normValue*10) ? `aquamarine` : 'grey'}
+                    />
+                {/each}
+            </g>
             {#each dialPointer as {x, y}, i}
                 {@const width = 10}
                 {#if (i < dialPointer.length - 2)}
@@ -166,7 +185,7 @@
                 {/if}
                 {#if (i === dialPointer.length - 1) && dial.changing}
                     <circle id='{id}-LED'
-                            cx=10% cy=16.1% r=2
+                            cx=90% cy=90% r=2
                             fill=aqua
                             in:fade out:fade/>
                 {/if}
@@ -184,13 +203,13 @@
     svg {
         width: 100%;
         height: 100%;
-        overflow: visible
+        overflow: visible;
+        transform-origin: center;
     }
 
     .dialContainer {
         position: absolute;
         border-radius: 25px;
-        background: grey;
     }
 
     .readout {
