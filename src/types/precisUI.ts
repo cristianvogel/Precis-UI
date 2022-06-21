@@ -6,7 +6,7 @@ export enum Default {
     SCALE,
     X = '50%',
     Y = '50%',
-    FADER_WIDTH = 8,
+    FADER_WIDTH = 11,
     FADER_HEIGHT = 200,
     DIAL_SQUARE = 100,
     RX = 2.75,
@@ -68,9 +68,6 @@ export type Taper = {
     curve: 'LINEAR' | 'NONLINEAR' //todo: implement NONLINEAR
 }
 
-export type ActionOptions = {
-    mode: 'NORMAL' | 'PRECIS'
-}
 
 // Controllers
 export enum WidgetType {

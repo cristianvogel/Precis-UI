@@ -6,13 +6,13 @@
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {ActionOptions, BoundingRectCSS, Dial, DialTag, Rect, Taper} from "../types/precisUI";
+    import type {BoundingRectCSS, Dial, DialTag, Rect, Taper} from "../types/precisUI";
     import {C, Default, DefaultTaper, WidgetType} from "../types/precisUI";
     import {addListenersFor, removeListenersFor} from "../lib/Events";
 
     let
-        selected:HTMLElement | null = null,
-        clientRect:DOMRect | null = null;
+        selected:(HTMLElement | null) = null,
+        clientRect:(DOMRect | null) = null;
 
     export let
         min = DefaultTaper.MIN,
@@ -51,7 +51,6 @@
             selected.focus()
             addListenersFor(dial, WidgetType.DIAL)
         },
-
         handleMouseMove: (event:MouseEvent) => {
                 clientRect = (selected as Element).getBoundingClientRect()
                 const dy = event.movementY
@@ -65,15 +64,14 @@
                         clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
                 }
         },
-
         handleMouseUp: () => {
             selected = null
             dial.precis = false
             dial.changing = false
             removeListenersFor(dial, WidgetType.DIAL)
         },
-
-        handleModifier(arg: KeyboardEvent) {
+        handleModifier(ev: KeyboardEvent) {
+            dial.precis = (ev.shiftKey && ev.type === 'keydown')
         },
 
         currentValue: value,
@@ -116,38 +114,6 @@
         }
     }
 
-    // function handleModifier(ev) {
-    //     const shift = ev.shiftKey && ev.type === 'keydown';
-    //     dial.precis = shift
-    //     if (shift) {
-    //         removeEventListener('mousemove', handleMouseMoveJump)
-    //         addEventListener('mousemove', handleMouseMovePrecision)
-    //     } else {
-    //         removeEventListener('mousemove', handleMouseMovePrecision)
-    //         addEventListener('mousemove', handleMouseMoveJump)
-    //     }
-    // }
-
-    // function handleMouseDownPrecision(event) {
-    //     selected = event.target
-    //     dial.precis = true
-    //     removeEventListener('mousemove', dial.handleMouseMoveJump)
-    //     addEventListener('mousemove', handleMouseMovePrecision)
-    //     addEventListener('mouseup', handleMouseUp)
-    // }
-
-    // function handleMouseMovePrecision(event) {
-    //     clientRect = selected.getBoundingClientRect()
-    //     const dy = event.movementY
-    //     if (dy === 0) {return}
-    //     const {currentValue, taper, height} = dial
-    //     if (taper) {
-    //         dial.currentValue = clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
-    //     }
-    // }
-
-
-
     let dialPointer;
     $: dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 10)
 
@@ -158,6 +124,7 @@
         console.log('dial:'+dialContainer.getAttribute('style'))
     })
 </script>
+
 
 <div class='dialContainer'
      id='{id}-container'
@@ -207,7 +174,7 @@
             <text class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                   id='{id}-readout'
                   style={dial.changing ? 'fill: aqua;' : ''}>
-                    {dial.mappedValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : '▹'}
+                    {dial.mappedValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : ' ▹'}
             </text>
         </g>
     </svg>

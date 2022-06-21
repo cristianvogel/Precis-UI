@@ -7,11 +7,12 @@
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
     import type {BoundingRectCSS, Fader, Rect, FaderTag, Taper} from "../types/precisUI";
-    import { C, DefaultTaper, Default} from "../types/precisUI";
+    import {C, DefaultTaper, Default, WidgetType } from "../types/precisUI";
+    import {addListenersFor, removeListenersFor} from "../lib/Events";
 
     let
-        clientRect,
-        selected = null;
+        selected:(HTMLElement | null) = null,
+        clientRect:(DOMRect | null) = null;
 
     export let
         min = DefaultTaper.MIN,
@@ -43,6 +44,37 @@
     }
 
     const fader: Fader = {
+        handleMouseDown: (event: MouseEvent) => {
+            const mode = (event.type)
+            console.log( `Event type ${mode} -> ${event.button}`)
+            fader.precis = (mode === 'contextmenu')
+            selected = event.target as HTMLElement
+            selected.focus()
+            addListenersFor(fader, WidgetType.FADER)
+        },
+        handleMouseMove: (event:MouseEvent) => {
+            clientRect = (selected as Element).getBoundingClientRect()
+            const dy = event.movementY
+            if (dy === 0) {return}
+            const {currentValue, height, normValue} = fader
+            if (fader.precis) {
+                fader.currentValue =
+                    clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
+            } else {
+                fader.currentValue =
+                    clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
+            }
+        },
+        handleMouseUp: () => {
+            selected = null
+            fader.precis = false
+            fader.changing = false
+            removeListenersFor(fader, WidgetType.FADER)
+        },
+        handleModifier(ev: KeyboardEvent) {
+            fader.precis = (ev.shiftKey && ev.type === 'keydown' )
+        },
+
         currentValue: value,
         id,
         rect,
@@ -79,64 +111,6 @@
         }
     }
 
-    function handleModifier (ev) {
-        const shift = ev.shiftKey && ev.type==='keydown';
-        fader.precis= shift
-        if (shift){
-            removeEventListener('mousemove', handleMouseMoveJump)
-            addEventListener('mousemove', handleMouseMovePrecision)
-        } else {
-            removeEventListener('mousemove', handleMouseMovePrecision)
-            addEventListener('mousemove', handleMouseMoveJump)
-        }
-    }
-
-    function handleMouseDownPrecision(event) {
-        selected = event.target
-        fader.precis = true
-        removeEventListener('mousemove', handleMouseMoveJump)
-        addEventListener('mousemove', handleMouseMovePrecision)
-        addEventListener('mouseup', handleMouseUp)
-    }
-
-    function handleMouseMovePrecision(event) {
-        clientRect = selected.getBoundingClientRect()
-        const dy = event.movementY
-        if (dy === 0) return
-        const {currentValue, taper, height} = fader
-        if (taper) {
-            fader.currentValue = clamp(currentValue + -dy * taper.fineStep, [0, height])
-        }
-    }
-
-    function handleMouseDownJump(event) {
-        selected = event.target
-        if (fader.precis) return
-        selected.focus()
-        addEventListener('mousemove', handleMouseMoveJump)
-        addEventListener('mouseup', handleMouseUp)
-        addEventListener('keydown', handleModifier)
-        addEventListener('keyup', handleModifier)
-    }
-
-    function handleMouseMoveJump(event) {
-        clientRect = selected.getBoundingClientRect()
-        const dy = event.movementY
-        const {currentValue, height, normValue } = fader
-        fader.currentValue = clamp( currentValue + (-dy /2), [0, height] )
-    }
-
-    function handleMouseUp() {
-        selected = null
-        fader.precis = false
-        fader.changing = false
-        removeEventListener('mousemove', handleMouseMovePrecision)
-        removeEventListener('mousemove', handleMouseMoveJump)
-        removeEventListener('mouseup', handleMouseUp)
-        removeEventListener('keydown', handleModifier)
-        removeEventListener('keyup', handleModifier)
-    }
-
     onMount(() => {
         // TODO: turn into a setRectFromParent method
         const faderContainer = document.getElementById(`${id}-container`)
@@ -148,6 +122,8 @@
 
 <div class='faderContainer'
      id='{id}-container'
+     on:contextmenu|preventDefault={fader.handleMouseDown}
+     on:mousedown|preventDefault={fader.handleMouseDown}
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
      on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
 >
@@ -163,7 +139,7 @@
                 <!-- todo: abstract out the colour assign -->
                 <stop offset="80%"
                       stop-color={[ C.red, C.sky, C.pink, C.aquaDark ].at(fader.index%4)}/>
-            </linearGradient>
+               </linearGradient>
             <filter id="shadow">
                 <feDropShadow dx="0" dy="0.4" stdDeviation="0.2"/>
             </filter>
@@ -172,15 +148,13 @@
         <g fill="url('#{id}-grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
             <rect height={fader.height + fader.rx}
                   id='#{id}-track'
-                  on:contextmenu|preventDefault={handleMouseDownPrecision}
                   on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
                   rx=4px
                   width={fader.width}
                   x=0rem
             />
             <g id='{id}-handle+readout'
-               on:contextmenu|preventDefault={handleMouseDownPrecision}
-               on:mousedown|preventDefault={handleMouseDownJump}
+               on:contextmenu|preventDefault={fader.handleMouseDown}
                stroke={C.offWhite}
                transform="translate({-fader.rx},{fader.height - fader.currentValue})">
                 <rect fill={C.whiteBis}
@@ -201,9 +175,10 @@
                           x=-0.5rem
                           y=-0.5rem />
                     <text id='{id}-readout.Text'
-                          class='readout'
-                          style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
-                        {fader.mappedValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}</text>
+                          class={fader.precis ? 'readout zoom' : 'readout'}>
+                          {fader.mappedValue.toPrecision(fader.precis ? 5 : 3)}
+                          {fader.precis ? '⋯' : ' ▹'}
+                    </text>
                 </g>
             </g>
         </g>
@@ -258,8 +233,7 @@
     .readout {
         font-family: 'Roboto', sans-serif;
         font-size: x-small;
-        /*transform: translate(-3rem, 0.5rem);*/
-        transform: translate(-3rem, -0.25rem);
+        transform: translate(-2.5rem, -0.3rem);
         stroke-width: 0;
         fill: aqua;
         cursor: grab;
@@ -270,10 +244,15 @@
     }
 
     .readoutBox {
-        transform: translate(-3rem, -0.5rem) scaleY(0.5);
+        transform: translate(-2.5rem, -0.6rem) scaleY(0.5);
         stroke-width: 0;
-        fill: darkcyan;
+        fill: rgba(120,120,120,0.5);
         pointer-events: none;
+    }
+
+    .readout.zoom {
+        font-size: large;
+        transform: translate(-0.75rem, 1rem)
     }
 
     .readoutBox.rotated {
@@ -281,6 +260,6 @@
     }
 
     .readoutBox.zoom {
-        transform: translate(1.5rem, -1.5rem) scaleX(225%) scaleY(110%);
+        transform: translate(-0.5rem, 0.5rem) scaleX(225%) scaleY(110%);
     }
 </style>
