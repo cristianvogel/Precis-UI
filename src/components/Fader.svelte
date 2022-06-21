@@ -6,8 +6,8 @@
     import {clamp, remap, toNumber} from '../lib/utils.ts';
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
-    import type {BoundingClientRec, Fader, Rect, FaderTag, Taper} from "../types/precisUI";
-    import {DefaultRectFader, C, DefaultTaper} from "../types/precisUI";
+    import type {BoundingRectCSS, Fader, Rect, FaderTag, Taper} from "../types/precisUI";
+    import { C, DefaultTaper, Default} from "../types/precisUI";
 
     let
         clientRect,
@@ -17,16 +17,17 @@
         min = DefaultTaper.MIN,
         max = DefaultTaper.MAX,
         fineStep = DefaultTaper.FINE,
-        x = DefaultRectFader.X,
-        y = DefaultRectFader.Y,
-        width = DefaultRectFader.WIDTH,
-        height = DefaultRectFader.HEIGHT,
-        rx = DefaultRectFader.RX,
+        x = Default.X,
+        y = Default.Y,
+        width = Default.FADER_WIDTH,
+        height = Default.FADER_HEIGHT,
+        scale = Default.FADER_SCALE_FACTOR,
+        rx = Default.RX,
         value:number = 0,
         id:FaderTag = 'fader.0'
 
     //todo: improve type assert checks or work with DOM units like %, px etc
-        rx = toNumber(rx)
+        rx = rx as number
         const taper: Taper = {
             min: toNumber(min),
             max: toNumber(max),
@@ -47,6 +48,7 @@
         rect,
         rx,
         taper,
+        scale,
         get x():number { return this.rect.x },
         get y():number {return this.rect.y},
         set x( number:number ) { this.rect.x = number },
@@ -58,13 +60,12 @@
         label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
-
         background: C.clear,
         get index(): number {
             return (Number.parseInt(<string>Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
-        get boundingBoxCSS():BoundingClientRec {
-            return <BoundingClientRec>
+        get boundingBoxCSS():BoundingRectCSS {
+            return <BoundingRectCSS>
                     `top:${this.rect.y}px;
                     left:${this.rect.x}px;
                     width:${this.rect.width}px;
@@ -138,18 +139,17 @@
 
     onMount(() => {
         // TODO: turn into a setRectFromParent method
-        const faderContainer = document.getElementById(`${id}-box`)
-        faderContainer.setAttribute('style', fader.boundingBoxCSS)
-        // console.log('fader:'+faderContainer.getAttribute('style'))
+        const faderContainer = document.getElementById(`${id}-container`)
+        faderContainer.setAttribute('style', `${fader.boundingBoxCSS};transform: scale(${fader.scale})`)
+        console.log('fader:'+faderContainer.getAttribute('style'))
     })
 
 </script>
 
 <div class='faderContainer'
-     id='{id}-box'
+     id='{id}-container'
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
      on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
-     style={fader.boundingBoxCSS}
 >
 
     <svg >
@@ -190,7 +190,9 @@
                       style="filter:url(#shadow);" width={Math.exp(fader.rx)}
                 />
 
-                <g id='{id}-readout' class='readoutBox rotated' style='opacity:{fader.changing ? 1 : 0.7}'>
+                <g id='{id}-readout'
+                   class='readoutBox rotated'
+                   style='opacity:{fader.changing ? 1 : 0.7}'>
                     <rect class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
                           height=1.25rem
                           id='{id}-readout.Box'
@@ -198,19 +200,19 @@
                           width=2.75rem
                           x=-0.5rem
                           y=-0.5rem />
-                    <text class='readout'
-                          id='{id}-readout.Text'
+                    <text id='{id}-readout.Text'
+                          class='readout'
                           style={fader.precis ? 'font-size: large; transform: translate(0.75rem, -1rem)' : '' }>
                         {fader.mappedValue.toPrecision(fader.precis ? 5 : 3)}{fader.precis ? '⋯' : '▹'}</text>
                 </g>
             </g>
         </g>
     </svg>
-</div>
+
 {#if fader.changing }
     <div id='{id}-label'
          class='faderContainer'
-         style={fader.boundingBoxCSS + 'z-index: -1000'}>
+         style={'z-index: -1000'}>
         <svg in:fade out:fade>
             <g id='{id}-LED'
                stroke="green" fill=none stroke-width="1px"
@@ -225,6 +227,7 @@
         </svg>
     </div>
 {/if}
+</div>
 
 <style>
     svg {
@@ -235,16 +238,14 @@
 
     .faderContainer {
         position: absolute;
-        width: 100px;
-        height: 100px;
-        top: 25%;
-        left: 55%;
-        transform: scale(1.5);
+        background: grey;
+        top: 2.5%;
+        left: 5%;
     }
 
     .label {
         font-family: 'Helvetica Neue', sans-serif;
-        font-size: x-small;
+        font-size: xx-small;
         stroke: none;
         fill: grey;
         pointer-events: none;

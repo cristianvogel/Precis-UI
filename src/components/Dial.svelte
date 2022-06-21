@@ -6,8 +6,8 @@
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {BoundingClientRec, Dial, Rect, Taper, DialTag} from "../types/precisUI";
-    import {DefaultRectDial, C, DefaultTaper} from "../types/precisUI";
+    import type {BoundingRectCSS, Dial, Rect, Taper, DialTag} from "../types/precisUI";
+    import { C, DefaultTaper, Default} from "../types/precisUI";
 
     let
         selected = null,
@@ -17,14 +17,14 @@
         min = DefaultTaper.MIN,
         max = DefaultTaper.MAX,
         fineStep = DefaultTaper.FINE,
-        x = DefaultRectDial.X,
-        y = DefaultRectDial.Y,
-        width = DefaultRectDial.WIDTH,
-        height = DefaultRectDial.HEIGHT,
-        scale:number = DefaultRectDial.SCALE,
-        rx = DefaultRectDial.RX,
+        x = Default.X,
+        y = Default.Y,
+        width = Default.DIAL_SQUARE,
+
+        scale:number = Default.DIAL_SCALE_FACTOR,
+        rx:number = Default.RX,
         value:number = 0,
-        id: DialTag = 'dial.0'
+        id:DialTag = 'dial.0'
 
     //todo: improve type assert checks to work with DOM units like %, px etc
         rx = rx as number
@@ -38,7 +38,7 @@
             x: toNumber(x),
             y: toNumber(y),
             width: toNumber(width),
-            height: toNumber(height)
+            height: toNumber(width)
         }
 
     const dial: Dial = {
@@ -50,6 +50,8 @@
         scale,
         get x():number { return this.rect.x },
         get y():number {return this.rect.y},
+        set x( number:number ) { this.rect.x = number },
+        set y( number:number ) { this.rect.y = number },
         get width():number {return this.rect.width},
         get height():number {return this.rect.height},
         set width(w:number) { this.rect.width = toNumber(w) + rx },
@@ -65,8 +67,8 @@
         get index(): number {
             return (Number.parseInt(<string>Array.from(this.id).at(-1))) //todo: what if id >10 ?
         },
-        get boundingBoxCSS():BoundingClientRec {
-            return <BoundingClientRec>
+        get boundingBoxCSS():BoundingRectCSS {
+            return <BoundingRectCSS>
                     `top:${this.rect.y}px;
                     left:${this.rect.x}px;
                     width:${this.rect.width}px;
@@ -144,14 +146,14 @@
 
     onMount(() => {
         // TODO: turn into a setRectFromParent method
-        const dialContainer = document.getElementById(`${id}-box`)
+        const dialContainer = document.getElementById(`${id}-container`)
         dialContainer.setAttribute('style', `${dial.boundingBoxCSS};transform: scale(${dial.scale})`)
         console.log('dial:'+dialContainer.getAttribute('style'))
     })
 </script>
 
 <div class='dialContainer'
-     id='{id}-box'
+     id='{id}-container'
      on:contextmenu|preventDefault={handleMouseDownPrecision}
      on:mousedown|preventDefault={handleMouseDownJump}
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); dial.changing=true}}'

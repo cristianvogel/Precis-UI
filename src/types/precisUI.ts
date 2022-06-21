@@ -1,21 +1,17 @@
 // Precis.ui
 
 // Defs
-
-export enum DefaultRectFader {
+export enum Default {
+    EMPTY,
+    SCALE,
     X = '50%',
     Y = '50%',
-    WIDTH = 8,
-    HEIGHT = 200,
-    RX = 2.75
-}
-export enum DefaultRectDial {
-    X = '50%',
-    Y = '50%',
-    WIDTH = 100,
-    HEIGHT = 100,
+    FADER_WIDTH = 8,
+    FADER_HEIGHT = 200,
+    DIAL_SQUARE = 100,
     RX = 2.75,
-    SCALE = 0.75
+    DIAL_SCALE_FACTOR = 0.75,
+    FADER_SCALE_FACTOR = 1.25,
 }
 
 export enum DefaultTaper {
@@ -24,7 +20,7 @@ export enum DefaultTaper {
     FINE = 1.0e-2
 }
 
-export type BoundingClientRec =
+export type BoundingRectCSS =
             `top:${number}px;
 			left:${number}px;
 			width:${number}px;
@@ -57,12 +53,12 @@ export enum C {
 export type Tint = RGB | C | RGBA | HEX
 
 
-// Common Geometry
+// Shared Geometry
 export interface Rect {
-    x: number | DefaultRectFader.X | DefaultRectDial.X,
-    y: number | DefaultRectFader.Y |  DefaultRectDial.Y,
-    width: number | DefaultRectFader.WIDTH |  DefaultRectDial.WIDTH,
-    height: number | DefaultRectFader.HEIGHT |  DefaultRectDial.HEIGHT,
+    x: number | Default.X ,
+    y: number | Default.Y ,
+    width: number | Default.FADER_WIDTH | Default.DIAL_SQUARE ,
+    height: number | Default.FADER_WIDTH | Default.DIAL_SQUARE ,
 }
 
 export type Taper = {
@@ -75,14 +71,15 @@ export type Taper = {
 interface BaseControl {
     currentValue: number,
     rect: Rect,
+    scale: number,
     rx: number,
     taper: Taper,
-    changing?: boolean,
-    precis?: boolean,
+    changing: boolean,
+    precis: boolean,
     x: number,
     y: number,
     background?: Tint
-    readonly boundingBoxCSS: BoundingClientRec,
+    readonly boundingBoxCSS: BoundingRectCSS,
     readonly mappedValue: number,
     readonly normValue:  number,
     readonly index: number
@@ -97,7 +94,6 @@ export interface Fader extends BaseControl {
 
 export interface Dial extends BaseControl  {
     id: DialTag,
-    scale: number,
     width: number,
     height: number,
     label?: string,
