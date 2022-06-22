@@ -4,7 +4,7 @@
     // @neverenginelabs
 
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
-    import {onMount} from 'svelte';
+    import {createEventDispatcher, onMount} from 'svelte';
     import {fade} from 'svelte/transition';
     import type {BoundingRectCSS, Dial, DialTag, Rect, Taper, Tint} from "../types/precisUI";
     import {C, Default, DefaultTaper, WidgetType} from "../types/precisUI";
@@ -26,24 +26,37 @@
         scale:number = Default.DIAL_SCALE_FACTOR,
         rx:number = Default.RX,
         value:number = 0,
-        id:DialTag = 'dial.0'
+        id:DialTag = 'dial.0',
+        label:string = ''
+
 
     //todo: improve type assert checks to work with DOM units like %, px etc
-        rx = rx as number
-        const taper:Taper = {
-            min: toNumber(min),
-            max: toNumber(max),
-            fineStep: toNumber(fineStep),
-            curve: 'LINEAR'
-        };
-        const rect:Rect = {
-            x: toNumber(x),
-            y: toNumber(y),
-            width: toNumber(width),
-            height: toNumber(width)
-        }
+    rx = rx as number
+
+    const taper:Taper = {
+        min: toNumber(min),
+        max: toNumber(max),
+        fineStep: toNumber(fineStep),
+        curve: 'LINEAR'
+    };
+    const rect:Rect = {
+        x: toNumber(x),
+        y: toNumber(y),
+        width: toNumber(width),
+        height: toNumber(width)
+    }
+    const dispatch = createEventDispatcher()
+
 
     const dial: Dial = {
+        redraw: ():void => {
+            placeContainerElement()
+        },
+
+        rescale: ():void => {
+            scaleContainerElement()
+        },
+
         handleMouseDown: (event: MouseEvent) => {
             const mode = (event.type)
             console.log( `Event type ${mode} -> ${event.button}`)
@@ -64,6 +77,7 @@
                     dial.currentValue =
                         clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
                 }
+            value = dial.mappedValue
         },
         handleMouseUp: () => {
             selected = null
@@ -74,7 +88,6 @@
         handleModifier(ev: KeyboardEvent) {
             dial.precis = (ev.shiftKey && ev.type === 'keydown')
         },
-
         currentValue: value,
         id,
         rect,
@@ -82,6 +95,7 @@
         taper,
         scale,
         background,
+        label,
         get x():number { return this.rect.x },
         get y():number {return this.rect.y},
         set x( number:number ) { this.rect.x = number },
@@ -90,7 +104,6 @@
         get height():number {return this.rect.height},
         set width(w:number) { this.rect.width = toNumber(w) + rx },
         set height(h:number) { this.rect.height = toNumber(h) },
-        label: 'hold shift for fine tuning',
         precis: false,
         changing: false,
         get radialTrack() {
@@ -117,20 +130,38 @@
 
     let dialPointer;
     $: dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 10)
+    $: output(dial.mappedValue, dial.id, dial.redraw)
+
+    function output (value, id, redraw, rescale)  {
+       // console.log( `Output value send: ${value}`)
+        dispatch('output', {
+            value,
+            id,
+            redraw,
+            rescale
+        })
+    }
+
+    const placeContainerElement = function () {
+        const el = document.getElementById(`${id}-container`)
+        const newStyle: string =`${dial.boundingBoxCSS};
+                                transform: scale(${dial.scale});
+                                background: ${dial.background};`
+        el.setAttribute('style', newStyle)
+        // console.log(`dial-style: ${dialContainer.getAttribute('style')} id: ${dial.id}`)
+    };
+
+    const scaleContainerElement = function () {
+        const el = document.getElementById(`${id}-container`)
+        const newStyle = el.getAttribute('style') + `transform: scale(${dial.scale});`
+        el.setAttribute('style', newStyle)
+    };
+
 
     onMount(() => {
-        // TODO: turn into a setRectFromParent method
-        console.log('bg:'+ background)
-        const dialContainer = document.getElementById(`${id}-container`)
-        const initStyle:string =
-            `${dial.boundingBoxCSS};
-            transform: scale(${dial.scale});
-            background: ${dial.background};`
-        dialContainer.setAttribute('style', initStyle)
-        console.log('dial:'+dialContainer.getAttribute('style'))
+        placeContainerElement();
     })
 </script>
-
 
 <div class='dialContainer'
      id='{id}-container'
@@ -195,6 +226,7 @@
                   style={dial.changing ? 'fill: aqua;' : ''}>
                     {dial.mappedValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : ' ▹'}
             </text>
+            <text text-anchor=inherit class:label={dial.label}>{dial.label} </text>
         </g>
     </svg>
 </div>
@@ -230,5 +262,11 @@
         font-size: large;
         fill: aqua;
         transform: translate(1rem, -0.5rem);
+    }
+
+    .label {
+        font-size: medium;
+        filL: aliceblue;
+        transform: translateY(8rem);
     }
 </style>

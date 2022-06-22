@@ -100,6 +100,8 @@ interface BaseControl extends UserActions{
     x: number,
     y: number,
     background?: string | Tint,
+    redraw: ()=>void,
+    rescale: ()=>void,
     readonly boundingBoxCSS: BoundingRectCSS,
     readonly mappedValue: number,
     readonly normValue:  number,

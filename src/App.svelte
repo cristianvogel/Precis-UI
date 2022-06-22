@@ -13,6 +13,31 @@
 <script lang="ts">
 	import Fader from "./components/Fader.svelte";
 	import Dial from "./components/Dial.svelte";
+	import {C, Default} from "./types/precisUI";
+	import { writable } from 'svelte/store';
+
+	let readout;
+	let rescale = writable( Default.DIAL_SCALE_FACTOR )
+
+	const scaleDial = {
+		id:"dial.rescale",
+		x:500, y:250,
+		background: C.clear,
+		scale: 0.55,
+		value: 50, // initial value as percentage!
+		label:"Graphic Scale",
+		min:0.125,
+		max:0.875 }
+
+	function handleOutputValue(ev){
+		//rescale/redraw with stepped throttle
+		//todo: make this a feature
+		const throttle = 10
+		$rescale =( Math.round((ev.detail.value) * throttle))  / throttle
+
+		console.log( `Output value receive: ${ev.detail.value}\n
+		from dial: ${ev.detail.id}`)
+	};
 
 </script>
 
@@ -32,28 +57,40 @@
 </div>
 
 <div class='footer'>
-	<svg style="height: 0.1rem;">
-		<line x1="0.5rem" y1="5%" x2="200%" y2="5%" stroke='antiqueWhite'/>
+	<svg style="height: 1rem;">
+		<text style="transform:translate(5%, 100%); font-size: xx-small" fill="cyan"> {readout}</text>
+		<line x1="0.5rem" y1="7.5%" x2="200%" y2="7.5%" stroke='antiqueWhite'/>
 	</svg>
 	<h3>
 		𝌺 <a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
 	</h3>
 </div>
-	{#each Array(4) as _, i }
+	<Dial {...scaleDial} on:output={handleOutputValue}/>
+	{#each Array(4) as _, i ('key-'+i)}
+		{@const posX = 100+(i*50)}
+		{@const ranges = Math.pow(i + 1, 2) }
 		<Fader id="fader.{i}"
-			   x={100+(i*50)}
+			   x={posX}
 			   y="250"
 			   min=0
-			   max={Math.pow(i + 1, 2)}/>
-	{/each}
-	{#each Array(4) as _, i}
-		<Dial id="dial.{i}"
-			  x={300+((i%2)*100)}
-			  y={i < 2 ? 250 : 350}
-			  min=0
-			  max={Math.pow(i + 1, 2)}
+			   max={ranges}
 		/>
 	{/each}
+	{#key $rescale}
+		{#each Array(4) as _, i ('key-'+i)}
+			{@const posX = 300+((i%2)*100)}
+			{@const posY = i < 2 ? 250 : 350}
+			{@const rangeTest = [1,10,100,16000].at(i)}
+			<Dial id="dial.{i}"
+				  x={posX}
+				  y={posY}
+				  min=0
+				  max={rangeTest}
+				  bind:value={readout}
+				  scale={$rescale}
+			/>
+		{/each}
+	{/key}
 </main>
 
 

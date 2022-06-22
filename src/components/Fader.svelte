@@ -27,6 +27,7 @@
         value:number = 0,
         id:FaderTag = 'fader.0'
 
+
     //todo: improve type assert checks or work with DOM units like %, px etc
         rx = rx as number
         const taper: Taper = {
@@ -44,6 +45,9 @@
     }
 
     const fader: Fader = {
+        redraw: ():void => {
+            //placeContainerElement()
+        },
         handleMouseDown: (event: MouseEvent) => {
             const mode = (event.type)
             console.log( `Event type ${mode} -> ${event.button}`)
