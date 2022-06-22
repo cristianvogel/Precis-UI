@@ -4,7 +4,7 @@
     // @neverenginelabs
 
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
-    import {afterUpdate, beforeUpdate, createEventDispatcher, onMount} from 'svelte';
+    import {afterUpdate, createEventDispatcher, onMount} from 'svelte';
     import {fade} from 'svelte/transition';
     import type {BoundingRectCSS, Dial, DialTag, Rect, Taper, Tint} from "../types/precisUI";
     import {C, Default, DefaultTaper, WidgetType} from "../types/precisUI";
@@ -27,7 +27,8 @@
         rx:number = Default.RX,
         value:number = 0,
         id:DialTag = 'dial.0',
-        label:string = ''
+        label:string = '',
+        touchedID:DialTag = ''
 
 
     //todo: improve type assert checks to work with DOM units like %, px etc
@@ -53,7 +54,6 @@
         },
         handleMouseDown: (event: MouseEvent) => {
             const mode = (event.type)
-            console.log( `Event type ${mode} -> ${event.button}`)
             dial.precis = (mode === 'contextmenu')
             selected = event.target as HTMLElement
             selected.focus()
@@ -72,6 +72,7 @@
                         clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
                 }
             value = dial.mappedValue
+            touchedID = dial.id
         },
         handleMouseUp: () => {
             selected = null
@@ -122,7 +123,7 @@
         }
     }
 
-    $: dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 10)
+    $: dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 20)
     $: output(dial.mappedValue, dial.id)
 
     function output(value, id)  {
@@ -135,8 +136,8 @@
 
     const containerTransform = function () {
         const newStyle =`${dial.boundingBoxCSS};
-                                transform: scale(${dial.scale});
-                                background: ${dial.background};`
+                          transform: scale(${scale});
+                          background: ${background};`
         return newStyle
     };
 
@@ -149,6 +150,10 @@
     afterUpdate(() => {
         resize()
     });
+
+    onMount( () => {
+        output(dial.mappedValue, dial.id);
+    })
 
 </script>
 
@@ -197,11 +202,10 @@
                 {/each}
             </g>
             {#each dialPointer as {x, y}, i}
-                {@const width = 10}
-                {#if (i < dialPointer.length - 2)}
+                {@const width = dial.precis ? 10 : 5}
+                {#if (i < dialPointer.length - 4)}
                     <polyline id='{id}-pointer'
                               points={`${x},${y}, 50,50 `}
-                              fill="none"
                               stroke-width={width - (i/2)}
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
@@ -215,7 +219,7 @@
             <text id='{id}-readout'
                   class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                   style={dial.changing ? 'fill: aqua;' : ''}>
-                    {dial.mappedValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : ' ▹'}
+                {dial.mappedValue.toPrecision(dial.precis ? 6 : 3)}{dial.precis ? '⋯' : ' ▹'}
             </text>
             <g id='{id}-label'>
                     <text class:label={dial.label}
@@ -257,7 +261,7 @@
     }
 
     .readout.dial.precis {
-        font-size: xx-large;
+        font-size: x-large;
         fill: aqua;
         transform: translate(-0.5rem, -0.5rem);
     }

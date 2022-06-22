@@ -4,7 +4,7 @@
     // @neverenginelabs
 
     import {clamp, remap, toNumber} from '../lib/utils.ts';
-    import { onMount } from 'svelte';
+    import {afterUpdate, createEventDispatcher, onMount} from 'svelte';
     import { fade } from 'svelte/transition';
     import type {BoundingRectCSS, Fader, Rect, FaderTag, Taper} from "../types/precisUI";
     import {C, DefaultTaper, Default, WidgetType } from "../types/precisUI";
@@ -13,6 +13,7 @@
     let
         selected:(HTMLElement | null) = null,
         clientRect:(DOMRect | null) = null;
+
 
     export let
         min = DefaultTaper.MIN,
@@ -25,7 +26,8 @@
         scale = Default.FADER_SCALE_FACTOR,
         rx = Default.RX,
         value:number = 0,
-        id:FaderTag = 'fader.0'
+        id:FaderTag = 'fader.0',
+        touchedID:FaderTag = ''
 
 
     //todo: improve type assert checks or work with DOM units like %, px etc
@@ -44,13 +46,14 @@
         height: toNumber(height)
     }
 
+    const dispatch = createEventDispatcher()
+
     const fader: Fader = {
-        redraw: ():void => {
-            //placeContainerElement()
+        draw: ():void => {
+            containerTransform()
         },
         handleMouseDown: (event: MouseEvent) => {
             const mode = (event.type)
-            console.log( `Event type ${mode} -> ${event.button}`)
             fader.precis = (mode === 'contextmenu')
             selected = event.target as HTMLElement
             selected.focus()
@@ -68,6 +71,8 @@
                 fader.currentValue =
                     clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
             }
+            value = fader.mappedValue
+            touchedID = fader.id
         },
         handleMouseUp: () => {
             selected = null
@@ -115,11 +120,34 @@
         }
     }
 
-    onMount(() => {
-        // TODO: turn into a setRectFromParent method
-        const faderContainer = document.getElementById(`${id}-container`)
-        faderContainer.setAttribute('style', `${fader.boundingBoxCSS};transform: scale(${fader.scale})`)
-        console.log('fader:'+faderContainer.getAttribute('style'))
+    $: output(fader.mappedValue, fader.id)
+
+    function output(value, id)  {
+        // console.log( `Output value send: ${value}`)
+        dispatch('output', {
+            value,
+            id,
+        })
+    }
+
+    const containerTransform = function () {
+        const newStyle =`${fader.boundingBoxCSS};
+                         transform: scale(${scale})`
+        return newStyle
+    };
+
+    const resize = function () {
+        const el = document.getElementById(`${id}-container`)
+        const newStyle = `transform: scale(${scale});`
+        el.setAttribute('style', el.getAttribute('style') + newStyle)
+    }
+
+    afterUpdate(() => {
+        resize()
+    });
+
+    onMount( () => {
+        output(fader.mappedValue, fader.id)
     })
 
 </script>
@@ -130,6 +158,7 @@
      on:mousedown|preventDefault={fader.handleMouseDown}
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
      on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
+     style={containerTransform()}
 >
 
     <svg >
@@ -150,30 +179,31 @@
         </defs>
 
         <g fill="url('#{id}-grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
-            <rect height={fader.height + fader.rx}
-                  id='#{id}-track'
-                  on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
-                  rx=4px
+            <rect id='#{id}-track'
                   width={fader.width}
+                  height={fader.height + fader.rx}
+                  rx=4px
                   x=0rem
+                  on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
             />
             <g id='{id}-handle+readout'
                on:contextmenu|preventDefault={fader.handleMouseDown}
                stroke={C.offWhite}
-               transform="translate({-fader.rx},{fader.height - fader.currentValue})">
+               transform="translate(0,{fader.height - fader.currentValue}) scale(1.5)">
                 <rect fill={C.whiteBis}
-                      height={fader.rx * 3.14}
+                      height={Math.pow(fader.rx, fader.precis ? 1 : 2)}
+                      width=66%
                       id='{id}-handle'
                       stroke=none
-                      style="filter:url(#shadow);" width={Math.exp(fader.rx)}
+                      style="filter:url(#shadow);"
                 />
 
                 <g id='{id}-readout'
                    class='readoutBox rotated'
                    style='opacity:{fader.changing ? 1 : 0.7}'>
-                    <rect class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
+                    <rect id='{id}-readout.Box'
+                          class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
                           height=1.25rem
-                          id='{id}-readout.Box'
                           rx=3px
                           width=2.75rem
                           x=-0.5rem
@@ -196,11 +226,12 @@
             <g id='{id}-LED'
                stroke="green" fill=none stroke-width="1px"
                transform="translate({fader.width/2})">
-                <circle id='{id}-active' cy=-10 cx=-0.5 r=2 fill='aqua'/>
+                <circle id='{id}-active' cy=-20 cx=-0.5 r=2 fill='aqua'/>
                 <text id='{id}-label.Text'
                       class='label rotated'
                       lengthAdjust='spacingAndGlyphs'
-                      textLength={fader.height * 0.5}>{fader.label}
+                      textLength={fader.height * 0.5} >
+                    {fader.label}
                 </text>
             </g>
         </svg>
@@ -212,26 +243,28 @@
     svg {
         width: 100%;
         height: 100%;
-        overflow: visible
+        overflow: visible;
+        transform-origin: center;
     }
 
     .faderContainer {
         position: absolute;
-        background: grey;
+        background: none;
         top: 2.5%;
         left: 5%;
     }
 
     .label {
         font-family: 'Roboto', sans-serif;
-        font-size: xx-small;
+        font-size: small;
         stroke: none;
         fill: grey;
         pointer-events: none;
     }
 
     .label.rotated {
-        transform: rotate(90deg) translate(0.25rem, -0.75rem);
+        /*transform: rotate(90deg) translate(0.25rem, -0.75rem);*/
+        transform: rotate(90deg) translate(0.25rem, -1rem);
     }
 
     .readout {
@@ -256,7 +289,7 @@
 
     .readout.zoom {
         font-size: large;
-        transform: translate(-0.75rem, 1rem)
+        transform: translate(-2.5rem, -0.15rem)
     }
 
     .readoutBox.rotated {
@@ -264,6 +297,6 @@
     }
 
     .readoutBox.zoom {
-        transform: translate(-0.5rem, 0.5rem) scaleX(225%) scaleY(110%);
+        transform: translate(-1.5rem, -0.66rem) scaleX(225%) scaleY(110%);
     }
 </style>

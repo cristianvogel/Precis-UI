@@ -1,14 +1,13 @@
 import  {WidgetType} from "../types/precisUI";
 
 export function addListenersFor( control:any, widget?:WidgetType ) {
-    console.log(`Adding listeners for ${control.id}: ${WidgetType[widget as number]}`)
-
+   // console.log(`Adding listeners for ${control.id}: ${WidgetType[widget as number]}`)
     addMouseListeners(control)
     addKeyListeners(control)
  }
 
 export function removeListenersFor( control:any, widget?:WidgetType ) {
-    console.log(`Removing listeners for : ${widget}`)
+  //  console.log(`Removing listeners for : ${widget}`)
     removeMouseListeners(control)
     removeKeyListeners(control)
 }

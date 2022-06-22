@@ -6,12 +6,12 @@ export enum Default {
     SCALE,
     X = '50%',
     Y = '50%',
-    FADER_WIDTH = 11,
-    FADER_HEIGHT = 200,
+    FADER_WIDTH = 25,
+    FADER_HEIGHT = 300,
     DIAL_SQUARE = 100,
     RX = 2.75,
-    DIAL_SCALE_FACTOR = 0.75,
-    FADER_SCALE_FACTOR = 1.25,
+    DIAL_SCALE_FACTOR = 1,
+    FADER_SCALE_FACTOR = 1,
     DIAL_TICKMARKS_COUNT=11,
     DIAL_TICKMARKS_RADIAL_OFFSET=135,
     DIAL_TICKMARKS_rMIN= -5,
@@ -125,8 +125,8 @@ export interface Dial extends BaseControl  {
 }
 
 // Naming Dependencies
-export type FaderTag = `fader.${number | string}`
-export type DialTag = `dial.${number | string}`
+export type FaderTag = `fader.${number | string}` | ''
+export type DialTag = `dial.${number | string}` | ''
 
 // Data structures
 type Point = { x: number, y: number}

@@ -16,27 +16,44 @@
 	import {C, Default} from "./types/precisUI";
 	import { writable } from 'svelte/store';
 
-	let readout;
-	let rescale = writable( Default.DIAL_SCALE_FACTOR )
+	let readout, touchedID;
+	let rescaleDials = writable( Default.DIAL_SCALE_FACTOR )
+	let rescaleFaders = writable( Default.FADER_SCALE_FACTOR)
 
-	const scaleDial = {
-		id:"dial.rescale",
-		x:500, y:250,
+
+	const dialScaler = {
+		id:"dial.rescale.3",
+		x:600, y:300,
 		background: C.clear,
-		scale: 0.55,
-		value: 50, // initial value as percentage!
-		label:"Scale Dial View",
-		min:0.125,
-		max:0.875 }
+		scale: 0.5,
+		value: 50, // initial value as percentage?
+		label:"Scale Dials",
+		min:0,
+		max:2 }
+
+	const faderScaler = {
+		id:"fader.rescale.2",
+		x:600, y:400,
+		background: C.clear,
+		scale: 0.5,
+		value: 50, // initial value as percentage?
+		label:"Scale Faders",
+		min:0,
+		max:2}
 
 	function handleOutputValue(ev){
+
 		//rescale/redraw with stepped throttle
 		//todo: make this a feature
 		const throttle = 10
-		$rescale =( Math.round((ev.detail.value) * throttle))  / throttle
-
-		// console.log( `Output value receive: ${ev.detail.value}\n
-		// from dial: ${ev.detail.id}`)
+		switch (ev.detail.id) {
+			case ('fader.rescale.2') :
+				$rescaleFaders = (Math.round((ev.detail.value) * throttle)) / throttle
+				break;
+			case ('dial.rescale.3') :
+				$rescaleDials = (Math.round((ev.detail.value) * throttle)) / throttle
+				break;
+		}
 	};
 
 </script>
@@ -58,14 +75,18 @@
 
 <div class='footer'>
 	<svg style="height: 1rem;">
-		<text style="transform:translate(5%, 100%); font-size: xx-small" fill="cyan">{readout}</text>
+		<text style="transform:translate(5%, 100%);
+				font-size: xx-small" fill="cyan">
+			Output from: {touchedID} - {readout}
+		</text>
 		<line x1="0.5rem" y1="7.5%" x2="200%" y2="7.5%" stroke='antiqueWhite'/>
 	</svg>
 	<h3>
 		𝌺 <a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
 	</h3>
 </div>
-	<Dial {...scaleDial} on:output={handleOutputValue}/>
+	<Dial {...dialScaler} on:output={handleOutputValue}/>
+	<Dial {...faderScaler} on:output={handleOutputValue}/>
 	{#each Array(4) as _, i ('key-'+i)}
 		{@const posX = 100+(i*50)}
 		{@const ranges = Math.pow(i + 1, 2) }
@@ -74,19 +95,23 @@
 			   y="250"
 			   min=0
 			   max={ranges}
+			   scale={$rescaleFaders}
+			   bind:touchedID={touchedID}
+			   bind:value={readout}
 		/>
 	{/each}
 		{#each Array(4) as _, i ('key-'+i)}
-			{@const posX = 300+((i%2)*100)}
-			{@const posY = i < 2 ? 250 : 350}
+			{@const posX = 300+((i%2)*150)}
+			{@const posY = i < 2 ? 250 : 450}
 			{@const rangeTest = [1,10,100,16000].at(i)}
 			<Dial id="dial.{i}"
 				  x={posX}
 				  y={posY}
 				  min=0
 				  max={rangeTest}
+				  scale={$rescaleDials}
 				  bind:value={readout}
-				  scale={$rescale}
+				  bind:touchedID={touchedID}
 			/>
 		{/each}
 </main>
