@@ -25,7 +25,7 @@
 		background: C.clear,
 		scale: 0.55,
 		value: 50, // initial value as percentage!
-		label:"Graphic Scale",
+		label:"Scale Dial View",
 		min:0.125,
 		max:0.875 }
 
@@ -35,8 +35,8 @@
 		const throttle = 10
 		$rescale =( Math.round((ev.detail.value) * throttle))  / throttle
 
-		console.log( `Output value receive: ${ev.detail.value}\n
-		from dial: ${ev.detail.id}`)
+		// console.log( `Output value receive: ${ev.detail.value}\n
+		// from dial: ${ev.detail.id}`)
 	};
 
 </script>
@@ -58,7 +58,7 @@
 
 <div class='footer'>
 	<svg style="height: 1rem;">
-		<text style="transform:translate(5%, 100%); font-size: xx-small" fill="cyan"> {readout}</text>
+		<text style="transform:translate(5%, 100%); font-size: xx-small" fill="cyan">{readout}</text>
 		<line x1="0.5rem" y1="7.5%" x2="200%" y2="7.5%" stroke='antiqueWhite'/>
 	</svg>
 	<h3>
@@ -76,7 +76,6 @@
 			   max={ranges}
 		/>
 	{/each}
-	{#key $rescale}
 		{#each Array(4) as _, i ('key-'+i)}
 			{@const posX = 300+((i%2)*100)}
 			{@const posY = i < 2 ? 250 : 350}
@@ -90,7 +89,6 @@
 				  scale={$rescale}
 			/>
 		{/each}
-	{/key}
 </main>
 
 

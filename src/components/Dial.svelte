@@ -4,7 +4,7 @@
     // @neverenginelabs
 
     import {clamp, radialPoints, remap, toNumber} from '../lib/utils.ts';
-    import {createEventDispatcher, onMount} from 'svelte';
+    import {afterUpdate, beforeUpdate, createEventDispatcher, onMount} from 'svelte';
     import {fade} from 'svelte/transition';
     import type {BoundingRectCSS, Dial, DialTag, Rect, Taper, Tint} from "../types/precisUI";
     import {C, Default, DefaultTaper, WidgetType} from "../types/precisUI";
@@ -47,16 +47,10 @@
     }
     const dispatch = createEventDispatcher()
 
-
     const dial: Dial = {
-        redraw: ():void => {
-            placeContainerElement()
+        draw: ():void => {
+            containerTransform()
         },
-
-        rescale: ():void => {
-            scaleContainerElement()
-        },
-
         handleMouseDown: (event: MouseEvent) => {
             const mode = (event.type)
             console.log( `Event type ${mode} -> ${event.button}`)
@@ -128,39 +122,34 @@
         }
     }
 
-    let dialPointer;
     $: dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 10)
-    $: output(dial.mappedValue, dial.id, dial.redraw)
+    $: output(dial.mappedValue, dial.id)
 
-    function output (value, id, redraw, rescale)  {
+    function output(value, id)  {
        // console.log( `Output value send: ${value}`)
         dispatch('output', {
             value,
             id,
-            redraw,
-            rescale
         })
     }
 
-    const placeContainerElement = function () {
-        const el = document.getElementById(`${id}-container`)
-        const newStyle: string =`${dial.boundingBoxCSS};
+    const containerTransform = function () {
+        const newStyle =`${dial.boundingBoxCSS};
                                 transform: scale(${dial.scale});
                                 background: ${dial.background};`
-        el.setAttribute('style', newStyle)
-        // console.log(`dial-style: ${dialContainer.getAttribute('style')} id: ${dial.id}`)
+        return newStyle
     };
 
-    const scaleContainerElement = function () {
+    const resize = function () {
         const el = document.getElementById(`${id}-container`)
-        const newStyle = el.getAttribute('style') + `transform: scale(${dial.scale});`
-        el.setAttribute('style', newStyle)
-    };
+        const newStyle = `transform: scale(${scale});`
+        el.setAttribute('style', el.getAttribute('style') + newStyle)
+    }
 
+    afterUpdate(() => {
+        resize()
+    });
 
-    onMount(() => {
-        placeContainerElement();
-    })
 </script>
 
 <div class='dialContainer'
@@ -169,7 +158,9 @@
      on:mousedown|preventDefault={dial.handleMouseDown}
      on:mouseenter|preventDefault='{(e)=>{e.target.focus(); dial.changing=true}}'
      on:mouseleave='{()=>{dial.changing=(selected !== null)}}'
+     style={containerTransform()}
 >
+
     <svg transform=scale(0.9)>
         <defs id='{id}-gradients'>
             <radialGradient cx=50%
@@ -221,12 +212,19 @@
                             in:fade out:fade/>
                 {/if}
             {/each}
-            <text class={ dial.precis ? 'readout dial precis' : 'readout dial' }
-                  id='{id}-readout'
+            <text id='{id}-readout'
+                  class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                   style={dial.changing ? 'fill: aqua;' : ''}>
                     {dial.mappedValue.toPrecision(dial.precis ? 5 : 3)}{dial.precis ? '⋯' : ' ▹'}
             </text>
-            <text text-anchor=inherit class:label={dial.label}>{dial.label} </text>
+            <g id='{id}-label'>
+                    <text class:label={dial.label}
+                            x="50%" y="5%"
+                            dominant-baseline="middle"
+                            text-anchor="middle">
+                           {dial.label}
+                    </text>
+            </g>
         </g>
     </svg>
 </div>
@@ -246,7 +244,7 @@
 
     .readout {
         font-family: 'Roboto', sans-serif;
-        font-size: small;
+        font-size: medium;
         transform: translate(-3rem, 0.5rem);
         stroke-width: 0;
         fill: grey;
@@ -259,13 +257,13 @@
     }
 
     .readout.dial.precis {
-        font-size: large;
+        font-size: xx-large;
         fill: aqua;
-        transform: translate(1rem, -0.5rem);
+        transform: translate(-0.5rem, -0.5rem);
     }
 
     .label {
-        font-size: medium;
+        font-size: 1.5rem;
         filL: aliceblue;
         transform: translateY(8rem);
     }
