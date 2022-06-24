@@ -15,6 +15,8 @@
 	import Dial from "./components/Dial.svelte";
 	import {C, Default} from "./types/precisUI";
 	import { writable } from 'svelte/store';
+	import {PrecisUI} from "./lib/PrecisController";
+	import {setContext} from "svelte";
 
 	let readout, touchedID;
 	let rescaleDials = writable( Default.DIAL_SCALE_FACTOR )
@@ -55,6 +57,9 @@
 				break;
 		}
 	};
+
+	const precis = new PrecisUI( 'TestApp' )
+	setContext('precisUI', precis )
 
 </script>
 

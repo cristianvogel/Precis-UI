@@ -57,7 +57,7 @@
             dial.precis = (mode === 'contextmenu')
             selected = event.target as HTMLElement
             selected.focus()
-            addListenersFor(dial, WidgetType.DIAL)
+            addListenersFor(dial)
         },
         handleMouseMove: (event:MouseEvent) => {
                 clientRect = (selected as Element).getBoundingClientRect()
@@ -78,7 +78,7 @@
             selected = null
             dial.precis = false
             dial.changing = false
-            removeListenersFor(dial, WidgetType.DIAL)
+            removeListenersFor(dial)
         },
         handleModifier(ev: KeyboardEvent) {
             dial.precis = (ev.shiftKey && ev.type === 'keydown')

@@ -57,7 +57,7 @@
             fader.precis = (mode === 'contextmenu')
             selected = event.target as HTMLElement
             selected.focus()
-            addListenersFor(fader, WidgetType.FADER)
+            addListenersFor(fader)
         },
         handleMouseMove: (event:MouseEvent) => {
             clientRect = (selected as Element).getBoundingClientRect()
@@ -78,7 +78,7 @@
             selected = null
             fader.precis = false
             fader.changing = false
-            removeListenersFor(fader, WidgetType.FADER)
+            removeListenersFor(fader)
         },
         handleModifier(ev: KeyboardEvent) {
             fader.precis = (ev.shiftKey && ev.type === 'keydown' )
