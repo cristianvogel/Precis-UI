@@ -4,8 +4,8 @@
 export enum Default {
     EMPTY,
     SCALE,
-    X = '50%',
-    Y = '50%',
+    X = 150,
+    Y = 150,
     FADER_WIDTH = 25,
     FADER_HEIGHT = 300,
     DIAL_SQUARE = 100,
@@ -16,7 +16,7 @@ export enum Default {
     DIAL_TICKMARKS_RADIAL_OFFSET=135,
     DIAL_TICKMARKS_rMIN= -5,
     DIAL_TICKMARKS_rMAX= 1,
-    DIAL_BACKGROUND= 'grey',
+    DIAL_BACKGROUND = 'grey'
 }
 
 export enum DefaultTaper {

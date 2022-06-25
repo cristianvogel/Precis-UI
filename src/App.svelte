@@ -11,54 +11,22 @@
 />
 
 <script lang="ts">
-	import Fader from "./components/Fader.svelte";
-	import Dial from "./components/Dial.svelte";
-	import {C, Default} from "./types/precisUI";
+	import {Default} from "./types/precisUI";
 	import { writable } from 'svelte/store';
-	import {PrecisUI} from "./lib/PrecisController";
 	import {setContext} from "svelte";
+	import Radial from "./components/Radial.svelte";
+	import {PrecisUI} from "./lib/PrecisController";
 
 	let readout, touchedID;
 	let rescaleDials = writable( Default.DIAL_SCALE_FACTOR )
 	let rescaleFaders = writable( Default.FADER_SCALE_FACTOR)
 
 
-	const dialScaler = {
-		id:"dial.rescale.3",
-		x:600, y:300,
-		background: C.clear,
-		scale: 0.5,
-		value: 50, // initial value as percentage?
-		label:"Scale Dials",
-		min:0,
-		max:2 }
-
-	const faderScaler = {
-		id:"fader.rescale.2",
-		x:600, y:400,
-		background: C.clear,
-		scale: 0.5,
-		value: 50, // initial value as percentage?
-		label:"Scale Faders",
-		min:0,
-		max:2}
-
 	function handleOutputValue(ev){
-
-		//rescale/redraw with stepped throttle
-		//todo: make this a feature
-		const throttle = 10
-		switch (ev.detail.id) {
-			case ('fader.rescale.2') :
-				$rescaleFaders = (Math.round((ev.detail.value) * throttle)) / throttle
-				break;
-			case ('dial.rescale.3') :
-				$rescaleDials = (Math.round((ev.detail.value) * throttle)) / throttle
-				break;
-		}
+		console.log( 'output '+ev.detail)
 	};
 
-	const precis = new PrecisUI( 'TestApp' )
+	const precis:PrecisUI = new PrecisUI( )
 	setContext('precisUI', precis )
 
 </script>
@@ -90,26 +58,12 @@
 		𝌺 <a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
 	</h3>
 </div>
-	<Dial {...dialScaler} on:output={handleOutputValue}/>
-	<Dial {...faderScaler} on:output={handleOutputValue}/>
-	{#each Array(4) as _, i ('key-'+i)}
-		{@const posX = 100+(i*50)}
-		{@const ranges = Math.pow(i + 1, 2) }
-		<Fader id="fader.{i}"
-			   x={posX}
-			   y="250"
-			   min=0
-			   max={ranges}
-			   scale={$rescaleFaders}
-			   bind:touchedID={touchedID}
-			   bind:value={readout}
-		/>
-	{/each}
+
 		{#each Array(4) as _, i ('key-'+i)}
 			{@const posX = 300+((i%2)*150)}
 			{@const posY = i < 2 ? 250 : 450}
 			{@const rangeTest = [1,10,100,16000].at(i)}
-			<Dial id="dial.{i}"
+			<Radial id="dial.{i}"
 				  x={posX}
 				  y={posY}
 				  min=0
