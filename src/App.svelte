@@ -12,18 +12,19 @@
 
 <script lang="ts">
 	import {Default} from "./types/precisUI";
-	import { writable } from 'svelte/store';
+	import {Writable, writable} from 'svelte/store';
 	import {setContext} from "svelte";
 	import Radial from "./components/Radial.svelte";
 	import {PrecisUI} from "./lib/PrecisController";
 
-	let readout, touchedID;
-	let rescaleDials = writable( Default.DIAL_SCALE_FACTOR )
-	let rescaleFaders = writable( Default.FADER_SCALE_FACTOR)
+	let rescaleDials:Writable<number> = writable( Default.DIAL_SCALE_FACTOR )
+	let rescaleFaders:Writable<number> = writable( Default.FADER_SCALE_FACTOR)
+	let readout:Writable<number> = writable( 0 )
+	let touchedID:Writable<string> = writable( '' )
 
-
-	function handleOutputValue(ev){
-		console.log( 'output '+ev.detail)
+	function handleOutputValue(event:CustomEvent){
+		readout.set(event.detail.value)
+		touchedID.set(event.detail.id)
 	};
 
 	const precis:PrecisUI = new PrecisUI( )
@@ -50,7 +51,7 @@
 	<svg style="height: 1rem;">
 		<text style="transform:translate(5%, 100%);
 				font-size: xx-small" fill="cyan">
-			Output from: {touchedID} - {readout}
+			Output from: {$touchedID} - {$readout}
 		</text>
 		<line x1="0.5rem" y1="7.5%" x2="200%" y2="7.5%" stroke='antiqueWhite'/>
 	</svg>
@@ -69,8 +70,7 @@
 				  min=0
 				  max={rangeTest}
 				  scale={$rescaleDials}
-				  bind:value={readout}
-				  bind:touchedID={touchedID}
+					on:output={handleOutputValue}
 			/>
 		{/each}
 </main>

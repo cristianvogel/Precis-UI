@@ -1,8 +1,7 @@
 // Base class
-
-import {addListeners, removeListeners} from "./Listeners";
-import {clamp, remap, toNumber} from "./utils";
+import {remap, toNumber} from "./utils";
 import {createEventDispatcher} from "svelte";
+import {Palette as C} from "../lib/PrecisController";
 
 type ControlRegistry = Set<WidgetTypes>
 
@@ -68,9 +67,9 @@ interface PrecisController {
     set height(h:number)
 }
 
-export class BasicController implements PrecisController, SharedEventHandlers {
-    protected  dispatch
-    private _stateFlags: StateFlags = {precis: false , changing: false}
+export class BasicController implements PrecisController {
+    protected dispatch
+    private _stateFlags: StateFlags = {precis: false , focussed: false, changing: false}
     selected:(HTMLElement | null) = null
     protected clientRect: DOMRect;
     protected currentValue: number;
@@ -82,33 +81,33 @@ export class BasicController implements PrecisController, SharedEventHandlers {
     label:string
     protected background: Tint
     protected id: string
-    protected value: number
-    protected touchedID: string
 
     constructor(  ) {
         this.dispatch = createEventDispatcher()
     }
-
-    get precis(): boolean {
-        return this._stateFlags.precis
-    }
-    set precis( p:boolean) {
-        this._stateFlags.precis = p
-    }
-
     get changing(): boolean {
         return this._stateFlags.changing
     }
-    set changing( p:boolean) {
-        this._stateFlags.changing = p
+    set changing( b:boolean ) {
+        this._stateFlags.changing = b
     }
-
+    get precis(): boolean {
+        return this._stateFlags.precis
+    }
+    set precis( b:boolean ) {
+        this._stateFlags.precis = b
+    }
+    get focussed(): boolean {
+        return this._stateFlags.focussed
+    }
+    set focussed( b:boolean ) {
+        this._stateFlags.focussed = b
+    }
     get stateFlags(): StateFlags {
         return this._stateFlags;
     }
-
-    set stateFlags(value: StateFlags) {
-        this._stateFlags = {...value};
+    set stateFlags(settings: StateFlags) {
+        this._stateFlags = {...settings};
     }
 
     dispatchOutput(value: Output, id: string): void {
@@ -143,40 +142,7 @@ export class BasicController implements PrecisController, SharedEventHandlers {
     get height():number {return this.rect.height}
     set width(w:number) { this.rect.width = toNumber(w) + this.rx }
     set height(h:number) { this.rect.height = toNumber(h) }
-    handleModifier(event: KeyboardEvent): void {
-    }
-    handleMouseDown(event: MouseEvent): void {
-        const mode = (event.type)
-        this.precis = (mode === 'contextmenu')
-        this.selected = event.target as HTMLElement
-        this.selected.focus()
-        addListeners(this)
-        this.dispatch(this.getMappedValue(), this.id)
-    }
 
-    handleMouseMove(event: MouseEvent): void {
-        this.clientRect = (this.selected as Element).getBoundingClientRect()
-        const dy = event.movementY
-        if (dy === 0) {return}
-        const {currentValue, height,  taper} = this
-        const normValue = this.getNormValue()
-        if (this._stateFlags.precis) {
-            this.currentValue =
-                clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
-        } else {
-            this.currentValue =
-                clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
-        }
-        // component bound variables, will I need to dispatch these?
-        this.value = this.getMappedValue()
-        this.touchedID = this.id
-    }
-
-    handleMouseUp(): void {
-        this.selected = null
-        this._stateFlags = {precis: false, changing: false}
-        removeListeners(this)
-    }
 }
 
 
@@ -190,10 +156,11 @@ export class Radial extends BasicController {
         super();
         Object.assign(this, initialSettings)
         super.id = this.id
-        console.log( 'Constructor -> ' + this.id + ' Method -> ' + this.getMappedValue())
+        console.log( 'Constructor -> ' + this.id )
     }
-    radialTrack = () => { return (this.getNormValue() * 270) + 230}
-    resize(scale: number): void {
+
+    get radialTrack() {
+        return (this.getNormValue() * 270) + 230
     }
 }
 
@@ -234,15 +201,8 @@ export type BoundingRectCSS = `top:${number}px;left:${number}px;width:${number}p
 export type Output = number | boolean | string
 
 
-export interface SharedEventHandlers {
-    handleMouseDown(event: MouseEvent): void
-    handleMouseMove(event: MouseEvent): void
-    handleMouseUp(): void
-    handleModifier(event: KeyboardEvent): void
-}
-
 export type StateFlags = {
-    precis: boolean, changing: boolean
+    precis: boolean, focussed: boolean, changing: boolean
 }
 
 // Name Rules
@@ -273,7 +233,7 @@ type RGB = `rgb(${number}, ${number}, ${number})`
 type RGBA = `rgba(${number}, ${number}, ${number}, ${number})`
 type HEX = `#${string}`
 
-export enum C {
+export enum Palette {
     clear = 'transparent',
     black = 'black',
     sky = 'skyblue',
@@ -293,5 +253,5 @@ export enum C {
     tan = 'tan',
     deepBlue = 'midnightblue'
 } //todo: improve color palette stuff
-export type Tint = RGB | C | RGBA | HEX
+export type Tint = RGB | Palette | RGBA | HEX
 

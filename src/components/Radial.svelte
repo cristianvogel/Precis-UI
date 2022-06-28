@@ -3,13 +3,16 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper} from "../types/precisUI";
-    import { RadialSettings} from "../lib/Radial";
-    import type {CommonSettings, DialTag, Tint} from "../lib/PrecisController";
+    import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
+    import type { DialTag, Tint} from "../lib/PrecisController";
     import {radialPoints, radialTickMarkAt, remap, toNumber} from "../lib/utils";
-    import {Taper, Rect, C, PrecisUI, Radial} from "../lib/PrecisController";
-    import {afterUpdate, getContext, onMount} from "svelte";
+    import {Taper, Rect, Palette as C, Radial} from "../lib/PrecisController";
+    import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
+    import { dialStore } from './stores.js'
+    import {get} from "svelte/store";
+    import {addListeners, removeListeners} from "../lib/Listeners";
+
 
     export let
         min:number = DefaultTaper.MIN,
@@ -21,10 +24,10 @@
         background:Tint = C.dim,
         scale:number = Default.DIAL_SCALE_FACTOR,
         rx:number = Default.RX,
-        value:number = 0,
         id:DialTag = 'dial.0',
         label:string = '',
-        touchedID:DialTag = '',
+        touchedID:string = '',
+        value:number = 0,
         pointer:boolean = true,
         tickMarks:boolean = true
 
@@ -41,7 +44,7 @@
         max: toNumber(max),
         fineStep: toNumber(fineStep)
     };
-    const settings:CommonSettings & RadialSettings = {
+    const settings = {
         currentValue: value,
         id,
         label,
@@ -50,11 +53,15 @@
         rx,
         scale,
         taper,
-        tickMarks: false
+        tickMarks: true,
     }
+    // Construct a new instance and register it in Map store
+    // keyed by id (unique we hope)
 
     const dial:Radial = new Radial(settings)
+    get(dialStore).set(dial.id, dial)
 
+    // this is the transform that places the container DIV element
     const containerTransform = function () {
         const newStyle =`${dial.generateRectCSS()};
                           transform: scale(${dial.scale});
@@ -63,25 +70,48 @@
     };
 
     afterUpdate(() => {
-        dial.resize(dial.scale)
+        dial.resize(dial.scale, dial.id)
     });
+
+   let dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 20)
 
     onMount( () => {
         dial.dispatchOutput(dial.getMappedValue(), dial.id);
     })
 
-    $: dialPointer = radialPoints(dial.radialTrack(), 50, 50, 10, 55, 20)
+     function componentMouseDown(event: MouseEvent ): void {
+        console.info('Element ◻︎ ' + event.target.id + ' ⇢ ' + dial.id)
+         const mode = (event.type)
+         dial.stateFlags = {
+             changing: true,
+             precis: (mode === 'contextmenu'),
+             focussed: true
+        }
+         dial.selected = event.target as HTMLElement | null
+         addListeners(dial.selected)
+    }
+
+    function componentMouseLeave(event: MouseEvent) {
+        dial.focussed=false
+    }
+
+    function componentMouseEnter(event: MouseEvent) {
+        dial.selected = event.target as HTMLElement
+        dial.selected.focus()
+        dial.focussed=true
+    }
+
 </script>
 
 <div class='dialContainer'
      id='{dial.id}-container'
-     on:contextmenu|preventDefault={dial.handleMouseDown}
-     on:mousedown|preventDefault={dial.handleMouseDown}
-     on:mouseenter|preventDefault='{(e)=>{e.target.focus();  dial.stateFlags.changing=true}}'
-     on:mouseleave='{()=>{dial.stateFlags.changing=(dial.selected !== null)}}'
+     on:contextmenu|preventDefault={componentMouseDown}
+     on:mousedown|preventDefault={componentMouseDown}
+     on:mouseenter|preventDefault={componentMouseEnter}
+     on:mouseleave={ componentMouseLeave }
      style={containerTransform()}
 >
-
+    <!--{@debug dial}-->
     <svg transform=scale(0.9)>
         <defs id='{dial.id}-gradients'>
             <radialGradient cx=50%
@@ -105,37 +135,39 @@
                     cy=50% fill=#112211
                     r={(dial.rx * 0.9) +'rem'} stroke="url('#{dial.id}-grad')"
             />
+            {#if tickMarks}
             <g id='{dial.id}-ticks'>
                 {#each Array(Default.DIAL_TICKMARKS_COUNT) as tick, i}
-                    {@const tickMarks = radialTickMarkAt(i)}
-                    <line x1={tickMarks.x1}
-                          x2={tickMarks.x2}
-                          y1={tickMarks.y1}
-                          y2={tickMarks.y2}
+                    {@const marks = radialTickMarkAt(i)}
+                    <line x1={marks.x1}
+                          x2={marks.x2}
+                          y1={marks.y1}
+                          y2={marks.y2}
                           stroke-width='2px'
                           stroke = {i<(dial.getNormValue()*10) ? `aquamarine` : 'grey'}
                     />
                 {/each}
             </g>
+                {/if}
             {#each dialPointer as {x, y}, i}
-                {@const width = dial.stateFlags.precis ? 10 : 5}
+                {@const width = dial.precis ? 10 : 5}
                 {#if (i < dialPointer.length - 4)}
                     <polyline id='{dial.id}-pointer'
                               points={`${x},${y}, 50,50 `}
                               stroke-width={width - (i/2)}
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
-                {#if (i === dialPointer.length - 1) && dial.stateFlags.changing}
+                {#if (i === dialPointer.length - 1) && dial.focussed}
                     <circle id='{id}-LED'
-                            cx=90% cy=90% r=2
+                            cx=90% cy=90% r=3
                             fill=aqua
                             in:fade out:fade/>
                 {/if}
             {/each}
             <text id='{dial.id}-readout'
                   class={ dial.precis ? 'readout dial precis' : 'readout dial' }
-                  style={dial.changing ? 'fill: aqua;' : ''}>
-                {dial.getMappedValue().toPrecision(dial.precis ? 6 : 3)}{dial.stateFlags.precis ? '⋯' : ' ▹'}
+                  style={ dial.focussed ? 'fill: aqua;' : '' }>
+                  {dial.getMappedValue().toPrecision(dial.precis ? 6 : 3)}{dial.precis ? '⋯' : ' ▹'}
             </text>
             <g id='{dial.id}-label'>
                 <text class:label={dial.label}

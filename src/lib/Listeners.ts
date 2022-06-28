@@ -1,32 +1,40 @@
-import type {WidgetType} from "./PrecisController";
-import type {PrecisControl} from "./PrecisController";
 
-export function addListeners(control:PrecisControl) {
-    addMouseListeners(control)
-    addKeyListeners(control)
+import {handleModifier, handleMouseMove, handleMouseUp} from "./Events";
+
+export function addListeners(element:HTMLElement | null) {
+    if (!element) return
+    console.log('adding listeners...' + element.id)
+    addMouseListeners(element)
+    addKeyListeners(element)
 }
 
-export function removeListeners(control:PrecisControl) {
-    removeMouseListeners(control)
-    removeKeyListeners(control)
+export function removeListeners(element:HTMLElement | null) {
+    if (!element) return
+    console.log('removing listeners...' + element.id)
+    removeMouseListeners(element)
+    removeKeyListeners(element)
 }
 
-function addMouseListeners( control:PrecisControl ) {
-    addEventListener('mousemove', control.handleMouseMove)
-    addEventListener('mouseup', control.handleMouseUp)
+function addMouseListeners( element:HTMLElement | null ) {
+    if (!element) return
+    element.addEventListener('mousemove', handleMouseMove)
+    element.addEventListener('mouseup', handleMouseUp)
 }
 
-function removeMouseListeners(control:PrecisControl) {
-    removeEventListener('mousemove', control.handleMouseMove)
-    removeEventListener('mouseup', control.handleMouseUp)
+function removeMouseListeners(element:HTMLElement | null) {
+    if (!element) return
+    element.removeEventListener('mousemove', handleMouseMove)
+    element.removeEventListener('mouseup', handleMouseUp)
 }
 
-function addKeyListeners( control:PrecisControl ) {
-    addEventListener('keydown', control.handleModifier)
-    addEventListener('keyup', control.handleModifier)
+function addKeyListeners( element:HTMLElement | null) {
+    if (!element) return
+    element.addEventListener('keydown', handleModifier)
+    element.addEventListener('keyup', handleModifier)
 }
 
-function removeKeyListeners(control:PrecisControl) {
-    removeEventListener('keydown', control.handleModifier)
-    removeEventListener('keyup', control.handleModifier)
+function removeKeyListeners(element:HTMLElement | null) {
+    if (!element) return
+    element.removeEventListener('keydown', handleModifier)
+    element.removeEventListener('keyup', handleModifier)
 }

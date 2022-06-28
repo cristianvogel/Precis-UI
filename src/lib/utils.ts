@@ -1,7 +1,7 @@
 import type {PointsArray, TickMark} from "../types/precisUI";
 import {Default} from "../types/precisUI";
 
-export function clamp(value, range):number {
+export function clamp(value:number , range = [0,1]):number {
     return Math.min(Math.max(value, range[0]), range[1]);
 }
 
