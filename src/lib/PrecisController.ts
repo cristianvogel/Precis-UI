@@ -180,7 +180,7 @@ export class BasicController implements PrecisController, SharedEventHandlers {
 }
 
 
-export class Radial extends BasicController implements BasicController {
+export class Radial extends BasicController {
     background = C.dim
     pointer = true
     tickMarks = true
@@ -190,10 +190,7 @@ export class Radial extends BasicController implements BasicController {
         super();
         Object.assign(this, initialSettings)
         super.id = this.id
-        console.log( Object.entries(this))
-        super.handleMouseDown = super.handleMouseDown.bind(this)
-        super.handleMouseMove = super.handleMouseMove.bind(this)
-        super.handleMouseUp = super.handleMouseUp.bind(this)
+        console.log( 'Constructor -> ' + this.id + ' Method -> ' + this.getMappedValue())
     }
     radialTrack = () => { return (this.getNormValue() * 270) + 230}
     resize(scale: number): void {
@@ -206,6 +203,14 @@ class Slider extends BasicController implements PrecisController {
 }
 
 // 👀 https://medium.com/codex/factory-pattern-type-script-implementation-with-type-map-ea422f38862
+
+const widgetMap = {
+    dial: Radial,
+    fader: Slider
+}
+type WidgetMap = typeof widgetMap
+type WidgetTypes = keyof WidgetMap
+
 /**
 const widgetMap = {
     dial: Radial,
@@ -230,7 +235,7 @@ export type Output = number | boolean | string
 
 
 export interface SharedEventHandlers {
-    handleMouseDown(event: MouseEvent, widget: WidgetTypes): void
+    handleMouseDown(event: MouseEvent): void
     handleMouseMove(event: MouseEvent): void
     handleMouseUp(): void
     handleModifier(event: KeyboardEvent): void
