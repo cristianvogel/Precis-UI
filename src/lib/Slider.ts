@@ -1,4 +1,5 @@
 import type {
+    CommonSettings,
     Output,
     SharedEventHandlers,
     SharedMethods,
@@ -8,7 +9,7 @@ import type {
 import {createEventDispatcher} from "svelte";
 import {PrecisControl} from "./PrecisController";
 
-export interface SliderSettings extends SharedSettings {
+export interface SliderSettings extends CommonSettings {
     id: SliderTag,
     tickMarks: boolean
 }

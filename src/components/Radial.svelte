@@ -70,7 +70,7 @@
         dial.dispatchOutput(dial.getMappedValue(), dial.id);
     })
 
-    $: dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 20)
+    $: dialPointer = radialPoints(dial.radialTrack(), 50, 50, 10, 55, 20)
 </script>
 
 <div class='dialContainer'

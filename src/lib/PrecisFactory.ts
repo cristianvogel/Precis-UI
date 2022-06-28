@@ -1,15 +1,17 @@
+import {BasicController} from "./PrecisController";
+
 export {}
 
 interface PrController {
     getMappedValue(): number
 }
 
-class Dial implements PrController {
+class Dial  extends BasicController implements PrController{
     getMappedValue(): number { return 0
     }
 }
 
-class Fader implements PrController {
+class Fader extends BasicController implements PrController {
     getMappedValue(): number {return 0
     }
 }
@@ -29,16 +31,13 @@ type Keys = keyof typeof widgetMap
 
 type WidgetTypes = typeof widgetMap[Keys]
 
-type ExtractInstanceType<T> = T extends new () => infer R ? R : never
+type ExtractInstanceType<T> = T extends BasicController ? T  : NullCont
 
 class WidgetFactory {
-    static getWidget(k: Keys): ExtractInstanceType<WidgetTypes> {
-        return new widgetMap[k]()
+    static getWidget(k: Keys, initialSettings: CommonSettings): ExtractInstanceType<WidgetTypes> {
+        return new widgetMap[k](initialSettings)
     }
 }
 
-class WidgetService {
-    getMappedValueFrom(widget: Keys) {
-        return WidgetFactory.getWidget(widget).getMappedValue()
-    }
-}
+
+

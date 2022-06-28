@@ -1,6 +1,6 @@
 import {createEventDispatcher} from "svelte";
 import {
-    BoundingRectCSS,
+    BoundingRectCSS, CommonSettings,
     Output,
     PrecisControl,
     SelectorTag,
@@ -11,7 +11,7 @@ import {
 
 type SelectorChoices = Set<{ label: string | number, value: any }>
 
-export interface SelectorSettings extends SharedSettings {
+export interface SelectorSettings extends CommonSettings {
     id: SelectorTag,
     choices: SelectorChoices,
 }

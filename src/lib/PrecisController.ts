@@ -37,7 +37,7 @@ export class PrecisUI implements View, Unique{
         return this.getAll();
     }
 }
-export interface CommonSettings {
+ interface CommonSettings {
     currentValue: number;
     rect:Rect
     rx:number
@@ -68,9 +68,9 @@ interface PrecisController {
     set height(h:number)
 }
 
-
 export class BasicController implements PrecisController, SharedEventHandlers {
-    stateFlags: StateFlags = {precis: false , changing: false}
+    protected  dispatch
+    private _stateFlags: StateFlags = {precis: false , changing: false}
     selected:(HTMLElement | null) = null
     protected clientRect: DOMRect;
     protected currentValue: number;
@@ -81,11 +81,42 @@ export class BasicController implements PrecisController, SharedEventHandlers {
     scale:number
     label:string
     protected background: Tint
+    protected id: string
+    protected value: number
+    protected touchedID: string
 
-    constructor( initialSettings:CommonSettings ) {
-        Object.assign(this, initialSettings)
+    constructor(  ) {
+        this.dispatch = createEventDispatcher()
     }
+
+    get precis(): boolean {
+        return this._stateFlags.precis
+    }
+    set precis( p:boolean) {
+        this._stateFlags.precis = p
+    }
+
+    get changing(): boolean {
+        return this._stateFlags.changing
+    }
+    set changing( p:boolean) {
+        this._stateFlags.changing = p
+    }
+
+    get stateFlags(): StateFlags {
+        return this._stateFlags;
+    }
+
+    set stateFlags(value: StateFlags) {
+        this._stateFlags = {...value};
+    }
+
     dispatchOutput(value: Output, id: string): void {
+        console.log( `dispatch out ${value} ${id}`)
+        this.dispatch('output', {
+            value,
+            id,
+        })
     }
     generateRectCSS(): BoundingRectCSS {
         const aRect:BoundingRectCSS =
@@ -114,13 +145,13 @@ export class BasicController implements PrecisController, SharedEventHandlers {
     set height(h:number) { this.rect.height = toNumber(h) }
     handleModifier(event: KeyboardEvent): void {
     }
-
-    handleMouseDown(event: MouseEvent, widget: WidgetTypes): void {
+    handleMouseDown(event: MouseEvent): void {
         const mode = (event.type)
-        widgetService.setChangingModeOn(widget, mode === 'contextmenu')
+        this.precis = (mode === 'contextmenu')
         this.selected = event.target as HTMLElement
         this.selected.focus()
         addListeners(this)
+        this.dispatch(this.getMappedValue(), this.id)
     }
 
     handleMouseMove(event: MouseEvent): void {
@@ -129,21 +160,21 @@ export class BasicController implements PrecisController, SharedEventHandlers {
         if (dy === 0) {return}
         const {currentValue, height,  taper} = this
         const normValue = this.getNormValue()
-        if (this.stateFlags.precis) {
+        if (this._stateFlags.precis) {
             this.currentValue =
                 clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
         } else {
             this.currentValue =
                 clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
         }
-        // component bound variables, need to dispatch?
-        // value = this.mappedValue
-        // touchedID = this.id
+        // component bound variables, will I need to dispatch these?
+        this.value = this.getMappedValue()
+        this.touchedID = this.id
     }
 
     handleMouseUp(): void {
         this.selected = null
-        this.stateFlags = {precis: false, changing: false}
+        this._stateFlags = {precis: false, changing: false}
         removeListeners(this)
     }
 }
@@ -153,22 +184,18 @@ export class Radial extends BasicController implements BasicController {
     background = C.dim
     pointer = true
     tickMarks = true
-    dispatch = createEventDispatcher()
     id:DialTag = 'dial.0'
 
     constructor(initialSettings) {
-        super(initialSettings);
+        super();
+        Object.assign(this, initialSettings)
+        super.id = this.id
+        console.log( Object.entries(this))
+        super.handleMouseDown = super.handleMouseDown.bind(this)
+        super.handleMouseMove = super.handleMouseMove.bind(this)
+        super.handleMouseUp = super.handleMouseUp.bind(this)
     }
-
     radialTrack = () => { return (this.getNormValue() * 270) + 230}
-
-    dispatchOutput(value: Output, id: string): void {
-        this.dispatch('output', {
-            value,
-            id,
-        })
-    }
-
     resize(scale: number): void {
     }
 }
@@ -179,7 +206,7 @@ class Slider extends BasicController implements PrecisController {
 }
 
 // 👀 https://medium.com/codex/factory-pattern-type-script-implementation-with-type-map-ea422f38862
-
+/**
 const widgetMap = {
     dial: Radial,
     fader: Slider
@@ -189,34 +216,12 @@ type WidgetTypes = keyof WidgetMap
 type Tuples<T> = T extends WidgetTypes ? [T, InstanceType<WidgetMap[T]>] : never;
 type SingleKeys<K> = [K] extends (K extends WidgetTypes ? [K] : never) ? K : never;
 type ClassType<A extends WidgetTypes> = Extract<Tuples<WidgetTypes>, [A, any]>[1];
-
-
 class WidgetFactory {
     static getWidget<K extends WidgetTypes>(k: SingleKeys<K>): ClassType<K>{
-        return new widgetMap[k]()
+        return widgetMap[k]
     }
 }
-
-class WidgetService {
-    getMappedValueFrom<K extends WidgetTypes>(widget: SingleKeys<K>){
-        return WidgetFactory.getWidget(widget).getMappedValue()
-    }
-    getNormValueFrom<K extends WidgetTypes>(widget: SingleKeys<K>){
-        return WidgetFactory.getWidget(widget).getNormValue()
-    }
-    resize<K extends WidgetTypes>(widget: SingleKeys<K>, scale:number, id:string) {
-        return WidgetFactory.getWidget(widget).resize( scale, id)
-    }
-    setPrecisModeOn<K extends WidgetTypes>(widget: SingleKeys<K>, precis:boolean) {
-         WidgetFactory.getWidget(widget).stateFlags.precis = precis;
-    }
-
-    setChangingModeOn<K extends WidgetTypes>(widget: SingleKeys<K>, changing:boolean) {
-         WidgetFactory.getWidget(widget).stateFlags.changing = changing;
-    }
-}
-
-const widgetService = new WidgetService();
+**/
 
 
 // Widget agnostic types

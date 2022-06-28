@@ -1,6 +1,6 @@
 import {createEventDispatcher} from "svelte";
 import {
-    BoundingRectCSS,
+    BoundingRectCSS, CommonSettings,
     Output,
     PrecisControl,
     SharedMethods, SharedSettings,
@@ -8,7 +8,7 @@ import {
 } from "./PrecisController";
 
 
-export interface ReadoutSettings extends SharedSettings {
+export interface ReadoutSettings extends CommonSettings {
     // todo: interface for readout widgets
 }
 
