@@ -3,15 +3,14 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
+    import {Default, DefaultTaper} from "../types/precisUI";
     import type { DialTag, Tint} from "../lib/PrecisController";
-    import {radialPoints, radialTickMarkAt, remap, toNumber} from "../lib/utils";
+    import { radialTickMarkAt, remap, toNumber} from "../lib/utils";
     import {Taper, Rect, Palette as C, Radial} from "../lib/PrecisController";
     import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import { dialStore } from './stores.js'
-    import {get} from "svelte/store";
-    import {addListeners, removeListeners} from "../lib/Listeners";
+    import {widgetStore} from './stores.js'
+    import {addListeners} from "../lib/Listeners";
 
 
     export let
@@ -31,14 +30,12 @@
         pointer:boolean = true,
         tickMarks:boolean = true
 
-
     const rect:Rect = {
         x: toNumber(x),
         y: toNumber(y),
         width: toNumber(width),
         height: toNumber(width)
     }
-
     const taper:Taper = {
         min: toNumber(min),
         max: toNumber(max),
@@ -55,11 +52,16 @@
         taper,
         tickMarks: true,
     }
+
+    // this SHOULD build an array of new positions for the pointer whenever the internal
+    // values change, but it doesn't??
+    $:pointerPlot = dial.spinPointer();
+
     // Construct a new instance and register it in Map store
     // keyed by id (unique we hope)
-
     const dial:Radial = new Radial(settings)
-    get(dialStore).set(dial.id, dial)
+    $widgetStore.set( dial.id, dial)
+
 
     // this is the transform that places the container DIV element
     const containerTransform = function () {
@@ -73,25 +75,24 @@
         dial.resize(dial.scale, dial.id)
     });
 
-   let dialPointer = radialPoints(dial.radialTrack, 50, 50, 10, 55, 20)
-
     onMount( () => {
         dial.dispatchOutput(dial.getMappedValue(), dial.id);
     })
 
      function componentMouseDown(event: MouseEvent ): void {
-        console.info('Element ◻︎ ' + event.target.id + ' ⇢ ' + dial.id)
+        if (!event.target) return
+        console.info('Element ◻︎ ' + event.target + ' ⇢ ' + dial.id)
          const mode = (event.type)
          dial.stateFlags = {
              changing: true,
              precis: (mode === 'contextmenu'),
              focussed: true
         }
-         dial.selected = event.target as HTMLElement | null
+         dial.selected = event.target as HTMLElement
          addListeners(dial.selected)
     }
 
-    function componentMouseLeave(event: MouseEvent) {
+    function componentMouseLeave() {
         dial.focussed=false
     }
 
@@ -107,8 +108,8 @@
      id='{dial.id}-container'
      on:contextmenu|preventDefault={componentMouseDown}
      on:mousedown|preventDefault={componentMouseDown}
-     on:mouseenter|preventDefault={componentMouseEnter}
-     on:mouseleave={ componentMouseLeave }
+     on:mouseenter|preventDefault={componentMouseEnter }
+     on:mouseleave={componentMouseLeave}
      style={containerTransform()}
 >
     <!--{@debug dial}-->
@@ -149,15 +150,16 @@
                 {/each}
             </g>
                 {/if}
-            {#each dialPointer as {x, y}, i}
+
+            {#each pointerPlot as {x, y}, i}
                 {@const width = dial.precis ? 10 : 5}
-                {#if (i < dialPointer.length - 4)}
+                {#if (i < pointerPlot.length - 4)}
                     <polyline id='{dial.id}-pointer'
                               points={`${x},${y}, 50,50 `}
                               stroke-width={width - (i/2)}
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
-                {#if (i === dialPointer.length - 1) && dial.focussed}
+                {#if (i === pointerPlot.length - 1) && dial.focussed}
                     <circle id='{id}-LED'
                             cx=90% cy=90% r=3
                             fill=aqua

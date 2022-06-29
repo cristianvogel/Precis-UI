@@ -1,14 +1,14 @@
 
 import {clamp, remap} from "./utils";
-import {get} from "svelte/store";
-import { dialStore } from '../components/stores.js'
+import { widgetStore } from '../components/stores.js'
 import {removeListeners} from "./Listeners";
+import {get} from "svelte/store";
 
 export function handleModifier(event: KeyboardEvent): void {
 }
 
 export function handleMouseMove(event: MouseEvent): void {
-    get(dialStore).forEach( update )
+    get(widgetStore).forEach( update ) // retrieve the store which is a Map, then update all the widgets in there
 
     function update(_control, _controlID) {
         if (!_control.changing || !_control.focussed) {
@@ -20,29 +20,31 @@ export function handleMouseMove(event: MouseEvent): void {
         if (dy === 0) {
             return
         }
-        const {currentValue, height, taper} = _control
-       // console.log(`◎ ${_controlID} mapped value is ${_control.getMappedValue()} `)
-        const normValue:number = _control.getNormValue()
-        if (_control.precis) {
+        const {height, taper, precis} = _control
+
+        if (precis) {
             _control.currentValue =
-                clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
+                clamp(_control.currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
         } else {
             _control.currentValue =
-                clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
+                clamp(_control.currentValue + (-dy * (remap(_control.getNormValue(), 0, 1, 1, 0.25))), [0, height])
         }
         _control.dispatchOutput( _control.getMappedValue(), _controlID)
-        get(dialStore).set(_controlID, _control)
+        // @ts-ignore
+        // do I need to now update the widget in the widget store? - not sure if is passed by reference...
+        get(widgetStore).set( _controlID, _control)
     }
 }
 
 
 export function handleMouseUp(event:MouseEvent):void {
-    get(dialStore).forEach( update )
+    get(widgetStore).forEach( update )
 
     function update(_control, _controlID) {
         removeListeners(_control.selected as HTMLElement | null)
       //  _control.dispatchOutput( _control.getMappedValue(), _controlID)
         _control.changing = false
         _control.precis = false
+        get(widgetStore).set( _controlID, _control)
     }
 }

@@ -13,9 +13,7 @@
 <script lang="ts">
 	import {Default} from "./types/precisUI";
 	import {Writable, writable} from 'svelte/store';
-	import {setContext} from "svelte";
 	import Radial from "./components/Radial.svelte";
-	import {PrecisUI} from "./lib/PrecisController";
 
 	let rescaleDials:Writable<number> = writable( Default.DIAL_SCALE_FACTOR )
 	let rescaleFaders:Writable<number> = writable( Default.FADER_SCALE_FACTOR)
@@ -26,9 +24,6 @@
 		readout.set(event.detail.value)
 		touchedID.set(event.detail.id)
 	};
-
-	const precis:PrecisUI = new PrecisUI( )
-	setContext('precisUI', precis )
 
 </script>
 
