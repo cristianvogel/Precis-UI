@@ -2,8 +2,10 @@ import { Writable, writable} from 'svelte/store';
 import type {BasicController} from '../lib/PrecisController'
 import type {PointsArray} from "../types/precisUI";
 
-export const widgetStore:Writable<Map<string, BasicController>>  =
-    writable( new Map() );
+type WidgetEntry = Map<string, BasicController> // widget.id , instance
+export const WidgetStore:Writable<WidgetEntry>  =
+    writable( new Map() )
 
-export let dialPointer:Writable<PointsArray> =
-    writable([])
+type PointerPlot = Map<string,PointsArray> // widget.id , array of points
+export const PointerPlotStore:Writable<PointerPlot> =
+    writable( new Map() )

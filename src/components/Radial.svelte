@@ -3,13 +3,13 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper} from "../types/precisUI";
+    import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
     import type { DialTag, Tint} from "../lib/PrecisController";
     import { radialTickMarkAt, remap, toNumber} from "../lib/utils";
-    import {Taper, Rect, Palette as C, Radial} from "../lib/PrecisController";
+    import {Taper, Rect, Palette as C, Radial, BasicController} from "../lib/PrecisController";
     import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import {widgetStore} from './stores.js'
+    import {PointerPlotStore, WidgetStore} from './stores.js'
     import {addListeners} from "../lib/Listeners";
 
 
@@ -53,15 +53,32 @@
         tickMarks: true,
     }
 
-    // this SHOULD build an array of new positions for the pointer whenever the internal
-    // values change, but it doesn't??
-    $:pointerPlot = dial.spinPointer();
 
-    // Construct a new instance and register it in Map store
-    // keyed by id (unique we hope)
-    const dial:Radial = new Radial(settings)
-    $widgetStore.set( dial.id, dial)
 
+    // Construct a new instance and compute the current PointsArray
+    // used to plot the radial pointer
+    let dial:Radial | BasicController = new Radial(settings)
+    let pointerPlot:PointsArray
+
+    function addSelfToRegistry() {
+        $WidgetStore.set(dial.id, dial)
+    }
+
+    function addPointerPlotToStore( ) {
+       const plotPoints:PointsArray =  dial.spinPointer()
+        $PointerPlotStore.set( dial.id, plotPoints)
+        $PointerPlotStore = $PointerPlotStore
+    }
+
+    function getPointerPlotFromStore():PointsArray {
+        let plot = $PointerPlotStore.get( dial.id )
+        if (!plot) {console.warn( 'no plot in store'); return }
+        $PointerPlotStore = $PointerPlotStore
+      return plot;
+    }
+
+    addPointerPlotToStore()
+    $: pointerPlot = getPointerPlotFromStore();
 
     // this is the transform that places the container DIV element
     const containerTransform = function () {
@@ -70,14 +87,6 @@
                           background: ${dial.background};`
         return newStyle
     };
-
-    afterUpdate(() => {
-        dial.resize(dial.scale, dial.id)
-    });
-
-    onMount( () => {
-        dial.dispatchOutput(dial.getMappedValue(), dial.id);
-    })
 
      function componentMouseDown(event: MouseEvent ): void {
         if (!event.target) return
@@ -102,6 +111,16 @@
         dial.focussed=true
     }
 
+    afterUpdate(() => {
+        dial.resize(dial.scale, dial.id)
+    });
+
+    onMount( () => {
+        addSelfToRegistry()
+        dial.dispatchOutput(dial.getMappedValue(), dial.id);
+    })
+
+
 </script>
 
 <div class='dialContainer'
@@ -110,6 +129,7 @@
      on:mousedown|preventDefault={componentMouseDown}
      on:mouseenter|preventDefault={componentMouseEnter }
      on:mouseleave={componentMouseLeave}
+     on:mousemove={addPointerPlotToStore}
      style={containerTransform()}
 >
     <!--{@debug dial}-->

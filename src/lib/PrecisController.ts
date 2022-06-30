@@ -2,6 +2,7 @@
 import {radialPoints, remap, toNumber} from "./utils";
 import {createEventDispatcher} from "svelte";
 import {Palette as C} from "../lib/PrecisController";
+import type {PointsArray} from "../types/precisUI";
 
 
 interface PrecisController {
@@ -37,6 +38,7 @@ export class BasicController implements PrecisController {
     label: string
     background: Tint
     id: string
+    protected _radialPoints:PointsArray;
 
     constructor() {
         this.dispatch = createEventDispatcher()
@@ -105,7 +107,7 @@ export class BasicController implements PrecisController {
     }
 
     dispatchOutput(value: Output, id: string): void {
-        console.log(`dispatch out ${value} ${id}`)
+     //   console.log(`dispatch out ${value} ${id}`)
         this.dispatch('output', {
             value,
             id,
@@ -127,7 +129,8 @@ export class BasicController implements PrecisController {
     }
 
     spinPointer() {
-        return radialPoints(this.getRadialTrack(), 50, 50, 10, 55, 20)
+        this._radialPoints = radialPoints(this.getRadialTrack(), 50, 50, 10, 55, 20)
+        return this._radialPoints
     }
 
     getRadialTrack(): number {
