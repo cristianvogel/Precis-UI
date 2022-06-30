@@ -3,13 +3,13 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
+    import {Default, DefaultTaper, Point, PointsArray} from "../types/precisUI";
     import type { DialTag, Tint} from "../lib/PrecisController";
     import { radialTickMarkAt, remap, toNumber} from "../lib/utils";
     import {Taper, Rect, Palette as C, Radial, BasicController} from "../lib/PrecisController";
     import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import {PointerPlotStore, WidgetStore} from './stores.js'
+    import {PointerPlotStore, WidgetStore, MouseLocationStore} from './stores.js'
     import {addListeners} from "../lib/Listeners";
 
 
@@ -60,6 +60,7 @@
     let dial:Radial | BasicController = new Radial(settings)
     let pointerPlot:PointsArray
     let pointerLength:number
+    let lockedMousePoint:Point
     let registrySize
 
     function addSelfToRegistry() {
@@ -70,11 +71,14 @@
        const plotPoints:PointsArray =  dial.spinPointer()
         $PointerPlotStore.set( dial.id, plotPoints)
         dial=dial
+      //  lockedMousePoint=lockedMousePoint
     }
 
     addPointerPlotToStore()
     $:pointerPlot =  dial._radialPoints
     $:pointerLength = dial._radialPoints.length
+    $:lockedMousePoint =  $MouseLocationStore
+
     // this is the transform that places the container DIV element
     const containerTransform = function () {
         const newStyle =`${dial.generateRectCSS()};
@@ -122,7 +126,16 @@
     })
 
 </script>
-
+{#if dial.changing}
+<div in:fade out:fade style="z-index:1000;position: absolute;
+top:{lockedMousePoint.y}px;
+left:{lockedMousePoint.x}px;
+background-color: transparent; color:whitesmoke; opacity:0.5;
+transform:
+translateY( {(((dial.getNormValue()*-400)%dial.height) / 16)}px)
+scale(2)">
+       ⦿
+</div>{/if}
 <div class='dialContainer'
      id='{dial.id}-container'
      on:contextmenu|preventDefault={componentMouseDown}
@@ -185,7 +198,6 @@
                             in:fade out:fade/>
                 {/if}
             {/each}
-
             <text id='{dial.id}-readout'
                   class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                   style={ dial.focussed ? 'fill: aqua;' : '' }>

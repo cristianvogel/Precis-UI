@@ -2,15 +2,23 @@ import {clamp, remap} from "./utils";
 import {removeListeners} from "./Listeners";
 import type {BasicController} from "./PrecisController";
 import type {WidgetWithKey} from "../types/precisUI";
+import {get} from "svelte/store";
+import {MouseLocationStore} from "../components/stores";
 
-export function handleMouseMove(event: MouseEvent, widget: BasicController): void {
+function renderPointerImage(ev) {
+  // draw a non-standard pointer
+    MouseLocationStore.set( {x: ev.x, y: ev.y} )
+}
+
+export function handleMouseDrag(event: MouseEvent, widget: BasicController): void {
     if (!widget) return
     const caller: WidgetWithKey = {id: widget.id, widget, event}
-    updateForMouseMove(caller)
+    updatesForMouseDrag(caller)
+    renderPointerImage(event)
     dispatch(widget.id, widget)
 }
 
-function updateForMouseMove(caller) {
+function updatesForMouseDrag(caller) {
     const {id, widget, event} = caller
     if (!widget.changing || !widget.focussed) {
         return
@@ -33,14 +41,14 @@ function updateForMouseMove(caller) {
     return {id, widget}
 }
 
-export function handleMouseUp(event: MouseEvent, widget: BasicController): void {
+export function handleMouseDragEnd(event: MouseEvent, widget: BasicController): void {
     if (!widget) return
     const caller: WidgetWithKey = {id: widget.id, widget, event}
-    updateForMouseUp(caller)
+    updatesForMouseDragEnd(caller)
     dispatch(widget.id, widget)
 }
 
-function updateForMouseUp(caller) {
+function updatesForMouseDragEnd(caller) {
     const {id, widget, event} = caller
     if (!widget) return
     removeListeners(widget.selected, widget)

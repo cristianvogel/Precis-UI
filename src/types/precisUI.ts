@@ -36,6 +36,6 @@ export type BoundingRectCSS =
 			height:${number}px;`
 
 // Data structures
-type Point = { x: number, y: number}
+export type Point = { x: number, y: number}
 export type PointsArray = Array<Point>
 export type WidgetWithKey = { id:string, widget:BasicController, event?:Event}
