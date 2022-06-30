@@ -1,6 +1,8 @@
-// Precis.ui
+// Precis.UI
 
 // Geometry Defs
+import type {BasicController} from "../lib/PrecisController";
+
 export enum Default {
     EMPTY,
     SCALE,
@@ -36,3 +38,4 @@ export type BoundingRectCSS =
 // Data structures
 type Point = { x: number, y: number}
 export type PointsArray = Array<Point>
+export type WidgetWithKey = { id:string, widget:BasicController, event?:Event}

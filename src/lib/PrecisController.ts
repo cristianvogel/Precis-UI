@@ -12,7 +12,7 @@ interface PrecisController {
      */
     generateRectCSS(): BoundingRectCSS
     resize(scale: number, id: string): void;
-    dispatchOutput(value: Output, id: string): void
+    dispatchOutput(id: string, value: Output, ): void
     getNormValue(): number
     getMappedValue(): number
     get x(): number
@@ -106,7 +106,7 @@ export class BasicController implements PrecisController {
         this.rect.height = toNumber(h)
     }
 
-    dispatchOutput(value: Output, id: string): void {
+    dispatchOutput(id: string, value: Output, ): void {
         this.dispatch('output', {
             value,
             id,

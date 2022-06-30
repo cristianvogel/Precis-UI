@@ -10,7 +10,7 @@
     import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from './stores.js'
-    import {addListeners, removeListeners} from "../lib/Listeners";
+    import {addListeners} from "../lib/Listeners";
 
 
     export let
@@ -59,10 +59,11 @@
     // used to plot the radial pointer
     let dial:Radial | BasicController = new Radial(settings)
     let pointerPlot:PointsArray
+    let pointerLength:number
+    let registrySize
 
     function addSelfToRegistry() {
         $WidgetStore.set(dial.id, dial)
-        dial=dial
     }
 
     function addPointerPlotToStore( ) {
@@ -72,10 +73,8 @@
     }
 
     addPointerPlotToStore()
-    $: pointerPlot =  dial._radialPoints
-    $: pointerLength = dial._radialPoints.length
-
-
+    $:pointerPlot =  dial._radialPoints
+    $:pointerLength = dial._radialPoints.length
     // this is the transform that places the container DIV element
     const containerTransform = function () {
         const newStyle =`${dial.generateRectCSS()};
@@ -109,7 +108,7 @@
     }
 
     afterUpdate(() => {
-         // maybe needs to update itself in the registry
+         // maybe widget needs to update itself in the registry
         // after changes?
       //  dial.resize(dial.scale, dial.id)
      //   addSelfToRegistry()
@@ -117,7 +116,9 @@
 
     onMount( () => {
         addSelfToRegistry()
-        dial.dispatchOutput(dial.getMappedValue(), dial.id);
+       $: registrySize = $WidgetStore.size
+        console.log( 'Widget Store size ▷ ' + $WidgetStore.size)
+        dial.dispatchOutput( dial.id, dial.getMappedValue(),);
     })
 
 </script>
@@ -143,7 +144,7 @@
             >
                 <stop offset="5%" stop-color="darkblue"/>
                 <!-- todo: abstract out the colour assign -->
-                <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan ].at(1)}/> //at(dial.index%4)
+                <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan ].at(registrySize%4)}/>
                 />
                 <stop offset="99%" stop-color="aquamarine"/>
             </radialGradient>

@@ -9,22 +9,10 @@ export function addListeners(element:HTMLElement | null, widget:BasicController)
     addKeyListeners(element)
 }
 
-export function removeListeners(element:HTMLElement | null, widget:BasicController) {
-    if (!element) return
-    console.log('removing listeners...' + element.id)
-    removeMouseListeners(element, widget)
-    removeKeyListeners(element)
-}
-
 function addMouseListeners( element:HTMLElement, widget:BasicController ) {
+    if (!element) return
     element.addEventListener('mousemove', (ev)=>handleMouseMove(ev, widget))
     element.addEventListener('mouseup', (ev)=>handleMouseUp(ev,widget))
-}
-
-function removeMouseListeners(element: HTMLElement, widget: BasicController) {
-    if (!element) return
-    element.removeEventListener('mousemove', (ev)=>handleMouseMove(ev, widget))
-    element.removeEventListener('mouseup', (ev)=>handleMouseUp(ev,widget))
 }
 
 function addKeyListeners( element:HTMLElement ) {
@@ -33,8 +21,22 @@ function addKeyListeners( element:HTMLElement ) {
     element.addEventListener('keyup', handleModifier)
 }
 
+export function removeListeners(element:HTMLElement | null, widget:BasicController) {
+    if (!element) return
+    console.log('removing listeners...' + element.id)
+    removeMouseListeners(element, widget)
+    removeKeyListeners(element)
+}
+
+function removeMouseListeners(element: HTMLElement, widget: BasicController) {
+    if (!element) return
+    element.removeEventListener('mousemove', (ev)=>handleMouseMove(ev, widget))
+    element.removeEventListener('mouseup', (ev)=>handleMouseUp(ev,widget))
+}
+
 function removeKeyListeners(element:HTMLElement ) {
     if (!element) return
     element.removeEventListener('keydown', handleModifier)
     element.removeEventListener('keyup', handleModifier)
 }
+

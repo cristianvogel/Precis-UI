@@ -29,7 +29,7 @@ export class Slider extends PrecisControl implements SharedMethods, SharedEventH
         //
     }
 
-    dispatchOutput(value: Output, id: string): void {
+    dispatchOutput(id: string, value: Output): void {
         this.dispatch('output', {
             value,
             id,

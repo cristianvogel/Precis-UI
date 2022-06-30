@@ -31,7 +31,7 @@ export class Selector extends PrecisControl implements SharedMethods {
         //
     }
 
-    dispatchOutput(value: Output, id: string): void {
+    dispatchOutput( id: string, value: Output,): void {
         this.dispatch('output', {
             value,
             id,
