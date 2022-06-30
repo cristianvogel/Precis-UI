@@ -107,7 +107,6 @@ export class BasicController implements PrecisController {
     }
 
     dispatchOutput(value: Output, id: string): void {
-     //   console.log(`dispatch out ${value} ${id}`)
         this.dispatch('output', {
             value,
             id,

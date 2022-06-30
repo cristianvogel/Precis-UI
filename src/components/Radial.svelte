@@ -10,7 +10,7 @@
     import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from './stores.js'
-    import {addListeners} from "../lib/Listeners";
+    import {addListeners, removeListeners} from "../lib/Listeners";
 
 
     export let
@@ -62,6 +62,7 @@
 
     function addSelfToRegistry() {
         $WidgetStore.set(dial.id, dial)
+        dial=dial
     }
 
     function addPointerPlotToStore( ) {
@@ -70,14 +71,10 @@
         dial=dial
     }
 
-    function getPointerPlotFromStore():PointsArray {
-        let plot = $PointerPlotStore.get( dial.id )
-        if (!plot) {console.warn( 'no plot in store'); return }
-      return plot;
-    }
-
     addPointerPlotToStore()
-    $: pointerPlot = dial.spinPointer();
+    $: pointerPlot =  dial._radialPoints
+    $: pointerLength = dial._radialPoints.length
+
 
     // this is the transform that places the container DIV element
     const containerTransform = function () {
@@ -97,11 +94,12 @@
              focussed: true
         }
          dial.selected = event.target as HTMLElement
-         addListeners(dial.selected)
+         addListeners(dial.selected, dial)
     }
 
     function componentMouseLeave() {
-        dial.focussed=false
+         if (dial.changing) return
+         dial.focussed= false
     }
 
     function componentMouseEnter(event: MouseEvent) {
@@ -111,14 +109,16 @@
     }
 
     afterUpdate(() => {
-        dial.resize(dial.scale, dial.id)
+         // maybe needs to update itself in the registry
+        // after changes?
+      //  dial.resize(dial.scale, dial.id)
+     //   addSelfToRegistry()
     });
 
     onMount( () => {
         addSelfToRegistry()
         dial.dispatchOutput(dial.getMappedValue(), dial.id);
     })
-
 
 </script>
 
@@ -169,22 +169,22 @@
                 {/each}
             </g>
                 {/if}
-
             {#each pointerPlot as {x, y}, i}
                 {@const width = dial.precis ? 10 : 5}
-                {#if (i < pointerPlot.length - 4)}
+                {#if (i < pointerLength - 4)}
                     <polyline id='{dial.id}-pointer'
                               points={`${x},${y}, 50,50 `}
                               stroke-width={width - (i/2)}
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
-                {#if (i === pointerPlot.length - 1) && dial.focussed}
+                {#if (i === pointerLength - 1) && dial.focussed}
                     <circle id='{id}-LED'
                             cx=90% cy=90% r=3
                             fill=aqua
                             in:fade out:fade/>
                 {/if}
             {/each}
+
             <text id='{dial.id}-readout'
                   class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                   style={ dial.focussed ? 'fill: aqua;' : '' }>

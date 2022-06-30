@@ -1,29 +1,30 @@
 
 import {handleModifier, handleMouseMove, handleMouseUp} from "./Events";
+import type {BasicController} from "./PrecisController";
 
-export function addListeners(element:HTMLElement | null) {
+export function addListeners(element:HTMLElement | null, widget:BasicController) {
     if (!element) return
     console.log('adding listeners...' + element.id)
-    addMouseListeners(element)
+    addMouseListeners(element, widget)
     addKeyListeners(element)
 }
 
-export function removeListeners(element:HTMLElement | null) {
+export function removeListeners(element:HTMLElement | null, widget:BasicController) {
     if (!element) return
     console.log('removing listeners...' + element.id)
-    removeMouseListeners(element)
+    removeMouseListeners(element, widget)
     removeKeyListeners(element)
 }
 
-function addMouseListeners( element:HTMLElement ) {
-    element.addEventListener('mousemove', handleMouseMove)
-    element.addEventListener('mouseup', handleMouseUp)
+function addMouseListeners( element:HTMLElement, widget:BasicController ) {
+    element.addEventListener('mousemove', (ev)=>handleMouseMove(ev, widget))
+    element.addEventListener('mouseup', (ev)=>handleMouseUp(ev,widget))
 }
 
-function removeMouseListeners(element:HTMLElement ) {
+function removeMouseListeners(element: HTMLElement, widget: BasicController) {
     if (!element) return
-    element.removeEventListener('mousemove', handleMouseMove)
-    element.removeEventListener('mouseup', handleMouseUp)
+    element.removeEventListener('mousemove', (ev)=>handleMouseMove(ev, widget))
+    element.removeEventListener('mouseup', (ev)=>handleMouseUp(ev,widget))
 }
 
 function addKeyListeners( element:HTMLElement ) {
