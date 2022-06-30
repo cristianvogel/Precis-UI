@@ -67,18 +67,17 @@
     function addPointerPlotToStore( ) {
        const plotPoints:PointsArray =  dial.spinPointer()
         $PointerPlotStore.set( dial.id, plotPoints)
-        $PointerPlotStore = $PointerPlotStore
+        dial=dial
     }
 
     function getPointerPlotFromStore():PointsArray {
         let plot = $PointerPlotStore.get( dial.id )
         if (!plot) {console.warn( 'no plot in store'); return }
-        $PointerPlotStore = $PointerPlotStore
       return plot;
     }
 
     addPointerPlotToStore()
-    $: pointerPlot = getPointerPlotFromStore();
+    $: pointerPlot = dial.spinPointer();
 
     // this is the transform that places the container DIV element
     const containerTransform = function () {

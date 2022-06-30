@@ -29,7 +29,7 @@ export function handleMouseMove(event: MouseEvent): void {
             _control.currentValue =
                 clamp(_control.currentValue + (-dy * (remap(_control.getNormValue(), 0, 1, 1, 0.25))), [0, height])
         }
-        get(PointerPlotStore).set(  _controlID, _control.spinPointer()  )
+     //   get(PointerPlotStore).set(  _controlID, _control.spinPointer()  )
         _control.dispatchOutput( _control.getMappedValue(), _controlID)
     }
 }
