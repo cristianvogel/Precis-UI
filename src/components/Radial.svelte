@@ -4,14 +4,19 @@
     // @neverenginelabs
 
     import {Default, DefaultTaper, Point, PointsArray} from "../types/precisUI";
-    import type { DialTag, Tint} from "../lib/PrecisController";
-    import { radialTickMarkAt, remap, toNumber} from "../lib/utils";
-    import {Taper, Rect, Palette as C, Radial, BasicController} from "../lib/PrecisController";
+    import type {DialTag, Tint} from "../lib/PrecisController";
+    import {BasicController, Palette as C, Radial, Rect, Taper} from "../lib/PrecisController";
+    import {radialTickMarkAt, remap, toNumber} from "../lib/utils";
     import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import {PointerPlotStore, WidgetStore, MouseLocationStore} from './stores.js'
+    import {MouseLocationStore, PointerPlotStore, WidgetStore} from './stores.js'
     import {addListeners} from "../lib/Listeners";
 
+    let gearedValue;
+    let offsetMap;
+    let sinMap;
+    let marks;
+    let numericalReadout = true;
 
     export let
         min:number = DefaultTaper.MIN,
@@ -25,7 +30,6 @@
         rx:number = Default.RX,
         id:DialTag = 'dial.0',
         label:string = '',
-        touchedID:string = '',
         value:number = 0,
         pointer:boolean = true,
         tickMarks:boolean = true,
@@ -42,6 +46,7 @@
         max: toNumber(max),
         fineStep: toNumber(fineStep)
     };
+
     const settings = {
         currentValue: value,
         id,
@@ -54,11 +59,9 @@
         tickMarks: true,
     }
 
-
-
     // Construct a new instance and compute the current PointsArray
     // used to plot the radial pointer
-    let dial:Radial | BasicController = new Radial(settings)
+    let dial:Radial = new Radial(settings)
     let pointerPlot:PointsArray
     let pointerLength:number
     let lockedMousePoint:Point
@@ -72,21 +75,19 @@
        const plotPoints:PointsArray =  dial.spinPointer()
         $PointerPlotStore.set( dial.id, plotPoints)
         dial=dial
-      //  lockedMousePoint=lockedMousePoint
     }
 
     addPointerPlotToStore()
-    $:pointerPlot =  dial._radialPoints
-    $:pointerLength = dial._radialPoints.length
+    $:pointerPlot =  dial.radialPoints
+    $:pointerLength = dial.radialPoints.length
     $:lockedMousePoint =  $MouseLocationStore
 
-    // this is the transform that places the container DIV element
+    // this is the transform which renders the container DIV element
     const containerTransform = function () {
-        const newStyle =`${dial.generateRectCSS()};
-                          transform: scale(${dial.scale});
-                          background: ${dial.background};`
-        return newStyle
-    };
+        return `${dial.generateRectCSS()};
+                  transform: scale(${dial.scale});
+                  background: ${dial.background};`
+    }
 
      function componentMouseDown(event: MouseEvent ): void {
         if (!event.target) return
@@ -126,10 +127,26 @@
         dial.dispatchOutput( dial.id, dial.getMappedValue(),);
     })
 
-
-
 </script>
 
+<!-- locked pointer animation-->
+{#if dial.changing && animatedMouse}
+    {@const value = dial.getNormValue()}
+    {@const gearedValue = (value * -200) % 20}
+    {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
+    {@const sinMap = Math.sin(Math.PI * offsetMap)}
+    <div class="visPointerLock"  >
+        <svg in:fade out:fade
+             transform= "translate( {dial.rect.x} , {dial.rect.y - (dial.height / 2) }  )" >
+            <g stroke-width='1px'
+               opacity={Math.abs(sinMap) + 0.1}
+               transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
+                            scale(1, {Math.abs(sinMap)  + 0.125} )"
+            > <text fill={C.aquaLight}>{dial.getMappedValue().toPrecision(dial.precis ? 6 : 3)}</text>
+            </g>
+        </svg>
+    </div>
+{/if}
 
 <div class='dialContainer'
      id='{dial.id}-container'
@@ -138,9 +155,9 @@
      on:mouseenter|preventDefault={componentMouseEnter }
      on:mouseleave={componentMouseLeave}
      on:mousemove={addPointerPlotToStore}
+     on:mouseup={()=>dial.changing=false}
      style={containerTransform()}
 >
-
 
     <svg transform=scale(0.9)>
         <defs id='{dial.id}-gradients'>
@@ -166,23 +183,6 @@
                     cy=50% fill=#112211
                     r={(dial.rx * 0.9) +'rem'} />
         </g>
-
-<!-- inner pointer animation-->
-            {#if dial.changing && animatedMouse}
-                {@const value = dial.getNormValue()}
-                {@const gearedValue = (value * -200) % 20}
-                {@const offsetMap = remap(gearedValue, -10, 10, -0.5, 0.6)}
-                {@const sinMap = Math.sin(Math.PI * offsetMap)}
-                <svg in:fade out:fade class="visPointerLock" x="25%" y="95%" >
-                    <g   stroke-width= '1px'
-                         opacity = {Math.abs(sinMap)}
-                         transform = "translate ( 0 {(gearedValue * 4)} )
-                            scale( 1, {(Math.abs(sinMap) * gearedValue) + 1} )"
-                    >
-                        <line x1="0" x2="50%" y1="0" y2="0" stroke=green></line>
-                    </g>
-                </svg>
-            {/if}
 
 <!-- circle ring   -->
             <g id='{dial.id}-colourRing' stroke-width=8>
@@ -231,11 +231,14 @@
             {/each}
             </g>
 <!-- readouts -->
-            <text id='{dial.id}-readout'
-                  class={ dial.precis ? 'readout dial precis' : 'readout dial' }
-                  style={ dial.focussed ? 'fill: aqua;' : '' }>
-                  {dial.getMappedValue().toPrecision(dial.precis ? 6 : 3)}{dial.precis ? '⋯' : ' ▹'}
-            </text>
+        {#if (numericalReadout && !dial.changing) }
+            <g in:fade out:fade>
+                <text id='{dial.id}-readout'
+                      class={ dial.precis ? 'readout dial precis' : 'readout dial' }
+                      style={ dial.focussed ? 'fill: aqua;' : '' }>
+                      {dial.getMappedValue().toPrecision(dial.precis ? 6 : 3)}{dial.precis ? '⋯' : ' ▹'}
+                </text>
+            </g>
             <g id='{dial.id}-label'>
                 <text class:label={dial.label}
                       x="50%" y="5%"
@@ -244,8 +247,10 @@
                     {dial.label}
                 </text>
             </g>
+            {/if}
     </svg>
 </div>
+
 
 <style>
     svg {
@@ -291,6 +296,7 @@
         position: absolute;
         background-color: transparent;
         font-size: xx-large;
+        z-index: 100;
     }
 
 </style>
