@@ -69,3 +69,6 @@ export function radialTickMarkAt( i:number,
 export function toNumber( value: string|number): number {
     return typeof value !== 'number' ? Number.parseFloat(value) : value;
 }
+
+// https://thi.ng/
+export const roundTo = (x: number, prec = 1) => Math.round(x / prec) * prec;

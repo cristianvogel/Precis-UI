@@ -3,13 +3,13 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper, Point, PointsArray} from "../types/precisUI";
+    import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
     import type {DialTag, Tint} from "../lib/PrecisController";
-    import {BasicController, Palette as C, Radial, Rect, Taper} from "../lib/PrecisController";
+    import {Palette as C, Radial, Rect, Taper} from "../lib/PrecisController";
     import {radialTickMarkAt, remap, toNumber} from "../lib/utils";
     import {afterUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import {MouseLocationStore, PointerPlotStore, WidgetStore} from './stores.js'
+    import { PointerPlotStore, WidgetStore} from './stores.js'
     import {addListeners} from "../lib/Listeners";
 
     let gearedValue;
@@ -17,6 +17,9 @@
     let sinMap;
     let marks;
     let numericalReadout = true;
+    let pointerPlot:PointsArray
+    let pointerLength:number
+    let registrySize
 
     export let
         min:number = DefaultTaper.MIN,
@@ -33,7 +36,7 @@
         value:number = 0,
         pointer:boolean = true,
         tickMarks:boolean = true,
-        animatedMouse:boolean = true
+        animatedReadout:boolean = true
 
     const rect:Rect = {
         x: toNumber(x),
@@ -51,7 +54,7 @@
         currentValue: value,
         id,
         label,
-        pointer: false,
+        pointer: true,
         rect,
         rx,
         scale,
@@ -59,17 +62,58 @@
         tickMarks: true,
     }
 
-    // Construct a new instance and compute the current PointsArray
-    // used to plot the radial pointer
+    // Construct a new instance of a Radial and compute
+    // the current PointsArray used to plot the radial polyline
     let dial:Radial = new Radial(settings)
-    let pointerPlot:PointsArray
-    let pointerLength:number
-    let lockedMousePoint:Point
-    let registrySize
 
-    function addSelfToRegistry() {
-        $WidgetStore.set(dial.id, dial)
-    }
+
+    // these initialise functions are working fine like this for now
+    // 😖 I have tried to refactor, but seems to get complicated
+    // with the reactivity.
+    const initialise = function () {
+
+        function addSelfToRegistry() {
+            $WidgetStore.set(dial.id, dial)
+        }
+
+        // this is the transform which renders the container DIV element
+        const containerTransform = function () {
+            return `${dial.generateRectCSS()};
+                  transform: scale(${dial.scale});
+                  background: ${dial.background};`
+        }
+
+        function componentMouseDown(event: MouseEvent): void {
+            if (!event.target) return
+            console.info('Element ◻︎ ' + event.target + ' ⇢ ' + dial.id)
+            const mode = (event.type)
+            dial.stateFlags = {
+                changing: true,
+                precis: (mode === 'contextmenu'),
+                focussed: true
+            }
+            dial.selected = event.target as HTMLElement
+            addListeners(dial.selected, dial)
+        }
+
+        function componentMouseLeave() {
+            if (dial.changing) return
+            dial.focussed = false
+        }
+
+        function componentMouseEnter(event: MouseEvent) {
+            dial.selected = event.target as HTMLElement
+            dial.selected.focus()
+            dial.focussed = true
+        }
+        return {
+            addSelfToRegistry,
+            containerTransform,
+            componentMouseDown,
+            componentMouseLeave,
+            componentMouseEnter
+        };
+    };
 
     function addPointerPlotToStore( ) {
        const plotPoints:PointsArray =  dial.spinPointer()
@@ -77,48 +121,21 @@
         dial=dial
     }
 
+    const { addSelfToRegistry,
+            containerTransform,
+            componentMouseDown,
+            componentMouseLeave,
+            componentMouseEnter } = initialise();
+
     addPointerPlotToStore()
     $:pointerPlot =  dial.radialPoints
     $:pointerLength = dial.radialPoints.length
-    $:lockedMousePoint =  $MouseLocationStore
 
-    // this is the transform which renders the container DIV element
-    const containerTransform = function () {
-        return `${dial.generateRectCSS()};
-                  transform: scale(${dial.scale});
-                  background: ${dial.background};`
-    }
-
-     function componentMouseDown(event: MouseEvent ): void {
-        if (!event.target) return
-        console.info('Element ◻︎ ' + event.target + ' ⇢ ' + dial.id)
-         const mode = (event.type)
-         dial.stateFlags = {
-             changing: true,
-             precis: (mode === 'contextmenu'),
-             focussed: true
-        }
-         dial.selected = event.target as HTMLElement
-         addListeners(dial.selected, dial)
-    }
-
-    function componentMouseLeave() {
-         if (dial.changing) return
-         dial.focussed= false
-    }
-
-    function componentMouseEnter(event: MouseEvent) {
-        dial.selected = event.target as HTMLElement
-        dial.selected.focus()
-        dial.focussed=true
-    }
-
-    afterUpdate(() => {
+    // afterUpdate(() => {
          // maybe widget needs to update itself in the registry
         // after changes?
       //  dial.resize(dial.scale, dial.id)
      //   addSelfToRegistry()
-    });
 
     onMount( () => {
         addSelfToRegistry()
@@ -130,7 +147,7 @@
 </script>
 
 <!-- locked pointer animation-->
-{#if dial.changing && animatedMouse}
+{#if dial.changing && animatedReadout}
     {@const value = dial.getNormValue()}
     {@const gearedValue = (value * -200) % 20}
     {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
@@ -142,7 +159,7 @@
                opacity={Math.abs(sinMap) + 0.1}
                transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
                             scale(1, {Math.abs(sinMap)  + 0.125} )"
-            > <text fill={C.aquaLight}>{dial.getMappedValue().toPrecision(dial.precis ? 6 : 3)}</text>
+            > <text fill={C.aquaLight}>{dial.getMappedValue().toPrecision(dial.precis ? 4 : 2)}</text>
             </g>
         </svg>
     </div>

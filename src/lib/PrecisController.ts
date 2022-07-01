@@ -1,5 +1,5 @@
 // Base class
-import {radialPoints, remap, toNumber} from "./utils";
+import {radialPoints, remap, roundTo, toNumber} from "./utils";
 import {createEventDispatcher} from "svelte";
 import {Palette as C} from "../lib/PrecisController";
 import type {PointsArray} from "../types/precisUI";
@@ -98,7 +98,7 @@ export class BasicController extends PrecisController {
         super()
     }
     getMappedValue(): number {
-        return remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max)
+        return roundTo(remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max), 0.0001)
     }
     getNormValue(): number {
         return this.currentValue / this.height
@@ -126,6 +126,18 @@ export class Radial extends BasicController {
         return (this.getNormValue() * 270) + 230
     }
 }
+export class Fader extends BasicController {
+    background = C.dim
+    id:FaderTag = 'fader.0'
+
+    constructor(initialSettings) {
+        super();
+        Object.assign(this, initialSettings)  // don't do this lazy move on a server, very insecure!
+        super.id = this.id
+        console.log('Constructed -> ' + this.id)
+    }
+}
+
 
 // Widget agnostic types
 export type BoundingRectCSS = `top:${number}px;left:${number}px;width:${number}px;height:${number}px;`
@@ -135,7 +147,7 @@ export type StateFlags = {
 }
 
 // Name Rules
-export type SliderTag = `slider.${number}` | ''
+export type FaderTag = `fader.${number}` | ''
 export type DialTag = `dial.${number}` | ''
 export type SelectorTag = `selector.${number}` | ''
 
