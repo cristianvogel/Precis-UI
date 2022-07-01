@@ -129,24 +129,7 @@
 
 
 </script>
-<!--optional mouse pointer animation-->
-{#if dial.changing && animatedMouse}
-    {@const value = dial.getNormValue()}
-    {@const gearedValue = (value * -200) % 20}
-    {@const offsetMap = remap(gearedValue, -10, 10, -0.5, 0.5)}
-    {@const sinMap = Math.sin(Math.PI * offsetMap)}
-    <div in:fade out:fade style="z-index:1000;position: absolute;
-    top:{lockedMousePoint.y}px;
-    left:{lockedMousePoint.x}px;
-    background-color: transparent;
-    color:whitesmoke;
-    opacity: {Math.abs(sinMap)};
-    transform:
-    translateY( {gearedValue * 2}px)
-    scale({Math.abs(sinMap) + 1.5})">
-           -
-    </div>
-{/if}
+
 
 <div class='dialContainer'
      id='{dial.id}-container'
@@ -157,6 +140,8 @@
      on:mousemove={addPointerPlotToStore}
      style={containerTransform()}
 >
+
+
     <svg transform=scale(0.9)>
         <defs id='{dial.id}-gradients'>
             <radialGradient cx=50%
@@ -174,12 +159,41 @@
             </radialGradient>
         </defs>
 
-        <g id='{dial.id}-dialBody' stroke-width=8>
+<!-- circle body -->
+        <g id='{dial.id}-circleBody' stroke-width=8>
             <circle id='{dial.id}-circleFigure'
                     cx=50%
                     cy=50% fill=#112211
-                    r={(dial.rx * 0.9) +'rem'} stroke="url('#{dial.id}-grad')"
-            />
+                    r={(dial.rx * 0.9) +'rem'} />
+        </g>
+
+<!-- inner pointer animation-->
+            {#if dial.changing && animatedMouse}
+                {@const value = dial.getNormValue()}
+                {@const gearedValue = (value * -200) % 20}
+                {@const offsetMap = remap(gearedValue, -10, 10, -0.5, 0.6)}
+                {@const sinMap = Math.sin(Math.PI * offsetMap)}
+                <svg in:fade out:fade class="visPointerLock" x="25%" y="95%" >
+                    <g   stroke-width= '1px'
+                         opacity = {Math.abs(sinMap)}
+                         transform = "translate ( 0 {(gearedValue * 4)} )
+                            scale( 1, {(Math.abs(sinMap) * gearedValue) + 1} )"
+                    >
+                        <line x1="0" x2="50%" y1="0" y2="0" stroke=green></line>
+                    </g>
+                </svg>
+            {/if}
+
+<!-- circle ring   -->
+            <g id='{dial.id}-colourRing' stroke-width=8>
+                <circle id='{dial.id}-circleRingFigure'
+                        cx=50%
+                        cy=50% fill=transparent
+                        r={(dial.rx * 0.9) +'rem'}
+                        stroke="url('#{dial.id}-grad')"/>
+            </g>
+
+<!-- tick marks -->
             {#if tickMarks}
             <g id='{dial.id}-ticks'>
                 {#each Array(Default.DIAL_TICKMARKS_COUNT) as tick, i}
@@ -193,7 +207,9 @@
                     />
                 {/each}
             </g>
-                {/if}
+            {/if}
+<!-- pointer plot -->
+            <g id="pointerPlot" stroke-width=8>
             {#each pointerPlot as {x, y}, i}
                 {@const width = dial.precis ? 10 : 5}
                 {#if (i < pointerLength - 4)}
@@ -203,13 +219,18 @@
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
 <!-- LED indicator-->
-                {#if (i === pointerLength - 1) && dial.focussed}
+                {#if (i === pointerLength - 1) && dial.focussed || dial.changing}
+                    {@const value = dial.getNormValue()}
+                    {@const gearedValue = ((value * 100) % 10) - 10 }
                     <circle id='{id}-LED'
-                            cx=90% cy=90% r=3
+                            cx=90% cy=90% r= 3
                             fill=aqua
+                            opacity={Math.abs(gearedValue / 10) - 0.1}
                             in:fade out:fade/>
                 {/if}
             {/each}
+            </g>
+<!-- readouts -->
             <text id='{dial.id}-readout'
                   class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                   style={ dial.focussed ? 'fill: aqua;' : '' }>
@@ -223,7 +244,6 @@
                     {dial.label}
                 </text>
             </g>
-        </g>
     </svg>
 </div>
 
@@ -238,6 +258,7 @@
     .dialContainer {
         position: absolute;
         border-radius: 25px;
+        z-index: 0
     }
 
     .readout {
@@ -267,10 +288,8 @@
     }
 
     .visPointerLock {
-        z-index:1000;position: absolute;
+        position: absolute;
         background-color: transparent;
-        color:whitesmoke;
-        opacity:0.5;
         font-size: xx-large;
     }
 

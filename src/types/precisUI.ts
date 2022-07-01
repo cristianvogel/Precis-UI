@@ -14,7 +14,7 @@ export enum Default {
     RX = 2.75,
     DIAL_SCALE_FACTOR = 1,
     FADER_SCALE_FACTOR = 1,
-    DIAL_TICKMARKS_COUNT=11,
+    DIAL_TICKMARKS_COUNT=11, // best to keep this at 11
     DIAL_TICKMARKS_RADIAL_OFFSET=135,
     DIAL_TICKMARKS_rMIN= -5,
     DIAL_TICKMARKS_rMAX= 1,
