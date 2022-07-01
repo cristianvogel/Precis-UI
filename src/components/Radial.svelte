@@ -28,7 +28,8 @@
         touchedID:string = '',
         value:number = 0,
         pointer:boolean = true,
-        tickMarks:boolean = true
+        tickMarks:boolean = true,
+        animatedMouse:boolean = true
 
     const rect:Rect = {
         x: toNumber(x),
@@ -125,17 +126,28 @@
         dial.dispatchOutput( dial.id, dial.getMappedValue(),);
     })
 
+
+
 </script>
-{#if dial.changing}
-<div in:fade out:fade style="z-index:1000;position: absolute;
-top:{lockedMousePoint.y}px;
-left:{lockedMousePoint.x}px;
-background-color: transparent; color:whitesmoke; opacity:0.5;
-transform:
-translateY( {(((dial.getNormValue()*-400)%dial.height) / 16)}px)
-scale(2)">
-       ⦿
-</div>{/if}
+<!--optional mouse pointer animation-->
+{#if dial.changing && animatedMouse}
+    {@const value = dial.getNormValue()}
+    {@const gearedValue = (value * -200) % 20}
+    {@const offsetMap = remap(gearedValue, -10, 10, -0.5, 0.5)}
+    {@const sinMap = Math.sin(Math.PI * offsetMap)}
+    <div in:fade out:fade style="z-index:1000;position: absolute;
+    top:{lockedMousePoint.y}px;
+    left:{lockedMousePoint.x}px;
+    background-color: transparent;
+    color:whitesmoke;
+    opacity: {Math.abs(sinMap)};
+    transform:
+    translateY( {gearedValue * 2}px)
+    scale({Math.abs(sinMap) + 1.5})">
+           -
+    </div>
+{/if}
+
 <div class='dialContainer'
      id='{dial.id}-container'
      on:contextmenu|preventDefault={componentMouseDown}
@@ -145,7 +157,6 @@ scale(2)">
      on:mousemove={addPointerPlotToStore}
      style={containerTransform()}
 >
-    <!--{@debug dial}-->
     <svg transform=scale(0.9)>
         <defs id='{dial.id}-gradients'>
             <radialGradient cx=50%
@@ -156,7 +167,7 @@ scale(2)">
                             r={remap(dial.getNormValue(),0,1,2,0.75)}
             >
                 <stop offset="5%" stop-color="darkblue"/>
-                <!-- todo: abstract out the colour assign -->
+                <!-- todo: pull up a colour assign method -->
                 <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan ].at(registrySize%4)}/>
                 />
                 <stop offset="99%" stop-color="aquamarine"/>
@@ -191,6 +202,7 @@ scale(2)">
                               stroke-width={width - (i/2)}
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
+<!-- LED indicator-->
                 {#if (i === pointerLength - 1) && dial.focussed}
                     <circle id='{id}-LED'
                             cx=90% cy=90% r=3
@@ -253,4 +265,13 @@ scale(2)">
         filL: aliceblue;
         transform: translateY(8rem);
     }
+
+    .visPointerLock {
+        z-index:1000;position: absolute;
+        background-color: transparent;
+        color:whitesmoke;
+        opacity:0.5;
+        font-size: xx-large;
+    }
+
 </style>

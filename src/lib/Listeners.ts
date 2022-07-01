@@ -1,8 +1,6 @@
 
 import {handleModifier, handleMouseDrag, handleMouseDragEnd} from "./Events";
 import type {BasicController} from "./PrecisController";
-import {MouseLocationStore} from "../components/stores";
-import {get} from "svelte/store";
 
 let _widget:BasicController
 const drag = (ev:MouseEvent)=>{
