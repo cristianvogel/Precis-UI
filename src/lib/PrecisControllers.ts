@@ -1,8 +1,15 @@
-// Base class
+// Precision Audio UI © Cristian Vogel 2022
+// No unauthorised use or derivatives!
+// @neverenginelabs
+
+/**
+ * Declares and implements the Base Classes for all controller types
+ */
 import {radialPoints, remap, roundTo, toNumber} from "./utils";
 import {createEventDispatcher} from "svelte";
-import {Palette as C} from "../lib/PrecisController";
+import {Palette as C} from "../lib/PrecisControllers";
 import type {PointsArray} from "../types/precisUI";
+import {addListeners} from "./Listeners";
 
 
 abstract class PrecisController {
@@ -24,6 +31,9 @@ abstract class PrecisController {
 
     abstract getNormValue(): number
     abstract getMappedValue(): number
+    abstract componentMouseDown(event: MouseEvent, caller: BasicController): void
+    abstract componentMouseEnter(event: MouseEvent, caller:BasicController):void
+    abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
 
     set stateFlags(settings: StateFlags) {
         this._stateFlags = {...settings};
@@ -98,10 +108,32 @@ export class BasicController extends PrecisController {
         super()
     }
     getMappedValue(): number {
-        return roundTo(remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max), 0.0001)
+        return roundTo(remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max), 1.0e-4)
     }
     getNormValue(): number {
-        return this.currentValue / this.height
+        return roundTo(this.currentValue / this.height, 1.0e-4)
+    }
+
+    componentMouseDown(event: MouseEvent, caller:BasicController): void {
+        if (!event.target) return
+        console.info('Element belongs to ⇢ ' + caller.id)
+        const mode = (event.type)
+        caller.stateFlags = {
+            changing: true,
+            precis: (mode === 'contextmenu'),
+            focussed: true
+        }
+        caller.selected = event.target as HTMLElement
+        addListeners(caller.selected, caller)
+    }
+    componentMouseLeave(event: MouseEvent, caller:BasicController) {
+        if (caller.changing) return
+        caller.focussed = false
+    }
+    componentMouseEnter(event: MouseEvent, caller:BasicController) {
+        caller.selected = event.target as HTMLElement
+        caller.selected.focus()
+        caller.focussed = true
     }
 }
 

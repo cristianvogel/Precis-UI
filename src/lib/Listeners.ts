@@ -1,54 +1,68 @@
 //todo: implement key listeners
 import {handleModifier, handleMouseDrag, handleMouseDragEnd} from "./Events";
-import type {BasicController} from "./PrecisController";
+import type {BasicController} from "./PrecisControllers";
+import {ListeningElement, ListeningWidget} from "../components/stores";
+import {get} from "svelte/store";
 
-let _widget:BasicController
-const drag = (ev:MouseEvent)=>{
-    handleMouseDrag(ev, _widget)
-}
-const release = (ev:MouseEvent)=> {
-    document.exitPointerLock();
-    handleMouseDragEnd(ev, _widget)
-}
 
+let _widget:BasicController = get(ListeningWidget) // from store
+let _element:HTMLElement = get(ListeningElement) // from store
+
+/**
+ * addListeners is the entry point for Listener subscribe methods
+ * Stores should only get set here once
+ * to the incoming HTMLElement and BasicController Object
+ * then used for Listener assignment or removal
+ * @param element:HTMLElement
+ * @param widget:BasicController
+ */
 export function addListeners(element:HTMLElement | null, widget:BasicController) {
-    if (!element) return
-    _widget = widget
-    addMouseListeners(element, widget)
-    addKeyListeners(element)
+    if (!element || !widget) return
+    ListeningWidget.set(widget)
+    ListeningElement.set(element)
+    _widget = get(ListeningWidget)
+    _element = get(ListeningElement)
+
+    console.log('widget -> ' + _widget.id)
+
+
+    addMouseListeners()
+    addKeyListeners()
 }
 
-function addMouseListeners( element:HTMLElement, widget:BasicController ) {
-    if (!element) return
+export function removeListeners() {
+    if (!_element) return
+    removeMouseListeners()
+    removeKeyListeners()
+}
+
+function addMouseListeners() {
     console.log('pointer locking and adding listeners to -> '+ _widget.id)
-    element.requestPointerLock();
+    _element.requestPointerLock();
     document.addEventListener('mousemove', drag )
     document.addEventListener('mouseup', release)
 }
 
-function addKeyListeners( element:HTMLElement ) {
-    if (!element) return
-    element.addEventListener('keydown', handleModifier)
-    element.addEventListener('keyup', handleModifier)
+function addKeyListeners() {
+    _element.addEventListener('keydown', handleModifier)
+    _element.addEventListener('keyup', handleModifier)
 }
 
-export function removeListeners(element:HTMLElement | null, widget:BasicController) {
-    if (!element) return
-    console.log('removing listeners from <- ' + _widget.id)
-    removeMouseListeners(element, widget)
-    removeKeyListeners(element)
-}
-
-function removeMouseListeners(element: HTMLElement, widget: BasicController) {
-    if (!element) return
-    _widget = widget
+function removeMouseListeners() {
+    console.log('releasing pointer and removing listeners from <- ' + _widget.id)
+    document.exitPointerLock();
     document.removeEventListener('mousemove', drag)
     document.removeEventListener('mouseup', release)
 }
 
-function removeKeyListeners(element:HTMLElement ) {
-    if (!element) return
-    element.removeEventListener('keydown', handleModifier)
-    element.removeEventListener('keyup', handleModifier)
+function removeKeyListeners() {
+    _element.removeEventListener('keydown', handleModifier)
+    _element.removeEventListener('keyup', handleModifier)
 }
 
+const drag = (ev:MouseEvent)=>{
+    handleMouseDrag(ev, _widget)
+}
+const release = (ev:MouseEvent)=> {
+    handleMouseDragEnd(ev, _widget)
+}

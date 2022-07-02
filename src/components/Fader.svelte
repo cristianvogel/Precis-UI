@@ -4,8 +4,8 @@
     // @neverenginelabs
 
     import {Default, DefaultTaper} from "../types/precisUI";
-    import type {FaderTag} from "../lib/PrecisController";
-    import {Fader, Palette as C, Rect, Taper} from "../lib/PrecisController";
+    import type {FaderTag} from "../lib/PrecisControllers";
+    import {Fader, Palette as C, Rect, Taper} from "../lib/PrecisControllers";
     import {remap, toNumber} from "../lib/utils";
     import { onMount} from "svelte";
     import {fade} from 'svelte/transition';

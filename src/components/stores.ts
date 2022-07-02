@@ -1,5 +1,5 @@
 import { Writable, writable} from 'svelte/store';
-import type {BasicController} from '../lib/PrecisController'
+import type {BasicController} from '../lib/PrecisControllers'
 import type {Point, PointsArray} from "../types/precisUI";
 import type {Postcss} from "svelte-preprocess/dist/types/options";
 
@@ -11,6 +11,8 @@ type PointerPlot = Map<string,PointsArray> // widget.id , array of points
 export const PointerPlotStore:Writable<PointerPlot> =
     writable( new Map() )
 
-// mouse location when locking
-export const MouseLocationStore:Writable<Point> =
-    writable( {x:0, y:0} )
+export const ListeningWidget:Writable<BasicController> =
+    writable()
+
+export const ListeningElement:Writable<HTMLElement> =
+    writable()

@@ -3,7 +3,7 @@
 // @neverenginelabs
 
 // Geometry Defs
-import type {BasicController} from "../lib/PrecisController";
+import type {BasicController} from "../lib/PrecisControllers";
 
 export enum Default {
     EMPTY,

@@ -4,13 +4,17 @@
     // @neverenginelabs
 
     import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
-    import type {DialTag, Tint} from "../lib/PrecisController";
-    import {Palette as C, Radial, Rect, Taper} from "../lib/PrecisController";
+    import type {DialTag, Tint} from "../lib/PrecisControllers";
+    import {
+        Palette as C,
+        Radial,
+        Rect,
+        Taper
+    } from "../lib/PrecisControllers";
     import {radialTickMarkAt, remap, toNumber} from "../lib/utils";
-    import {afterUpdate, onMount} from "svelte";
+    import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import { PointerPlotStore, WidgetStore} from './stores.js'
-    import {addListeners} from "../lib/Listeners";
+    import {PointerPlotStore, WidgetStore} from './stores.js'
 
     let gearedValue;
     let offsetMap;
@@ -62,20 +66,14 @@
         tickMarks: true,
     }
 
-    // Construct a new instance of a Radial and compute
-    // the current PointsArray used to plot the radial polyline
+    // Construct a new instance of a Radial
     let dial:Radial = new Radial(settings)
 
-
-    // these initialise functions are working fine like this for now
-    // 😖 I have tried to refactor, but seems to get complicated
-    // with the reactivity.
     const initialise = function () {
-
+        // add self to a layout group registry
         function addSelfToRegistry() {
             $WidgetStore.set(dial.id, dial)
         }
-
         // this is the transform which renders the container DIV element
         const containerTransform = function () {
             return `${dial.generateRectCSS()};
@@ -83,49 +81,20 @@
                   background: ${dial.background};`
         }
 
-        function componentMouseDown(event: MouseEvent): void {
-            if (!event.target) return
-            console.info('Element ◻︎ ' + event.target + ' ⇢ ' + dial.id)
-            const mode = (event.type)
-            dial.stateFlags = {
-                changing: true,
-                precis: (mode === 'contextmenu'),
-                focussed: true
-            }
-            dial.selected = event.target as HTMLElement
-            addListeners(dial.selected, dial)
-        }
-
-        function componentMouseLeave() {
-            if (dial.changing) return
-            dial.focussed = false
-        }
-
-        function componentMouseEnter(event: MouseEvent) {
-            dial.selected = event.target as HTMLElement
-            dial.selected.focus()
-            dial.focussed = true
-        }
         return {
             addSelfToRegistry,
             containerTransform,
-            componentMouseDown,
-            componentMouseLeave,
-            componentMouseEnter
         };
     };
 
+    // compute the current PointsArray used to plot the radial polyline
     function addPointerPlotToStore( ) {
        const plotPoints:PointsArray =  dial.spinPointer()
         $PointerPlotStore.set( dial.id, plotPoints)
-        dial=dial
+        dial=dial // reactive assignment
     }
 
-    const { addSelfToRegistry,
-            containerTransform,
-            componentMouseDown,
-            componentMouseLeave,
-            componentMouseEnter } = initialise();
+    const { addSelfToRegistry, containerTransform} = initialise();
 
     addPointerPlotToStore()
     $:pointerPlot =  dial.radialPoints
@@ -142,7 +111,7 @@
        $: registrySize = $WidgetStore.size
         console.log( 'Widget Store size ▷ ' + $WidgetStore.size)
         dial.dispatchOutput( dial.id, dial.getMappedValue(),);
-    })
+    });
 
 </script>
 
@@ -167,10 +136,10 @@
 
 <div class='dialContainer'
      id='{dial.id}-container'
-     on:contextmenu|preventDefault={componentMouseDown}
-     on:mousedown|preventDefault={componentMouseDown}
-     on:mouseenter|preventDefault={componentMouseEnter }
-     on:mouseleave={componentMouseLeave}
+     on:contextmenu|preventDefault={ (e)=>{dial.componentMouseDown(e,dial)} }
+     on:mousedown|preventDefault={ (e)=>{dial.componentMouseDown(e, dial)} }
+     on:mouseenter|preventDefault={ (e)=>{dial.componentMouseEnter(e, dial)} }
+     on:mouseleave={ (e)=>{dial.componentMouseLeave(e, dial)} }
      on:mousemove={addPointerPlotToStore}
      on:mouseup={()=>dial.changing=false}
      style={containerTransform()}

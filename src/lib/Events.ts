@@ -1,21 +1,22 @@
 import {clamp, remap} from "./utils";
 import {removeListeners} from "./Listeners";
-import type {BasicController} from "./PrecisController";
+import type {BasicController} from "./PrecisControllers";
 import type {WidgetWithKey} from "../types/precisUI";
-import {get} from "svelte/store";
-import {MouseLocationStore} from "../components/stores";
-
-function renderPointerImage(ev) {
-  // draw a non-standard pointer
-    MouseLocationStore.set( {x: ev.x, y: ev.y} )
-}
 
 export function handleMouseDrag(event: MouseEvent, widget: BasicController): void {
     if (!widget) return
-    const caller: WidgetWithKey = {id: widget.id, widget, event}
+    const caller: WidgetWithKey = {id: widget.id,  widget: widget, event: event }
     updatesForMouseDrag(caller)
-    renderPointerImage(event)
-    dispatch(widget.id, widget)
+}
+
+export function handleMouseDragEnd(event: MouseEvent, widget: BasicController): void {
+    if (!widget) return
+    const caller:WidgetWithKey = {id: widget.id, widget: widget, event: event }
+    updatesForMouseDragEnd(caller)
+}
+
+export function handleModifier(event: KeyboardEvent): void {
+    //todo: implement keyboard shift-key modifier for precise mode
 }
 
 function updatesForMouseDrag(caller) {
@@ -38,32 +39,16 @@ function updatesForMouseDrag(caller) {
         widget.currentValue =
             clamp(widget.currentValue + (-dy * (remap(widget.getNormValue(), 0, 1, 1, 0.25))), [0, height])
     }
-    return {id, widget}
-}
-
-export function handleMouseDragEnd(event: MouseEvent, widget: BasicController): void {
-    if (!widget) return
-    const caller: WidgetWithKey = {id: widget.id, widget, event}
-    updatesForMouseDragEnd(caller)
-    dispatch(widget.id, widget)
+    widget.dispatchOutput(id, widget.getMappedValue())
 }
 
 function updatesForMouseDragEnd(caller) {
     const {id, widget, event} = caller
     if (!widget) return
-    removeListeners(widget.selected, widget)
     widget.changing = false
     widget.precis = false
-    widget.selected.blur()
     widget.dispatchOutput(id, widget.getMappedValue())
+    widget.selected.blur()
+    removeListeners()
 }
 
-
-export function handleModifier(event: KeyboardEvent): void {
-    //todo: implement keyboard shift-key modifier for precise mode
-}
-
-
-function dispatch(_controlID: string, _control: BasicController) {
-    _control.dispatchOutput(_controlID, _control.getMappedValue())
-}
