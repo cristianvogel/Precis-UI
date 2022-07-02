@@ -15,6 +15,7 @@
     import {Writable, writable} from 'svelte/store';
     import Radial from "./components/Radial.svelte";
 	import Fader from './components/Fader.svelte'
+    import {toFixed} from "./lib/Utils";
 
     let rescaleDials: Writable<number> = writable(Default.DIAL_SCALE_FACTOR)
     let rescaleFaders: Writable<number> = writable(Default.FADER_SCALE_FACTOR)
@@ -22,7 +23,7 @@
     let touchedID: Writable<string> = writable('')
 
     function handleOutputValue(event: CustomEvent) {
-        readout.set(event.detail.value)
+        readout.set(Number(toFixed(event.detail.value, 6)))
         touchedID.set(event.detail.id)
     }
 	let posX;

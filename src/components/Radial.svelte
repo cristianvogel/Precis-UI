@@ -11,7 +11,7 @@
         Rect,
         Taper
     } from "../lib/PrecisControllers";
-    import {radialTickMarkAt, remap, toNumber} from "../lib/utils";
+    import {radialTickMarkAt, remap, roundTo, toNumber} from "../lib/Utils";
     import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from './stores.js'
@@ -24,6 +24,7 @@
     let pointerPlot:PointsArray
     let pointerLength:number
     let registrySize
+    let roundedReadout:string
 
     export let
         min:number = DefaultTaper.MIN,
@@ -94,24 +95,26 @@
         dial=dial // reactive assignment
     }
 
+    function reactiveAssignment() {
+        dial=dial
+    }
+
     const { addSelfToRegistry, containerTransform} = initialise();
 
     addPointerPlotToStore()
     $:pointerPlot =  dial.radialPoints
     $:pointerLength = dial.radialPoints.length
-
-    // afterUpdate(() => {
-         // maybe widget needs to update itself in the registry
-        // after changes?
-      //  dial.resize(dial.scale, dial.id)
-     //   addSelfToRegistry()
+    $:roundedReadout =
+        roundTo(dial.getMappedValue(), dial.precis ? 1.0e-4 : 1.0e-2)
+        .toFixed(dial.precis ? 3 : 1)
 
     onMount( () => {
         addSelfToRegistry()
-       $: registrySize = $WidgetStore.size
+        $:registrySize = $WidgetStore.size
         console.log( 'Widget Store size ▷ ' + $WidgetStore.size)
         dial.dispatchOutput( dial.id, dial.getMappedValue(),);
     });
+
 
 </script>
 
@@ -128,7 +131,7 @@
                opacity={Math.abs(sinMap) + 0.1}
                transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
                             scale(1, {Math.abs(sinMap)  + 0.125} )"
-            > <text fill={C.aquaLight}>{dial.getMappedValue().toPrecision(dial.precis ? 4 : 2)}</text>
+            > <text fill={C.aquaLight}>{roundedReadout}</text>
             </g>
         </svg>
     </div>
@@ -139,9 +142,9 @@
      on:contextmenu|preventDefault={ (e)=>{dial.componentMouseDown(e,dial)} }
      on:mousedown|preventDefault={ (e)=>{dial.componentMouseDown(e, dial)} }
      on:mouseenter|preventDefault={ (e)=>{dial.componentMouseEnter(e, dial)} }
-     on:mouseleave={ (e)=>{dial.componentMouseLeave(e, dial)} }
+     on:mouseleave={ (e)=>{reactiveAssignment(); dial.componentMouseLeave(e, dial)} }
      on:mousemove={addPointerPlotToStore}
-     on:mouseup={()=>dial.changing=false}
+     on:mouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
      style={containerTransform()}
 >
 
@@ -222,7 +225,8 @@
                 <text id='{dial.id}-readout'
                       class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                       style={ dial.focussed ? 'fill: aqua;' : '' }>
-                      {dial.getMappedValue().toPrecision(dial.precis ? 6 : 3)}{dial.precis ? '⋯' : ' ▹'}
+                        {roundedReadout}
+                        {dial.precis ? '⋯' : ' ▹'}
                 </text>
             </g>
             <g id='{dial.id}-label'>

@@ -1,4 +1,4 @@
-import {clamp, remap} from "./utils";
+import {clamp, remap, roundTo} from "./Utils";
 import {removeListeners} from "./Listeners";
 import type {BasicController} from "./PrecisControllers";
 import type {WidgetWithKey} from "../types/precisUI";
@@ -39,6 +39,7 @@ function updatesForMouseDrag(caller) {
         widget.currentValue =
             clamp(widget.currentValue + (-dy * (remap(widget.getNormValue(), 0, 1, 1, 0.25))), [0, height])
     }
+
     widget.dispatchOutput(id, widget.getMappedValue())
 }
 

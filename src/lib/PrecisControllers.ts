@@ -5,7 +5,7 @@
 /**
  * Declares and implements the Base Classes for all controller types
  */
-import {radialPoints, remap, roundTo, toNumber} from "./utils";
+import {radialPoints, remap, toNumber} from "./Utils";
 import {createEventDispatcher} from "svelte";
 import {Palette as C} from "../lib/PrecisControllers";
 import type {PointsArray} from "../types/precisUI";
@@ -108,10 +108,10 @@ export class BasicController extends PrecisController {
         super()
     }
     getMappedValue(): number {
-        return roundTo(remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max), 1.0e-4)
+        return remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max)
     }
     getNormValue(): number {
-        return roundTo(this.currentValue / this.height, 1.0e-4)
+        return (this.currentValue / this.height)
     }
 
     componentMouseDown(event: MouseEvent, caller:BasicController): void {
@@ -127,6 +127,7 @@ export class BasicController extends PrecisController {
         addListeners(caller.selected, caller)
     }
     componentMouseLeave(event: MouseEvent, caller:BasicController) {
+        console.log( 'Mouse leaves -> '+ caller.id)
         if (caller.changing) return
         caller.focussed = false
     }

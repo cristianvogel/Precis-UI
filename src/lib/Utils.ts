@@ -70,5 +70,13 @@ export function toNumber( value: string|number): number {
     return typeof value !== 'number' ? Number.parseFloat(value) : value;
 }
 
-// https://thi.ng/
+// little bits of Thi.ng https://thi.ng/
 export const roundTo = (x: number, prec = 1) => Math.round(x / prec) * prec;
+export const trunc = (x) => (x < 0 ? Math.ceil(x) : Math.floor(x));
+
+// little bit of Ext.js
+export const toFixed = function(value:number, precision:number):string {
+    precision = precision || 0;
+    const pow = Math.pow(10, precision);
+    return (Math.round(value * pow) / pow).toFixed(precision);
+}

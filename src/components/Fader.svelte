@@ -6,7 +6,7 @@
     import {Default, DefaultTaper} from "../types/precisUI";
     import type {FaderTag} from "../lib/PrecisControllers";
     import {Fader, Palette as C, Rect, Taper} from "../lib/PrecisControllers";
-    import {remap, toNumber} from "../lib/utils";
+    import {remap, roundTo, toNumber} from "../lib/Utils";
     import { onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {WidgetStore} from './stores.js'
@@ -112,6 +112,10 @@
         componentMouseLeave,
         componentMouseEnter } = initialise();
 
+    $:roundedReadout =
+        roundTo(fader.getMappedValue(), fader.precis ? 1.0e-4 : 1.0e-2)
+            .toFixed(fader.precis ? 3 : 1)
+
     onMount( () => {
         addSelfToRegistry()
         $: registrySize = $WidgetStore.size
@@ -180,7 +184,7 @@
                           y=-0.5rem />
                     <text id='{id}-readout.Text'
                           class={fader.precis ? 'readout zoom' : 'readout'}>
-                        {fader.getMappedValue().toPrecision(fader.precis ? 5 : 3)}
+                        {roundedReadout}
                         {fader.precis ? '⋯' : ' ▹'}
                     </text>
                 </g>
