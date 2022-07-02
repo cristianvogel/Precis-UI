@@ -76,9 +76,9 @@
             $WidgetStore.set(dial.id, dial)
         }
         // this is the transform which renders the container DIV element
-        const containerTransform = function () {
-            return `${dial.generateRectCSS()};
-                  transform: scale(${dial.scale});
+        const containerTransform = function (s?:number) {
+            return `${dial.getCSSforRect()};
+                  transform: scale(${ s || dial.scale});
                   background: ${dial.background};`
         }
 
@@ -99,43 +99,23 @@
         dial=dial
     }
 
-    const { addSelfToRegistry, containerTransform} = initialise();
+    const { addSelfToRegistry, containerTransform } = initialise();
 
     addPointerPlotToStore()
+
     $:pointerPlot =  dial.radialPoints
-    $:pointerLength = dial.radialPoints.length
     $:roundedReadout =
         roundTo(dial.getMappedValue(), dial.precis ? 1.0e-4 : 1.0e-2)
         .toFixed(dial.precis ? 3 : 1)
 
     onMount( () => {
         addSelfToRegistry()
-        $:registrySize = $WidgetStore.size
-        console.log( 'Widget Store size ▷ ' + $WidgetStore.size)
+        pointerLength = dial.radialPoints.length
+        registrySize = $WidgetStore.size
         dial.dispatchOutput( dial.id, dial.getMappedValue(),);
     });
-
-
 </script>
 
-<!-- locked pointer animation-->
-{#if dial.changing && animatedReadout}
-    {@const value = dial.getNormValue()}
-    {@const gearedValue = (value * -200) % 20}
-    {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
-    {@const sinMap = Math.sin(Math.PI * offsetMap)}
-    <div class="visPointerLock"  >
-        <svg in:fade out:fade
-             transform= "translate( {dial.rect.x} , {dial.rect.y - (dial.height / 2) }  )" >
-            <g stroke-width='1px'
-               opacity={Math.abs(sinMap) + 0.1}
-               transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
-                            scale(1, {Math.abs(sinMap)  + 0.125} )"
-            > <text fill={C.aquaLight}>{roundedReadout}</text>
-            </g>
-        </svg>
-    </div>
-{/if}
 
 <div class='dialContainer'
      id='{dial.id}-container'
@@ -145,8 +125,27 @@
      on:mouseleave={ (e)=>{reactiveAssignment(); dial.componentMouseLeave(e, dial)} }
      on:mousemove={addPointerPlotToStore}
      on:mouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
-     style={containerTransform()}
+     style={containerTransform(dial.scale)}
 >
+    <!-- animated numerical readout mojo-->
+    {#if dial.changing && animatedReadout}
+        {@const value = dial.getNormValue()}
+        {@const gearedValue = (value * -200) % 20}
+        {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
+        {@const sinMap = Math.sin(Math.PI * offsetMap)}
+        <div id='{dial.id}-animatedReadout'
+             class="animatedReadout"
+             style="transform: translate( 30%, 60%)" >
+            <svg in:fade out:fade >
+                <g stroke-width='1px'
+                   opacity={Math.abs(sinMap) + 0.1}
+                   transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
+                                scale(1, {Math.abs(sinMap)  + 0.125} )"
+                > <text fill={C.aquaLight}>{roundedReadout}</text>
+                </g>
+            </svg>
+        </div>
+    {/if}
 
     <svg transform=scale(0.9)>
         <defs id='{dial.id}-gradients'>
@@ -282,7 +281,7 @@
         transform: translateY(8rem);
     }
 
-    .visPointerLock {
+    .animatedReadout {
         position: absolute;
         background-color: transparent;
         font-size: xx-large;

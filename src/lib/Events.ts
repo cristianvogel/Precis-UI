@@ -24,7 +24,7 @@ function updatesForMouseDrag(caller) {
     if (!widget.changing || !widget.focussed) {
         return
     }
-    console.log(`◎ [${id}] is changing on ▹ ${widget.focussed}`)
+    // console.log(`◎ [${id}] is changing on ▹ ${widget.focussed}`)
     widget.clientRect = (widget.selected as Element).getBoundingClientRect()
     const dy = event.movementY
     if (dy === 0) {

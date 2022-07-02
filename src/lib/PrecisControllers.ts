@@ -86,13 +86,13 @@ abstract class PrecisController {
             id,
         })
     }
-    generateRectCSS(): BoundingRectCSS {
+    getCSSforRect(): BoundingRectCSS {
         const aRect: BoundingRectCSS =
             `top:${this.rect.y}px;left:${this.rect.x}px;width:${this.rect.width}px;height:${this.rect.height}px;`
         return aRect
     }
-    resize(scale: number, id: string): void {
-        const el = document.getElementById(`${id}-container`)
+    resizeElementByID(elementID:string, scale: number): void {
+        const el = document.getElementById(`${elementID}`)
         if (!el) return
         const newStyle = `transform: scale(${scale});`
         el.setAttribute('style', el.getAttribute('style') + newStyle)
@@ -127,7 +127,7 @@ export class BasicController extends PrecisController {
         addListeners(caller.selected, caller)
     }
     componentMouseLeave(event: MouseEvent, caller:BasicController) {
-        console.log( 'Mouse leaves -> '+ caller.id)
+      //  console.log( 'Mouse leaves -> '+ caller.id)
         if (caller.changing) return
         caller.focussed = false
     }

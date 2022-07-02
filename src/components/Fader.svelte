@@ -54,51 +54,22 @@
     // Construct a new instance of a vertical fader
     let fader:Fader = new Fader(settings)
 
-    // these initialise functions are working fine like this for now
-    // 😖 I have tried to refactor, but seems to get complicated
-    // with the reactivity.
     const initialise = function () {
 
+        // add self to a layout group registry
         function addSelfToRegistry() {
             $WidgetStore.set(fader.id, fader)
         }
-
         // this is the transform which renders the container DIV element
         const containerTransform = function () {
-            return `${fader.generateRectCSS()};
+            return `${fader.getCSSforRect()};
                   transform: scale(${fader.scale});
                   background: ${fader.background};`
         }
 
-        function componentMouseDown(event: MouseEvent): void {
-            if (!event.target) return
-            console.info('Element ◻︎ ' + event.target + ' ⇢ ' + fader.id)
-            const mode = (event.type)
-            fader.stateFlags = {
-                changing: true,
-                precis: (mode === 'contextmenu'),
-                focussed: true
-            }
-            fader.selected = event.target as HTMLElement
-            addListeners(fader.selected, fader)
-        }
-
-        function componentMouseLeave() {
-            if (fader.changing) return
-            fader.focussed = false
-        }
-
-        function componentMouseEnter(event: MouseEvent) {
-            fader.selected = event.target as HTMLElement
-            fader.selected.focus()
-            fader.focussed = true
-        }
         return {
             addSelfToRegistry,
             containerTransform,
-            componentMouseDown,
-            componentMouseLeave,
-            componentMouseEnter
         };
     };
 
@@ -106,11 +77,7 @@
         fader=fader
     }
 
-    const { addSelfToRegistry,
-        containerTransform,
-        componentMouseDown,
-        componentMouseLeave,
-        componentMouseEnter } = initialise();
+    const { addSelfToRegistry, containerTransform,} = initialise();
 
     $:roundedReadout =
         roundTo(fader.getMappedValue(), fader.precis ? 1.0e-4 : 1.0e-2)
@@ -118,22 +85,47 @@
 
     onMount( () => {
         addSelfToRegistry()
-        $: registrySize = $WidgetStore.size
-        console.log( 'Widget Store size ▷ ' + $WidgetStore.size)
+        registrySize = $WidgetStore.size
         fader.dispatchOutput( fader.id, fader.getMappedValue(),);
     })
+
+    let animatedReadout = true;
+    let gearedValue;
+    let offsetMap;
+    let sinMap;
 
 </script>
 
 <div class='faderContainer'
      id='{fader.id}-container'
-     on:contextmenu|preventDefault={componentMouseDown}
-     on:mousedown|preventDefault={componentMouseDown}
-     on:mouseenter|preventDefault={componentMouseEnter }
-     on:mouseleave={componentMouseLeave}
+     on:contextmenu|preventDefault={ (e)=>{fader.componentMouseDown(e,fader)} }
+     on:mousedown|preventDefault={ (e)=>{fader.componentMouseDown(e, fader)} }
+     on:mouseenter|preventDefault={ (e)=>{fader.componentMouseEnter(e, fader)} }
+     on:mouseleave={ (e)=>{reactiveAssignment(); fader.componentMouseLeave(e, fader)} }
      on:mousemove={reactiveAssignment}
+     on:mouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
      style={containerTransform()}
 >
+
+    <!-- animated numerical readout mojo-->
+    {#if fader.changing && animatedReadout}
+        {@const value = fader.getNormValue()}
+        {@const gearedValue = (value * -200) % 20}
+        {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
+        {@const sinMap = Math.sin(Math.PI * offsetMap)}
+        <div id='{fader.id}-animatedReadout'
+             class="animatedReadout"
+             style="transform: translate( {1.1 - roundedReadout.length * 0.25}em, 3em )">
+            <svg in:fade out:fade >
+                <g stroke-width='1px'
+                   opacity={Math.abs(sinMap) + 0.1}
+                   transform="translate ( {-fader.width * 0.5} {-100 + (gearedValue * 2)} )
+                                scale(1, {Math.abs(sinMap)  + 0.125} )"
+                > <text fill={C.aquaLight}>{roundedReadout}</text>
+                </g>
+            </svg>
+        </div>
+    {/if}
 
     <svg >
         <defs id='{id}-gradients'>
@@ -161,7 +153,7 @@
                   on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
             />
             <g id='{id}-handle+readout'
-               on:contextmenu|preventDefault={componentMouseDown}
+               on:contextmenu|preventDefault={(e)=>{fader.componentMouseDown(e, fader)} }
                stroke={C.offWhite}
                transform="translate(0,{fader.height - fader.currentValue}) scale(1.5)">
                 <rect fill={C.whiteBis}
@@ -183,7 +175,7 @@
                           x=-0.5rem
                           y=-0.5rem />
                     <text id='{id}-readout.Text'
-                          class={fader.precis ? 'readout zoom' : 'readout'}>
+                          class='readout'>
                         {roundedReadout}
                         {fader.precis ? '⋯' : ' ▹'}
                     </text>
@@ -272,5 +264,12 @@
 
     .readoutBox.zoom {
         transform: translate(-1.5rem, -0.66rem) scaleX(225%) scaleY(110%);
+    }
+
+    .animatedReadout {
+        position: absolute;
+        background-color: transparent;
+        font-size: x-large;
+        z-index: 100;
     }
 </style>

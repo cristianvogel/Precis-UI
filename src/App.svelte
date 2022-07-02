@@ -11,25 +11,58 @@
 />
 
 <script lang="ts">
-    import {Default} from "./types/precisUI";
-    import {Writable, writable} from 'svelte/store';
+
     import Radial from "./components/Radial.svelte";
 	import Fader from './components/Fader.svelte'
     import {toFixed} from "./lib/Utils";
-
-    let rescaleDials: Writable<number> = writable(Default.DIAL_SCALE_FACTOR)
-    let rescaleFaders: Writable<number> = writable(Default.FADER_SCALE_FACTOR)
-    let readout: Writable<number> = writable(0)
-    let touchedID: Writable<string> = writable('')
+    import {Palette as C} from "./lib/PrecisControllers";
+    import {readout, touchedID, rescaleDials, rescaleFaders} from "./components/stores";
 
     function handleOutputValue(event: CustomEvent) {
         readout.set(Number(toFixed(event.detail.value, 6)))
         touchedID.set(event.detail.id)
     }
+
 	let posX;
 	let posY;
 	let rangeTest;
-	let ranges;
+    let scale = 1;
+
+    // Test: Two Dials for scaling the other components
+    const dialScaler = {
+        id:"dial.rescale",
+        x:700, y:300,
+        background: C.clear,
+        scale: 0.5,
+        value: 50, // initial value as percentage?
+        label:"Scale Dials",
+        min:0,
+        max:2 }
+
+    const faderScaler = {
+        id:"fader.rescale",
+        x:700, y:400,
+        background: C.clear,
+        scale: 0.5,
+        value: 50, // initial value as percentage?
+        label:"Scale Faders",
+        min:0,
+        max:2
+    }
+
+    function resizeWidgets(ev) {
+        //rescale/redraw with stepped throttle
+        //todo: make this a feature
+        const throttle = 10
+        switch (ev.detail.id) {
+            case ('fader.rescale') :
+                $rescaleFaders = (Math.round((ev.detail.value) * throttle)) / throttle
+                break;
+            case ('dial.rescale') :
+                $rescaleDials = ((Math.round((ev.detail.value) * throttle)) / throttle)
+                break;
+        }
+    }
 
 </script>
 
@@ -60,6 +93,10 @@
             𝌺 <a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
         </h3>
     </div>
+
+    <Radial {...dialScaler} on:output={(e)=>{handleOutputValue(e); resizeWidgets(e)}}/>
+    <Radial {...faderScaler} on:output={(e)=>{handleOutputValue(e); resizeWidgets(e)}}/>
+
 <!-- render some dials -->
     {#each Array(4) as _, i ('key-d-' + i)}
         {@const posX = 400 + ((i % 2) * 150)}
@@ -70,7 +107,7 @@
                 y={posY}
                 min=0
                 max={rangeTest}
-                scale={$rescaleDials}
+                scale={scale * $rescaleDials}
                 on:output={handleOutputValue} />
     {/each}
 <!-- render some vert faders -->
@@ -82,7 +119,6 @@
 			   y="250"
 			   min=0
 			   max={rangeTest}
-			   scale={$rescaleFaders}
 			   on:output={handleOutputValue}/>
 	{/each}
 </main>
