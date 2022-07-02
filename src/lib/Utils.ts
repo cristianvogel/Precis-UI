@@ -1,7 +1,7 @@
 import type {PointsArray, TickMark} from "../types/precisUI";
 import {Default} from "../types/precisUI";
 
-export function clamp(value, range):number {
+export function clamp(value:number , range = [0,1]):number {
     return Math.min(Math.max(value, range[0]), range[1]);
 }
 
@@ -68,4 +68,15 @@ export function radialTickMarkAt( i:number,
 
 export function toNumber( value: string|number): number {
     return typeof value !== 'number' ? Number.parseFloat(value) : value;
+}
+
+// little bits of Thi.ng https://thi.ng/
+export const roundTo = (x: number, prec = 1) => Math.round(x / prec) * prec;
+export const trunc = (x) => (x < 0 ? Math.ceil(x) : Math.floor(x));
+
+// little bit of Ext.js
+export const toFixed = function(value:number, precision:number):string {
+    precision = precision || 0;
+    const pow = Math.pow(10, precision);
+    return (Math.round(value * pow) / pow).toFixed(precision);
 }

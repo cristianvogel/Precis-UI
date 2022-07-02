@@ -3,17 +3,16 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {clamp, remap, toNumber} from '../lib/utils.ts';
-    import {afterUpdate, createEventDispatcher, onMount} from 'svelte';
-    import { fade } from 'svelte/transition';
-    import type {BoundingRectCSS, Fader, Rect, FaderTag, Taper} from "../types/precisUI";
-    import {C, DefaultTaper, Default, WidgetType } from "../types/precisUI";
-    import {addListenersFor, removeListenersFor} from "../lib/Events";
+    import {Default, DefaultTaper} from "../types/precisUI";
+    import type {FaderTag} from "../lib/PrecisControllers";
+    import {Fader, Palette as C, Rect, Taper} from "../lib/PrecisControllers";
+    import {remap, roundTo, toNumber} from "../lib/Utils";
+    import { onMount} from "svelte";
+    import {fade} from 'svelte/transition';
+    import {WidgetStore} from './stores.js'
+    import {addListeners} from "../lib/Listeners";
 
-    let
-        selected:(HTMLElement | null) = null,
-        clientRect:(DOMRect | null) = null;
-
+    let registrySize
 
     export let
         min = DefaultTaper.MIN,
@@ -25,19 +24,9 @@
         height = Default.FADER_HEIGHT,
         scale = Default.FADER_SCALE_FACTOR,
         rx = Default.RX,
-        value:number = 0,
         id:FaderTag = 'fader.0',
-        touchedID:FaderTag = ''
-
-
-    //todo: improve type assert checks or work with DOM units like %, px etc
-        rx = rx as number
-        const taper: Taper = {
-            min: toNumber(min),
-            max: toNumber(max),
-            fineStep: toNumber(fineStep),
-            curve: 'LINEAR'
-        };
+        label:string = '',
+        value:number = 0
 
     const rect:Rect = {
         x: toNumber(x),
@@ -45,121 +34,98 @@
         width: toNumber(width),
         height: toNumber(height)
     }
-
-    const dispatch = createEventDispatcher()
-
-    const fader: Fader = {
-        draw: ():void => {
-            containerTransform()
-        },
-        handleMouseDown: (event: MouseEvent) => {
-            const mode = (event.type)
-            fader.precis = (mode === 'contextmenu')
-            selected = event.target as HTMLElement
-            selected.focus()
-            addListenersFor(fader, WidgetType.FADER)
-        },
-        handleMouseMove: (event:MouseEvent) => {
-            clientRect = (selected as Element).getBoundingClientRect()
-            const dy = event.movementY
-            if (dy === 0) {return}
-            const {currentValue, height, normValue} = fader
-            if (fader.precis) {
-                fader.currentValue =
-                    clamp(currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
-            } else {
-                fader.currentValue =
-                    clamp(currentValue + (-dy * (remap(normValue, 0, 1, 1, 0.25))), [0, height])
-            }
-            value = fader.mappedValue
-            touchedID = fader.id
-        },
-        handleMouseUp: () => {
-            selected = null
-            fader.precis = false
-            fader.changing = false
-            removeListenersFor(fader, WidgetType.FADER)
-        },
-        handleModifier(ev: KeyboardEvent) {
-            fader.precis = (ev.shiftKey && ev.type === 'keydown' )
-        },
-
-        currentValue: value,
-        id,
-        rect,
-        rx,
-        taper,
-        scale,
-        get x():number { return this.rect.x },
-        get y():number {return this.rect.y},
-        set x( number:number ) { this.rect.x = number },
-        set y( number:number ) { this.rect.y = number },
-        get width():number {return this.rect.width},
-        get height():number {return this.rect.height},
-        set width(w:number) { this.rect.width = toNumber(w) + rx },
-        set height(h:number) { this.rect.height = toNumber(h) },
-        label: 'hold shift for fine tuning',
-        precis: false,
-        changing: false,
-        background: C.clear,
-        get index(): number {
-            return (Number.parseInt(<string>Array.from(this.id).at(-1))) //todo: what if id >10 ?
-        },
-        get boundingBoxCSS():BoundingRectCSS {
-            return <BoundingRectCSS>
-                    `top:${this.rect.y}px;
-                    left:${this.rect.x}px;
-                    width:${this.rect.width}px;
-                    height:${this.rect.height}px;`
-        },
-        get normValue() {
-            return this.currentValue / this.rect.height
-        },
-        get mappedValue():number {
-            return remap( this.normValue, 0 ,1, this.taper.min, this.taper.max)
-        }
-    }
-
-    $: output(fader.mappedValue, fader.id)
-
-    function output(value, id)  {
-        // console.log( `Output value send: ${value}`)
-        dispatch('output', {
-            value,
-            id,
-        })
-    }
-
-    const containerTransform = function () {
-        const newStyle =`${fader.boundingBoxCSS};
-                         transform: scale(${scale})`
-        return newStyle
+    const taper:Taper = {
+        min: toNumber(min),
+        max: toNumber(max),
+        fineStep: toNumber(fineStep)
     };
 
-    const resize = function () {
-        const el = document.getElementById(`${id}-container`)
-        const newStyle = `transform: scale(${scale});`
-        el.setAttribute('style', el.getAttribute('style') + newStyle)
+    const settings = {
+        currentValue: value,
+        id,
+        label,
+        rect,
+        rx,
+        scale,
+        taper,
+        tickMarks: true,
     }
 
-    afterUpdate(() => {
-        resize()
-    });
+    // Construct a new instance of a vertical fader
+    let fader:Fader = new Fader(settings)
+
+    const initialise = function () {
+
+        // add self to a layout group registry
+        function addSelfToRegistry() {
+            $WidgetStore.set(fader.id, fader)
+        }
+        // this is the transform which renders the container DIV element
+        const containerTransform = function () {
+            return `${fader.getCSSforRect()};
+                  transform: scale(${fader.scale});
+                  background: ${fader.background};`
+        }
+
+        return {
+            addSelfToRegistry,
+            containerTransform,
+        };
+    };
+
+    function reactiveAssignment() {
+        fader=fader
+    }
+
+    const { addSelfToRegistry, containerTransform,} = initialise();
+
+    $:roundedReadout =
+        roundTo(fader.getMappedValue(), fader.precis ? 1.0e-4 : 1.0e-2)
+            .toFixed(fader.precis ? 3 : 1)
 
     onMount( () => {
-        output(fader.mappedValue, fader.id)
+        addSelfToRegistry()
+        registrySize = $WidgetStore.size
+        fader.dispatchOutput( fader.id, fader.getMappedValue(),);
     })
+
+    let animatedReadout = true;
+    let gearedValue;
+    let offsetMap;
+    let sinMap;
 
 </script>
 
 <div class='faderContainer'
-     id='{id}-container'
-     on:contextmenu|preventDefault={fader.handleMouseDown}
-     on:mousedown|preventDefault={fader.handleMouseDown}
-     on:mouseenter|preventDefault='{(e)=>{e.target.focus(); fader.changing=true}}'
-     on:mouseleave='{()=>{fader.changing=(selected !== null)}}'
+     id='{fader.id}-container'
+     on:contextmenu|preventDefault={ (e)=>{fader.componentMouseDown(e,fader)} }
+     on:mousedown|preventDefault={ (e)=>{fader.componentMouseDown(e, fader)} }
+     on:mouseenter|preventDefault={ (e)=>{fader.componentMouseEnter(e, fader)} }
+     on:mouseleave={ (e)=>{reactiveAssignment(); fader.componentMouseLeave(e, fader)} }
+     on:mousemove={reactiveAssignment}
+     on:mouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
      style={containerTransform()}
 >
+
+    <!-- animated numerical readout mojo-->
+    {#if fader.changing && animatedReadout}
+        {@const value = fader.getNormValue()}
+        {@const gearedValue = (value * -200) % 20}
+        {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
+        {@const sinMap = Math.sin(Math.PI * offsetMap)}
+        <div id='{fader.id}-animatedReadout'
+             class="animatedReadout"
+             style="transform: translate( {1.1 - roundedReadout.length * 0.25}em, 3em )">
+            <svg in:fade out:fade >
+                <g stroke-width='1px'
+                   opacity={Math.abs(sinMap) + 0.1}
+                   transform="translate ( {-fader.width * 0.5} {-100 + (gearedValue * 2)} )
+                                scale(1, {Math.abs(sinMap)  + 0.125} )"
+                > <text fill={C.aquaLight}>{roundedReadout}</text>
+                </g>
+            </svg>
+        </div>
+    {/if}
 
     <svg >
         <defs id='{id}-gradients'>
@@ -167,17 +133,17 @@
                             x1=0
                             x2=0
                             y1=0
-                            y2={remap(fader.normValue, 0, 1, 3, 0)}>
+                            y2={remap(fader.getNormValue(), 0, 1, 3, 0)}>
                 <stop offset="0" stop-color={C.black}/>
                 <!-- todo: abstract out the colour assign -->
                 <stop offset="80%"
-                      stop-color={[ C.red, C.sky, C.pink, C.aquaDark ].at(fader.index%4)}/>
-               </linearGradient>
+                      stop-color={[ C.red, C.sky, C.pink, C.aquaDark ].at(registrySize%4)}/>
+            </linearGradient>
             <filter id="shadow">
                 <feDropShadow dx="0" dy="0.4" stdDeviation="0.2"/>
             </filter>
         </defs>
-
+<!-- todo: double click on track is broken -->
         <g fill="url('#{id}-grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
             <rect id='#{id}-track'
                   width={fader.width}
@@ -187,7 +153,7 @@
                   on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
             />
             <g id='{id}-handle+readout'
-               on:contextmenu|preventDefault={fader.handleMouseDown}
+               on:contextmenu|preventDefault={(e)=>{fader.componentMouseDown(e, fader)} }
                stroke={C.offWhite}
                transform="translate(0,{fader.height - fader.currentValue}) scale(1.5)">
                 <rect fill={C.whiteBis}
@@ -209,34 +175,34 @@
                           x=-0.5rem
                           y=-0.5rem />
                     <text id='{id}-readout.Text'
-                          class={fader.precis ? 'readout zoom' : 'readout'}>
-                          {fader.mappedValue.toPrecision(fader.precis ? 5 : 3)}
-                          {fader.precis ? '⋯' : ' ▹'}
+                          class='readout'>
+                        {roundedReadout}
+                        {fader.precis ? '⋯' : ' ▹'}
                     </text>
                 </g>
             </g>
         </g>
     </svg>
 
-{#if fader.changing }
-    <div id='{id}-label'
-         class='faderContainer'
-         style={'z-index: -1000'}>
-        <svg in:fade out:fade>
-            <g id='{id}-LED'
-               stroke="green" fill=none stroke-width="1px"
-               transform="translate({fader.width/2})">
-                <circle id='{id}-active' cy=-20 cx=-0.5 r=2 fill='aqua'/>
-                <text id='{id}-label.Text'
-                      class='label rotated'
-                      lengthAdjust='spacingAndGlyphs'
-                      textLength={fader.height * 0.5} >
-                    {fader.label}
-                </text>
-            </g>
-        </svg>
-    </div>
-{/if}
+    {#if fader.changing }
+        <div id='{id}-label'
+             class='faderContainer'
+             style={'z-index: -1000'}>
+            <svg in:fade out:fade>
+                <g id='{id}-LED'
+                   stroke="green" fill=none stroke-width="1px"
+                   transform="translate({fader.width/2})">
+                    <circle id='{id}-active' cy=-20 cx=-0.5 r=2 fill='aqua'/>
+                    <text id='{id}-label.Text'
+                          class='label rotated'
+                          lengthAdjust='spacingAndGlyphs'
+                          textLength={fader.height * 0.5} >
+                        {fader.label}
+                    </text>
+                </g>
+            </svg>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -298,5 +264,12 @@
 
     .readoutBox.zoom {
         transform: translate(-1.5rem, -0.66rem) scaleX(225%) scaleY(110%);
+    }
+
+    .animatedReadout {
+        position: absolute;
+        background-color: transparent;
+        font-size: x-large;
+        z-index: 100;
     }
 </style>

@@ -1,33 +1,55 @@
-import  {WidgetType} from "../types/precisUI";
+import {clamp, remap, roundTo} from "./Utils";
+import {removeListeners} from "./Listeners";
+import type {BasicController} from "./PrecisControllers";
+import type {WidgetWithKey} from "../types/precisUI";
 
-export function addListenersFor( control:any, widget?:WidgetType ) {
-   // console.log(`Adding listeners for ${control.id}: ${WidgetType[widget as number]}`)
-    addMouseListeners(control)
-    addKeyListeners(control)
- }
-
-export function removeListenersFor( control:any, widget?:WidgetType ) {
-  //  console.log(`Removing listeners for : ${widget}`)
-    removeMouseListeners(control)
-    removeKeyListeners(control)
+export function handleMouseDrag(event: MouseEvent, widget: BasicController): void {
+    if (!widget) return
+    const caller: WidgetWithKey = {id: widget.id,  widget: widget, event: event }
+    updatesForMouseDrag(caller)
 }
 
- function addMouseListeners( control:any ) {
-     addEventListener('mousemove', control.handleMouseMove)
-     addEventListener('mouseup', control.handleMouseUp)
+export function handleMouseDragEnd(event: MouseEvent, widget: BasicController): void {
+    if (!widget) return
+    const caller:WidgetWithKey = {id: widget.id, widget: widget, event: event }
+    updatesForMouseDragEnd(caller)
 }
 
- function removeMouseListeners(control:any) {
-     removeEventListener('mousemove', control.handleMouseMove)
-     removeEventListener('mouseup', control.handleMouseUp)
+export function handleModifier(event: KeyboardEvent): void {
+    //todo: implement keyboard shift-key modifier for precise mode
 }
 
- function addKeyListeners( control:any ) {
-     addEventListener('keydown', control.handleModifier)
-     addEventListener('keyup', control.handleModifier)
+function updatesForMouseDrag(caller) {
+    const {id, widget, event} = caller
+    if (!widget.changing || !widget.focussed) {
+        return
+    }
+    // console.log(`◎ [${id}] is changing on ▹ ${widget.focussed}`)
+    widget.clientRect = (widget.selected as Element).getBoundingClientRect()
+    const dy = event.movementY
+    if (dy === 0) {
+        return
+    }
+    const {height, taper, precis} = widget
+
+    if (precis) {
+        widget.currentValue =
+            clamp(widget.currentValue + ((dy * dy) * (Math.sign(dy) / -2)) * taper.fineStep, [0, height])
+    } else {
+        widget.currentValue =
+            clamp(widget.currentValue + (-dy * (remap(widget.getNormValue(), 0, 1, 1, 0.25))), [0, height])
+    }
+
+    widget.dispatchOutput(id, widget.getMappedValue())
 }
 
- function removeKeyListeners(control:any) {
-      removeEventListener('keydown', control.handleModifier)
-      removeEventListener('keyup', control.handleModifier)
+function updatesForMouseDragEnd(caller) {
+    const {id, widget, event} = caller
+    if (!widget) return
+    widget.changing = false
+    widget.precis = false
+    widget.dispatchOutput(id, widget.getMappedValue())
+    widget.selected.blur()
+    removeListeners()
 }
+
