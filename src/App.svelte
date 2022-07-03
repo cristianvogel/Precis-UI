@@ -15,8 +15,9 @@
     import Radial from "./components/Radial.svelte";
 	import Fader from './components/Fader.svelte'
     import {toFixed} from "./lib/Utils";
-    import {Palette as C} from "./lib/PrecisControllers";
     import {readout, touchedID} from "./components/stores";
+    import {Palette as C} from "./types/Precis-UI-TypeDeclarations";
+    import Toggle from './components/Toggle.svelte'
 
     function handleOutputValue(event: CustomEvent) {
         readout.set(Number(toFixed(event.detail.value, 6)))
@@ -57,7 +58,7 @@
         const throttle = 10
         switch (ev.detail.id) {
             case ('fader.rescale') :
-                rescaleFaders = (Math.round((ev.detail.value) * throttle)) / throttle
+                rescaleFaders = ((Math.round((ev.detail.value) * throttle)) / throttle)
                 break;
             case ('dial.rescale') :
                 rescaleDials = (Math.round((ev.detail.value) * throttle)) / throttle
@@ -122,6 +123,23 @@
                scale={rescaleFaders}
 			   on:output={handleOutputValue}/>
 	{/each}
+
+<!--- a few groovy buttons -->
+    {#each Array(4) as _, i ('key-t-'+i)}
+        {@const posX = 100+(i*90)}
+        <Toggle x={posX}
+                y="600"
+                width="81"
+                height="50"
+                graphicStyle={i%2}
+                label= { ['▷' , '⚠︎' , '⏏︎︎︎' , '𝌺' ].at(i) }
+                min="0"
+                max={i}
+                id="toggle.{i}"
+                on:output={handleOutputValue}
+        />
+    {/each}
+
 </main>
 
 

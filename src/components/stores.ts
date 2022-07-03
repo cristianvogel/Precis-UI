@@ -1,8 +1,6 @@
 import { Writable, writable} from 'svelte/store';
 import type {BasicController} from '../lib/PrecisControllers'
-import type { PointsArray} from "../types/precisUI";
-import {Default} from "../types/precisUI";
-
+import type {PointsArray} from "../types/Precis-UI-TypeDeclarations";
 
 type WidgetEntry = Map<string, BasicController> // widget.id , instance
 export const WidgetStore:Writable<WidgetEntry>  =

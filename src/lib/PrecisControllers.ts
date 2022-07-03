@@ -5,21 +5,33 @@
 /**
  * Declares and implements the Base Classes for all controller types
  */
-import {radialPoints, remap, toNumber} from "./Utils";
+import {asLogicValue, radialPoints, remap, roundTo, toNumber} from './Utils';
 import {createEventDispatcher} from "svelte";
-import {Palette as C} from "../lib/PrecisControllers";
-import type {PointsArray} from "../types/precisUI";
 import {addListeners} from "./Listeners";
 import {WidgetStore} from "../components/stores";
 import {get} from "svelte/store";
+import type {
+    PointsArray,
+    RoundedReadout,
+    BoundingRectCSS,
+    DialTag,
+    FaderTag,
+    Output,
+    Rect,
+    StateFlags,
+    Taper,
+    Tint,
+    ToggleTag
+} from '../types/Precis-UI-TypeDeclarations';
+import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
 
 abstract class PrecisController {
 
     protected dispatch
     selected: (HTMLElement | null) = null
-    clientRect: DOMRect;
-    boundingRectCSS: BoundingRectCSS
+    // clientRect: DOMRect;
+    // boundingRectCSS: BoundingRectCSS
     rect: Rect
     rx: number
     scale: number
@@ -27,13 +39,13 @@ abstract class PrecisController {
     background: Tint
     protected _stateFlags: StateFlags = {precis: false, focussed: false, changing: false}
 
-
     protected constructor() {
         this.dispatch = createEventDispatcher()
     }
 
-    abstract getNormValue(): number
-    abstract getMappedValue(): number
+    abstract getNormValue():number
+    abstract getMappedValue():number
+    abstract getRoundedReadout():RoundedReadout
     abstract componentMouseDown(event: MouseEvent, caller: BasicController): void
     abstract componentMouseEnter(event: MouseEvent, caller:BasicController):void
     abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
@@ -85,6 +97,7 @@ abstract class PrecisController {
         this.rect.height = toNumber(h)
     }
     dispatchOutput(id: string, value: Output,): void {
+        //console.log( 'dispatching '+value+' from -> ' + id)
         this.dispatch('output', {
             value,
             id,
@@ -115,6 +128,8 @@ abstract class PrecisController {
      * @param widget
      * @param scale
      */
+
+    // todo: I don't think this should be static, messing up the drawing when Default.DIAL_SQUARE is not 100
     static containerTransform(widget:BasicController, scale?:number):string {
         const inline = widget ?
             `${widget.getCSSforRect()};
@@ -144,9 +159,13 @@ export class BasicController extends PrecisController {
     getNormValue(): number {
         return (this.currentValue / this.height)
     }
+    getRoundedReadout():RoundedReadout {
+        return roundTo(this.getMappedValue(), this.precis ? 1.0e-4 : 1.0e-2)
+            .toFixed(this.precis ? 3 : 1);
+    };
     componentMouseDown(event: MouseEvent, caller:BasicController): void {
         if (!event.target) return
-        console.info('Element belongs to ⇢ ' + caller.id)
+        // console.info('Element belongs to ⇢ ' + caller.id)
         const mode = (event.type)
         caller.stateFlags = {
             changing: true,
@@ -166,8 +185,6 @@ export class BasicController extends PrecisController {
         caller.selected.focus()
         caller.focussed = true
     }
-
-
 }
 
 export class Radial extends BasicController {
@@ -202,59 +219,41 @@ export class Fader extends BasicController {
         console.log('Constructed -> ' + this.id)
     }
 }
+export class Toggle extends BasicController {
+    background = C.clear
+    id:ToggleTag = 'toggle.0'
+    private _state:number|boolean = 0
+    constructor(initialSettings) {
+        super();
+        Object.assign(this, initialSettings)  // don't do this lazy move on a server, very insecure!
+        super.id = this.id
+        console.log('Constructed -> ' + this.id)
+    }
+    componentMouseDown(event: MouseEvent, caller:BasicController): void{
+        if (!event.target) return
+        caller.stateFlags = {
+            changing: true,
+            precis: false,
+            focussed: true
+        }
+        caller.currentValue = this.changeState() as number
+        caller.selected = event.target as HTMLElement
+        super.dispatchOutput(this.id, this.getMappedValue())
+    }
+    getMappedValue(): number {
+        return Math.round(((this.state as number | 1) * this.taper.max) + this.taper.min);
+    }
 
+    changeState():number|boolean {
+        this._state = asLogicValue(this._state, 'not')
+        return this._state
+    }
 
-// Widget agnostic types
-export type BoundingRectCSS = `top:${number}px;left:${number}px;width:${number}px;height:${number}px;`
-export type Output = number | boolean | string
-export type StateFlags = {
-    precis: boolean, focussed: boolean, changing: boolean
+    get state(): number|boolean {
+        return this._state;
+    }
+    set state(value: number|boolean) {
+        this._state = value;
+    }
 }
-
-// Name Rules
-export type FaderTag = `fader.${number}` | ''
-export type DialTag = `dial.${number}` | ''
-export type SelectorTag = `selector.${number}` | ''
-
-// Shared Geometry
-export interface Rect {
-    x: number,
-    y: number,
-    width: number,
-    height: number
-}
-
-export interface Taper {
-    min: number,
-    max: number,
-    fineStep: number,
-    grid?: number
-}
-
-// Colours
-// todo: improve color palette stuff
-type RGB = `rgb(${number}, ${number}, ${number})`
-type RGBA = `rgba(${number}, ${number}, ${number}, ${number})`
-type HEX = `#${string}`
-export enum Palette {
-    clear = 'transparent',
-    black = 'black',
-    sky = 'skyblue',
-    cyan = 'cyan',
-    aquaLight = 'aqua',
-    red = 'mediumvioletred',
-    blanco = 'white',
-    silver = 'silver',
-    pink = 'hotpink',
-    offWhite = 'antiquewhite',
-    dim = 'darkgrey',
-    aquaDark = 'darkturquoise',
-    pinkDark = 'deeppink',
-    whiteBis = 'ghostwhite',
-    frenchSilver = 'gainsboro',
-    slate = 'slategray',
-    tan = 'tan',
-    deepBlue = 'midnightblue'
-}
-export type Tint = RGB | Palette | RGBA | HEX
 

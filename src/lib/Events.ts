@@ -1,7 +1,7 @@
 import {clamp, remap } from "./Utils";
 import {removeListeners} from "./Listeners";
 import type {BasicController} from "./PrecisControllers";
-import type {WidgetWithKey} from "../types/precisUI";
+import type {WidgetWithKey} from "../types/Precis-UI-TypeDeclarations";
 
 export function handleMouseDrag(event: MouseEvent, widget: BasicController): void {
     if (!widget) return

@@ -3,13 +3,13 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper} from "../types/precisUI";
-    import type {FaderTag} from "../lib/PrecisControllers";
-    import {BasicController, Fader, Palette as C, Rect, Taper} from "../lib/PrecisControllers";
-    import {remap, roundTo, toNumber} from "../lib/Utils";
+    import {Default, DefaultTaper} from "../types/Precis-UI-Defaults";
+    import {BasicController, Fader} from "../lib/PrecisControllers";
+    import {remap, toNumber} from "../lib/Utils";
     import { onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {WidgetStore} from './stores.js'
+    import {FaderTag, Palette as C, Rect, Taper} from "../types/Precis-UI-TypeDeclarations";
 
     export let
         min:number = DefaultTaper.MIN,
@@ -22,20 +22,20 @@
         scale:number = Default.FADER_SCALE_FACTOR,
         rx:number = Default.RX,
         id:FaderTag = 'fader.0',
+        tickMarks:boolean = true, //todo: Fader tickmarks
         label:string = '',
-        value:number = 0
-
-    const rect:Rect = {
-        x: toNumber(x),
-        y: toNumber(y),
-        width: toNumber(width),
-        height: toNumber(height)
-    }
-    const taper:Taper = {
-        min: toNumber(min),
-        max: toNumber(max),
-        fineStep: toNumber(fineStep)
-    };
+        value:number = 0,
+        rect:Rect = {
+            x: toNumber(x),
+            y: toNumber(y),
+            width: toNumber(width),
+            height: toNumber(height)
+        },
+        taper:Taper = {
+            min: toNumber(min),
+            max: toNumber(max),
+            fineStep: toNumber(fineStep)
+        };
 
     const settings = {
         currentValue: value,
@@ -45,7 +45,7 @@
         rx,
         scale,
         taper,
-        tickMarks: true,
+        tickMarks,
     }
 
     // Construct a new instance of a vertical fader
@@ -62,9 +62,7 @@
     let offsetMap;
     let sinMap;
 
-    $:roundedReadout =
-        roundTo(fader.getMappedValue(), fader.precis ? 1.0e-4 : 1.0e-2)
-            .toFixed(fader.precis ? 3 : 1)
+    $:roundedReadout = fader.getRoundedReadout()
     $:registrySize = $WidgetStore.size
 
 </script>
@@ -99,7 +97,7 @@
             </svg>
         </div>
     {/if}
-
+    <!-- SVG defs -->
     <svg >
         <defs id='{id}-gradients'>
             <linearGradient id='{id}-grad'
@@ -117,6 +115,7 @@
             </filter>
         </defs>
 <!-- todo: double click on track is broken -->
+<!-- fader track -->
         <g fill="url('#{id}-grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
             <rect id='#{id}-track'
                   width={fader.width}
@@ -125,6 +124,7 @@
                   x=0rem
                   on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
             />
+<!-- handle and inner readout -->
             <g id='{id}-handle+readout'
                on:contextmenu|preventDefault={(e)=>{fader.componentMouseDown(e, fader)} }
                stroke={C.offWhite}
@@ -136,7 +136,6 @@
                       stroke=none
                       style="filter:url(#shadow);"
                 />
-
                 <g id='{id}-readout'
                    class='readoutBox rotated'
                    style='opacity:{fader.changing ? 1 : 0.7}'>
@@ -156,16 +155,20 @@
             </g>
         </g>
     </svg>
-
-    {#if fader.changing }
+<!-- label -->
+    {#if fader.focussed }
         <div id='{id}-label'
              class='faderContainer'
              style={'z-index: -1000'}>
+
+<!-- LED indicator -->
             <svg in:fade out:fade>
                 <g id='{id}-LED'
-                   stroke="green" fill=none stroke-width="1px"
+                   stroke="aqua" fill=none stroke-width="2px"
                    transform="translate({fader.width/2})">
-                    <circle id='{id}-active' cy=-20 cx=-0.5 r=2 fill='aqua'/>
+<!--                    <circle id='{id}-LED' cy=-25 cx=-0.5 r=2 fill='aqua'/>-->
+                    <line id='{id}-LED' x1="-0.5" x2="-0.5" y1="-5" y2="-25"></line>
+                    <line x1="-20" x2="20" y1="-25" y2="-25" in:fade="{{duration: 2000}}"></line>
                     <text id='{id}-label.Text'
                           class='label rotated'
                           lengthAdjust='spacingAndGlyphs'

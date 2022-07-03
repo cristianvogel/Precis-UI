@@ -3,19 +3,17 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
-    import type {DialTag, Tint} from "../lib/PrecisControllers";
+    import {Default, DefaultTaper} from "../types/Precis-UI-Defaults";
     import {
         BasicController,
-        Palette as C,
-        Radial,
-        Rect,
-        Taper
+        Radial
     } from "../lib/PrecisControllers";
-    import {radialTickMarkAt, remap, roundTo, toNumber} from "../lib/Utils";
-    import {afterUpdate, beforeUpdate, onMount} from "svelte";
+    import {radialTickMarkAt, remap, toNumber} from "../lib/Utils";
+    import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from './stores.js'
+    import type {DialTag, Rect, Taper, Tint, PointsArray} from "../types/Precis-UI-TypeDeclarations";
+    import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
     export let
         min:number = DefaultTaper.MIN,
@@ -24,38 +22,38 @@
         x:number = Default.X,
         y:number = Default.Y,
         width:number = Default.DIAL_SQUARE,
-        background:Tint = C.dim,
+        background = Default.DIAL_BACKGROUND,
         scale:number = Default.DIAL_SCALE_FACTOR,
         rx:number = Default.RX,
         id:DialTag = 'dial.0',
         label:string = '',
         value:number = 0,
+        rect:Rect = {
+            x: toNumber(x),
+            y: toNumber(y),
+            width: toNumber(width),
+            height: toNumber(width)
+        },
+        taper:Taper = {
+            min: toNumber(min),
+            max: toNumber(max),
+            fineStep: toNumber(fineStep)
+        },
         pointer:boolean = true,
         tickMarks:boolean = true,
         animatedReadout:boolean = true
-
-    const rect:Rect = {
-        x: toNumber(x),
-        y: toNumber(y),
-        width: toNumber(width),
-        height: toNumber(width)
-    }
-    const taper:Taper = {
-        min: toNumber(min),
-        max: toNumber(max),
-        fineStep: toNumber(fineStep)
-    };
 
     const settings = {
         currentValue: value,
         id,
         label,
-        pointer: true,
+        pointer,
         rect,
         rx,
         scale,
         taper,
-        tickMarks: true,
+        tickMarks,
+        background: C.dim
     }
 
     // Construct a new instance of a Radial
@@ -74,15 +72,13 @@
     let offsetMap;
     let sinMap;
     let marks;
-    let numericalReadout = true;
+    let numericalReadout = true; // can be user selected?
     let pointerPlot:PointsArray
     let pointerLength:number
     let roundedReadout:string
 
     $:pointerPlot =  dial.radialPoints
-    $:roundedReadout =
-        roundTo(dial.getMappedValue(), dial.precis ? 1.0e-4 : 1.0e-2)
-            .toFixed(dial.precis ? 3 : 1)
+    $:roundedReadout = dial.getRoundedReadout()
     $:registrySize = $WidgetStore.size
 
     // compute the current PointsArray used to plot the radial polyline
@@ -113,18 +109,18 @@
         {@const sinMap = Math.sin(Math.PI * offsetMap)}
         <div id='{dial.id}-animatedReadout'
              class="animatedReadout"
-             style="transform: translate( 30%, 60%)" >
+             style="transform: translate( 30%, 55%)" >
             <svg in:fade out:fade >
                 <g stroke-width='1px'
                    opacity={Math.abs(sinMap) + 0.1}
                    transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
-                                scale(1, {Math.abs(sinMap)  + 0.125} )"
-                > <text fill={C.aquaLight}>{roundedReadout}</text>
+                                scale(1, {Math.abs(sinMap)  + 0.125} )" >
+                 <text fill={C.aquaLight}>{roundedReadout}</text>
                 </g>
             </svg>
         </div>
     {/if}
-
+<!-- SVG defs -->
     <svg transform=scale(0.9)>
         <defs id='{dial.id}-gradients'>
             <radialGradient cx=50%
@@ -184,8 +180,9 @@
                               stroke-width={width - (i/2)}
                               stroke='rgba(250,250,250,0.5)'/>
                 {/if}
+
 <!-- LED indicator-->
-                {#if (i === pointerLength - 1) && dial.focussed || dial.changing}
+                {#if (i === pointerLength - 1) && dial.focussed}
                     {@const value = dial.getNormValue()}
                     {@const gearedValue = ((value * 100) % 10) - 10 }
                     <circle id='{id}-LED'
@@ -206,6 +203,8 @@
                         {dial.precis ? '⋯' : ' ▹'}
                 </text>
             </g>
+        {/if}
+<!-- label -->
             <g id='{dial.id}-label'>
                 <text class:label={dial.label}
                       x="50%" y="5%"
@@ -214,7 +213,7 @@
                     {dial.label}
                 </text>
             </g>
-            {/if}
+
     </svg>
 </div>
 

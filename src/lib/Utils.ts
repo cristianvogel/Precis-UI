@@ -1,21 +1,11 @@
-import type {PointsArray, TickMark} from "../types/precisUI";
-import {Default} from "../types/precisUI";
 
-export function clamp(value:number , range = [0,1]):number {
-    return Math.min(Math.max(value, range[0]), range[1]);
+import {Default} from "../types/Precis-UI-Defaults";
+import type {TickMark, PointsArray} from "../types/Precis-UI-TypeDeclarations";
+
+// Type assert
+export function toNumber( value: string|number): number {
+    return typeof value !== 'number' ? Number.parseFloat(value) : value;
 }
-
-export function lerp(start, stop, amt):number {
-    return amt*(stop-start)+start;
-};
-
-export function remap(n, start1, stop1, start2, stop2):number {
-    return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
-};
-
-export function degToRad(degrees):number {
-    return degrees * (Math.PI / 180);
-};
 
 /** radialPoints
  ** Method adapted from iPlug 2 C++ Plug-in Framework
@@ -65,16 +55,37 @@ export function radialTickMarkAt( i:number,
     return {x1, x2, y1, y2}
 }
 
+// Kyma influenced
+/**
+ * returns 1 or true for any positive input or 0 or false for <= 0
+ * @param n
+ * @param not optionally return the logical NOT
+ * @param bool optionally cast result as boolean
+ */
+export function asLogicValue( n:number|boolean, not:string = '', bool:boolean = false ):number|boolean
+    {   n = typeof n === 'boolean' ? Boolean(n) : n
+        const r = n > 0 ? (not ? 0 : 1) : (not ? 1 : 0)
+        return (bool ? Boolean(r) : r)
+    }
 
-export function toNumber( value: string|number): number {
-    return typeof value !== 'number' ? Number.parseFloat(value) : value;
-}
-
-// little bits of Thi.ng https://thi.ng/
+// Thi.ng https://thi.ng/
 export const roundTo = (x: number, prec = 1) => Math.round(x / prec) * prec;
 export const trunc = (x) => (x < 0 ? Math.ceil(x) : Math.floor(x));
+export function lerp(start, stop, amt):number {
+    return amt*(stop-start)+start;
+};
+export function remap(n, start1, stop1, start2, stop2):number {
+    return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
+};
+export function degToRad(degrees):number {
+    return degrees * (Math.PI / 180);
+};
+export function clamp(value:number , range = [0,1], round = false):number {
+    let res = Math.min(Math.max(value, range[0]), range[1])
+    return (round ? Math.round(res) : res);
+}
 
-// little bit of Ext.js
+// Ext.js
 export const toFixed = function(value:number, precision:number):string {
     precision = precision || 0;
     const pow = Math.pow(10, precision);
