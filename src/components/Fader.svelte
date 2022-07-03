@@ -108,7 +108,7 @@
                 <stop offset="0" stop-color={C.black}/>
                 <!-- todo: abstract out the colour assign -->
                 <stop offset="80%"
-                      stop-color={[ C.red, C.sky, C.pink, C.aquaDark ].at(registrySize%4)}/>
+                      stop-color={[ C.red, C.sky, C.pink, C.aquaDark, C.slate ].at(registrySize%5)}/>
             </linearGradient>
             <filter id="shadow">
                 <feDropShadow dx="0" dy="0.4" stdDeviation="0.2"/>
@@ -171,8 +171,7 @@
                     <line x1="-20" x2="20" y1="-25" y2="-25" in:fade="{{duration: 2000}}"></line>
                     <text id='{id}-label.Text'
                           class='label rotated'
-                          lengthAdjust='spacingAndGlyphs'
-                          textLength={fader.height * 0.5} >
+                          textLength={fader.height * 0.25} >
                         {fader.label}
                     </text>
                 </g>

@@ -18,39 +18,13 @@
     import {readout, touchedID} from "./stores/stores";
     import {Palette as C} from "./types/Precis-UI-TypeDeclarations";
     import Toggle from './components/Toggle.svelte'
+    import {Default} from './types/Precis-UI-Defaults'
 
     function handleOutputValue(event: CustomEvent) {
         readout.set(Number(toFixed(event.detail.value, 6)))
         touchedID.set(event.detail.id)
     }
 
-	let posX;
-	let posY;
-	let rangeTest;
-    let scale;
-    let rescaleDials, rescaleFaders = 1
-
-    // Test: Two Dials for scaling the other components
-    const dialScaler = {
-        id:"dial.rescale",
-        x:700, y:300,
-        background: C.clear,
-        scale: 0.5,
-        value: 50, // initial value as percentage?
-        label:"Scale Dials",
-        min:0,
-        max:2 }
-
-    const faderScaler = {
-        id:"fader.rescale",
-        x:700, y:400,
-        background: C.clear,
-        scale: 0.5,
-        value: 50, // initial value as percentage?
-        label:"Scale Faders",
-        min:0,
-        max:2
-    }
 
     function resizeWidgets(ev:CustomEvent) {
         //rescale/redraw with stepped throttle
@@ -67,15 +41,44 @@
 
     }
 
+
+    // Test: Two Dials for scaling the other components
+    const dialScaler = {
+        id:"dial.rescale",
+        x:100, y:600,
+        background: C.clear,
+        scale: 0.5,
+        value: 40, // initial value as percentage?
+        label:"Scale Dials",
+        min:0,
+        max:2 }
+    const faderScaler = {
+        id:"fader.rescale",
+        x:200, y:600,
+        background: C.clear,
+        scale: 0.5,
+        value: 50, // initial value as percentage?
+        label:"Scale Faders",
+        min:0,
+        max:2
+    }
+
+    let posX;
+    let posY;
+    let rangeTest;
+    let rescaleDials, rescaleFaders = 1
+    let oddEvenSpreadF;
+    let oddEvenSpreadD;
+
 </script>
 
 <main>
     <div id='header'>
         <h1>
-            Precision UI Controls
+            Precision UI
         </h1>
         <h2>
-            for <a href='https://svelte.dev'>Svelte</a>
+            Made with <a href='https://svelte.dev'>Svelte</a>
         </h2>
         <p>
             Drag with left mouse and use right mouse for precision mode.<br>
@@ -95,32 +98,49 @@
         </h3>
     </div>
 
+<!-- render dials to scale the other widgets -->
     <Radial {...dialScaler} on:output={(e)=>{handleOutputValue(e); resizeWidgets(e)}}/>
     <Radial {...faderScaler} on:output={(e)=>{handleOutputValue(e); resizeWidgets(e)}}/>
 
-<!-- render some dials -->
-    {#each Array(4) as _, i ('key-d-' + i)}
-        {@const posX = 400 + ((i % 2) * 150)}
-        {@const posY = i < 2 ? 250 : 450}
+<!--
+    render a group of dials
+    to get fixed positioning use props x= and y=
+        example: x={posX} y={posY}
+    or pass a new Rect for dynamic transform
+        example: rect={{x: posX * rescaleDials, y: posY, width: 100, height: 100}}
+-->
+
+    <div style="transform-origin:center" >
+    {#each Array(8) as _, i ('key-d-' + i)}
+        {@const posX = 450 + ((i % 2) * 50)}
+        {@const oddEvenSpreadD = rescaleDials * [-1, 1].at(i%2) }
+        {@const posY = (((i / 3) % 8) + 1) * 150}
         {@const rangeTest = [1, 10, 100, 16000].at(i)}
         <Radial id="dial.{i}"
-                x={posX}
-                y={posY}
+                rect={{  x: posX + (50 * oddEvenSpreadD),
+                         y: posY,
+                         width: 100,
+                         height: 100 }}
                 min=0
                 max={rangeTest}
                 scale={rescaleDials}
                 on:output={handleOutputValue} />
     {/each}
+    </div>
 <!-- render some vert faders -->
-	{#each Array(4) as _, i ('key-f-'+i)}
+	{#each Array(6) as _, i ('key-f-'+i)}
 		{@const posX = 100+(i*50)}
+        {@const oddEvenSpreadF = rescaleFaders * [-1, 1].at(i%2) }
 		{@const rangeTest = [1, 10, 100, 16000].at(i)}
 		<Fader id="fader.{i}"
-			   x={posX}
-			   y="250"
+               rect={{  x: posX ,
+                         y: 250 ,
+                         width: Default.FADER_WIDTH,
+                         height: Default.FADER_HEIGHT  }}
 			   min=0
 			   max={rangeTest}
                scale={rescaleFaders}
+               label={'Precis-UI ◠◡ '+i}
 			   on:output={handleOutputValue}/>
 	{/each}
 
@@ -128,13 +148,13 @@
     {#each Array(4) as _, i ('key-t-'+i)}
         {@const posX = 100+(i*90)}
         <Toggle x={posX}
-                y="600"
+                y="700"
                 width="81"
                 height="50"
                 graphicStyle={i%2}
                 label= { ['▷' , '⚠︎' , '⏏︎︎︎' , '𝌺' ].at(i) }
                 min="0"
-                max={i}
+                max={i+1}
                 id="toggle.{i}"
                 on:output={(e)=>{handleOutputValue(e); resizeWidgets(e)}}
         />

@@ -77,10 +77,10 @@
     let pointerLength:number
     let roundedReadout:string
 
+    $:rect , refresh
     $:pointerPlot =  dial.radialPoints
     $:roundedReadout = dial.getRoundedReadout()
     $:registrySize = $WidgetStore.size
-
     // compute the current PointsArray used to plot the radial polyline
     function addPointerPlotToStore() {
         const plotPoints:PointsArray =  dial.spinPointer()
@@ -99,7 +99,7 @@
      on:mouseleave={ (e)=>{refresh(); dial.componentMouseLeave(e, dial)} }
      on:mousemove={addPointerPlotToStore}
      on:mouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
-     style={BasicController.containerTransform(dial, scale)}
+     style={BasicController.containerTransform(dial, scale, rect)}
 >
     <!-- animated numerical readout mojo-->
     {#if dial.changing && animatedReadout}
@@ -132,7 +132,7 @@
             >
                 <stop offset="5%" stop-color="darkblue"/>
                 <!-- todo: pull up a colour assign method -->
-                <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan ].at(registrySize%4)}/>
+                <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan, C.whiteBis ].at(registrySize%5)}/>
                 />
                 <stop offset="99%" stop-color="aquamarine"/>
             </radialGradient>
