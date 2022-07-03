@@ -6,26 +6,16 @@
     import {Default, DefaultTaper, PointsArray} from "../types/precisUI";
     import type {DialTag, Tint} from "../lib/PrecisControllers";
     import {
+        BasicController,
         Palette as C,
         Radial,
         Rect,
         Taper
     } from "../lib/PrecisControllers";
     import {radialTickMarkAt, remap, roundTo, toNumber} from "../lib/Utils";
-    import {onMount} from "svelte";
+    import {afterUpdate, beforeUpdate, onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from './stores.js'
-    import read_script from "svelte/types/compiler/parse/read/script";
-
-    let gearedValue;
-    let offsetMap;
-    let sinMap;
-    let marks;
-    let numericalReadout = true;
-    let pointerPlot:PointsArray
-    let pointerLength:number
-    let registrySize
-    let roundedReadout:string
 
     export let
         min:number = DefaultTaper.MIN,
@@ -70,51 +60,38 @@
 
     // Construct a new instance of a Radial
     let dial:Radial = new Radial(settings)
-
-    const initialise = function () {
-        // add self to a layout group registry
-        function addSelfToRegistry() {
-            $WidgetStore.set(dial.id, dial)
-        }
-        // this is the transform which renders the container DIV element
-        const containerTransform = function (s?:number) {
-            return `${dial.getCSSforRect()};
-                  transform: scale(${ s || dial.scale});
-                  background: ${dial.background};`
-        }
-        // the Svelte reactive assigment
-        function reactiveAssignment() {
-            dial=dial
-        }
-        return {
-            addSelfToRegistry,
-            containerTransform,
-            reactiveAssignment
-        };
-    };
-    // compute the current PointsArray used to plot the radial polyline
-    function addPointerPlotToStore( ) {
-       const plotPoints:PointsArray =  dial.spinPointer()
-        $PointerPlotStore.set( dial.id, plotPoints)
-        dial=dial // reactive assignment
-    }
-
-    const { addSelfToRegistry, containerTransform, reactiveAssignment } = initialise();
+    BasicController.initialise(dial)
+    const refresh = ()=> {dial = dial}
 
     addPointerPlotToStore()
 
-    $:scale, reactiveAssignment()
+    onMount( () => {
+        pointerLength = dial.radialPoints.length
+        dial.dispatchOutput( dial.id, dial.getMappedValue(),);
+    });
+
+    let gearedValue;
+    let offsetMap;
+    let sinMap;
+    let marks;
+    let numericalReadout = true;
+    let pointerPlot:PointsArray
+    let pointerLength:number
+    let roundedReadout:string
+
     $:pointerPlot =  dial.radialPoints
     $:roundedReadout =
         roundTo(dial.getMappedValue(), dial.precis ? 1.0e-4 : 1.0e-2)
-        .toFixed(dial.precis ? 3 : 1)
+            .toFixed(dial.precis ? 3 : 1)
+    $:registrySize = $WidgetStore.size
 
-    onMount( () => {
-        addSelfToRegistry()
-        pointerLength = dial.radialPoints.length
-        registrySize = $WidgetStore.size
-        dial.dispatchOutput( dial.id, dial.getMappedValue(),);
-    });
+    // compute the current PointsArray used to plot the radial polyline
+    function addPointerPlotToStore() {
+        const plotPoints:PointsArray =  dial.spinPointer()
+        $PointerPlotStore.set( dial.id, plotPoints)
+        refresh() // reactive assignment
+    }
+
 </script>
 
 
@@ -123,10 +100,10 @@
      on:contextmenu|preventDefault={ (e)=>{dial.componentMouseDown(e,dial)} }
      on:mousedown|preventDefault={ (e)=>{dial.componentMouseDown(e, dial)} }
      on:mouseenter|preventDefault={ (e)=>{dial.componentMouseEnter(e, dial)} }
-     on:mouseleave={ (e)=>{reactiveAssignment(); dial.componentMouseLeave(e, dial)} }
+     on:mouseleave={ (e)=>{refresh(); dial.componentMouseLeave(e, dial)} }
      on:mousemove={addPointerPlotToStore}
      on:mouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
-     style={containerTransform(scale)}
+     style={BasicController.containerTransform(dial, scale)}
 >
     <!-- animated numerical readout mojo-->
     {#if dial.changing && animatedReadout}

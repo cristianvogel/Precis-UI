@@ -10,6 +10,8 @@ import {createEventDispatcher} from "svelte";
 import {Palette as C} from "../lib/PrecisControllers";
 import type {PointsArray} from "../types/precisUI";
 import {addListeners} from "./Listeners";
+import {WidgetStore} from "../components/stores";
+import {get} from "svelte/store";
 
 
 abstract class PrecisController {
@@ -25,6 +27,7 @@ abstract class PrecisController {
     background: Tint
     protected _stateFlags: StateFlags = {precis: false, focussed: false, changing: false}
 
+
     protected constructor() {
         this.dispatch = createEventDispatcher()
     }
@@ -34,6 +37,7 @@ abstract class PrecisController {
     abstract componentMouseDown(event: MouseEvent, caller: BasicController): void
     abstract componentMouseEnter(event: MouseEvent, caller:BasicController):void
     abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
+
 
     set stateFlags(settings: StateFlags) {
         this._stateFlags = {...settings};
@@ -97,15 +101,42 @@ abstract class PrecisController {
         const newStyle = `transform: scale(${scale});`
         el.setAttribute('style', el.getAttribute('style') + newStyle)
     }
+    /**
+     * add self to a layout group registry
+     * @param widget
+     */
+    static addSelfToRegistry( widget: BasicController ): void {
+        if (!widget) return
+        get(WidgetStore).set(widget.id, widget)
+    }
+    /**
+     * CSS transform which renders the widget's container element
+     * todo: narrow down return type
+     * @param widget
+     * @param scale
+     */
+    static containerTransform(widget:BasicController, scale?:number):string {
+        const inline = widget ?
+            `${widget.getCSSforRect()};
+                  transform: scale(${ scale || widget.scale});
+                  background: ${widget.background};`
+            : ''
+        return inline
+    }
 }
 
 export class BasicController extends PrecisController {
     currentValue: number;
     taper: Taper
     id: string
+    selfy:any
 
     constructor() {
         super()
+    }
+    static initialise(widget: BasicController){
+        BasicController.addSelfToRegistry(widget)
+        BasicController.containerTransform(widget)
     }
     getMappedValue(): number {
         return remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max)
@@ -113,7 +144,6 @@ export class BasicController extends PrecisController {
     getNormValue(): number {
         return (this.currentValue / this.height)
     }
-
     componentMouseDown(event: MouseEvent, caller:BasicController): void {
         if (!event.target) return
         console.info('Element belongs to ⇢ ' + caller.id)
@@ -136,6 +166,8 @@ export class BasicController extends PrecisController {
         caller.selected.focus()
         caller.focussed = true
     }
+
+
 }
 
 export class Radial extends BasicController {

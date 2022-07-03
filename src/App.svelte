@@ -77,7 +77,7 @@
             for <a href='https://svelte.dev'>Svelte</a>
         </h2>
         <p>
-            Drag with left mouse or use right mouse for precision mode.<br>
+            Drag with left mouse and use right mouse for precision mode.<br>
         </p>
     </div>
 

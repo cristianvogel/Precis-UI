@@ -5,25 +5,22 @@
 
     import {Default, DefaultTaper} from "../types/precisUI";
     import type {FaderTag} from "../lib/PrecisControllers";
-    import {Fader, Palette as C, Rect, Taper} from "../lib/PrecisControllers";
+    import {BasicController, Fader, Palette as C, Rect, Taper} from "../lib/PrecisControllers";
     import {remap, roundTo, toNumber} from "../lib/Utils";
     import { onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {WidgetStore} from './stores.js'
-    import {addListeners} from "../lib/Listeners";
-
-    let registrySize
 
     export let
-        min = DefaultTaper.MIN,
-        max = DefaultTaper.MAX,
-        fineStep = DefaultTaper.FINE,
-        x = Default.X,
-        y = Default.Y,
-        width = Default.FADER_WIDTH,
-        height = Default.FADER_HEIGHT,
-        scale = Default.FADER_SCALE_FACTOR,
-        rx = Default.RX,
+        min:number = DefaultTaper.MIN,
+        max:number = DefaultTaper.MAX,
+        fineStep:number = DefaultTaper.FINE,
+        x:number = Default.X,
+        y:number = Default.Y,
+        width:number = Default.FADER_WIDTH,
+        height:number = Default.FADER_HEIGHT,
+        scale:number = Default.FADER_SCALE_FACTOR,
+        rx:number = Default.RX,
         id:FaderTag = 'fader.0',
         label:string = '',
         value:number = 0
@@ -53,48 +50,22 @@
 
     // Construct a new instance of a vertical fader
     let fader:Fader = new Fader(settings)
-
-    const initialise = function () {
-
-        // add self to a layout group registry
-        function addSelfToRegistry() {
-            $WidgetStore.set(fader.id, fader)
-        }
-        // this is the transform which renders the container DIV element
-        const containerTransform = function (s?:number) {
-            return `${fader.getCSSforRect()};
-                  transform: scale(${ s || fader.scale});
-                  background: ${fader.background};`
-        }
-        // the Svelte reactive assigment
-        function reactiveAssignment() {
-            fader=fader
-        }
-
-        return {
-            addSelfToRegistry,
-            containerTransform,
-            reactiveAssignment
-        };
-    };
-
-    const { addSelfToRegistry, containerTransform, reactiveAssignment} = initialise();
-
-    $:scale, reactiveAssignment()
-    $:roundedReadout =
-        roundTo(fader.getMappedValue(), fader.precis ? 1.0e-4 : 1.0e-2)
-            .toFixed(fader.precis ? 3 : 1)
+    BasicController.initialise(fader)
+    const refresh = ()=> {fader = fader}
 
     onMount( () => {
-        addSelfToRegistry()
-        registrySize = $WidgetStore.size
-        fader.dispatchOutput( fader.id, fader.getMappedValue(),);
+        fader.dispatchOutput( fader.id, fader.getMappedValue());
     })
 
     let animatedReadout = true;
     let gearedValue;
     let offsetMap;
     let sinMap;
+
+    $:roundedReadout =
+        roundTo(fader.getMappedValue(), fader.precis ? 1.0e-4 : 1.0e-2)
+            .toFixed(fader.precis ? 3 : 1)
+    $:registrySize = $WidgetStore.size
 
 </script>
 
@@ -103,10 +74,10 @@
      on:contextmenu|preventDefault={ (e)=>{fader.componentMouseDown(e,fader)} }
      on:mousedown|preventDefault={ (e)=>{fader.componentMouseDown(e, fader)} }
      on:mouseenter|preventDefault={ (e)=>{fader.componentMouseEnter(e, fader)} }
-     on:mouseleave={ (e)=>{reactiveAssignment(); fader.componentMouseLeave(e, fader)} }
-     on:mousemove={reactiveAssignment}
+     on:mouseleave={ (e)=>{refresh(); fader.componentMouseLeave(e, fader)} }
+     on:mousemove={refresh}
      on:mouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
-     style={containerTransform(scale)}
+     style={BasicController.containerTransform(fader, scale)}
 >
 
     <!-- animated numerical readout mojo-->
