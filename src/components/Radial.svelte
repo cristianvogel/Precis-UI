@@ -11,7 +11,7 @@
     import {radialTickMarkAt, remap, toNumber} from "../lib/Utils";
     import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import {PointerPlotStore, WidgetStore} from './stores.js'
+    import {PointerPlotStore, WidgetStore} from '../stores/stores.js'
     import type {DialTag, Rect, Taper, Tint, PointsArray} from "../types/Precis-UI-TypeDeclarations";
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 

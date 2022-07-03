@@ -15,7 +15,7 @@
     import Radial from "./components/Radial.svelte";
 	import Fader from './components/Fader.svelte'
     import {toFixed} from "./lib/Utils";
-    import {readout, touchedID} from "./components/stores";
+    import {readout, touchedID} from "./stores/stores";
     import {Palette as C} from "./types/Precis-UI-TypeDeclarations";
     import Toggle from './components/Toggle.svelte'
 
@@ -136,7 +136,7 @@
                 min="0"
                 max={i}
                 id="toggle.{i}"
-                on:output={handleOutputValue}
+                on:output={(e)=>{handleOutputValue(e); resizeWidgets(e)}}
         />
     {/each}
 

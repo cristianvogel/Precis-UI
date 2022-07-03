@@ -8,7 +8,7 @@
     import {clamp, toNumber} from '../lib/Utils';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import {WidgetStore} from './stores.js'
+    import {WidgetStore} from '../stores/stores.js'
     import {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
 
     export let
@@ -60,7 +60,7 @@
     let position: number | boolean = 0;
     const design = {
         designIndex: ()=>clamp(graphicStyle, [0,1], true),
-        trimColour: [ 'orange' , 'green']
+        trimColour: [ 'coral' , 'green']
     }
     const {designIndex, trimColour} = design
     let toggleDesign:string|undefined =  [ 'toggle-alt', 'toggle' ].at(designIndex())

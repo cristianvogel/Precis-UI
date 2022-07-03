@@ -1,7 +1,7 @@
 //todo: implement key listeners
 import {handleModifier, handleMouseDrag, handleMouseDragEnd} from "./Events";
 import type {BasicController} from "./PrecisControllers";
-import {ListeningElement, ListeningWidget} from "../components/stores";
+import {ListeningElement, ListeningWidget} from "../stores/stores";
 import {get} from "svelte/store";
 
 

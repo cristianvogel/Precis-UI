@@ -8,7 +8,7 @@
     import {remap, toNumber} from "../lib/Utils";
     import { onMount} from "svelte";
     import {fade} from 'svelte/transition';
-    import {WidgetStore} from './stores.js'
+    import {WidgetStore} from '../stores/stores.js'
     import {FaderTag, Palette as C, Rect, Taper} from "../types/Precis-UI-TypeDeclarations";
 
     export let

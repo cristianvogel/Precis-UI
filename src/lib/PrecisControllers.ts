@@ -8,7 +8,7 @@
 import {asLogicValue, radialPoints, remap, roundTo, toNumber} from './Utils';
 import {createEventDispatcher} from "svelte";
 import {addListeners} from "./Listeners";
-import {WidgetStore} from "../components/stores";
+import {WidgetStore} from "../stores/stores";
 import {get} from "svelte/store";
 import type {
     PointsArray,
