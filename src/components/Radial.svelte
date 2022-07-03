@@ -70,6 +70,7 @@
 
     // Construct a new instance of a Radial
     let dial:Radial = new Radial(settings)
+
     const initialise = function () {
         // add self to a layout group registry
         function addSelfToRegistry() {

@@ -77,9 +77,7 @@
             for <a href='https://svelte.dev'>Svelte</a>
         </h2>
         <p>
-            Mouse buttons for changing gear.<br>
-            Optionally, hold shift during drag.<br>
-            Double click to jump.
+            Drag with left mouse or use right mouse for precision mode.<br>
         </p>
     </div>
 
