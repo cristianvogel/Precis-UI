@@ -61,24 +61,26 @@
             $WidgetStore.set(fader.id, fader)
         }
         // this is the transform which renders the container DIV element
-        const containerTransform = function () {
+        const containerTransform = function (s?:number) {
             return `${fader.getCSSforRect()};
-                  transform: scale(${fader.scale});
+                  transform: scale(${ s || fader.scale});
                   background: ${fader.background};`
+        }
+        // the Svelte reactive assigment
+        function reactiveAssignment() {
+            fader=fader
         }
 
         return {
             addSelfToRegistry,
             containerTransform,
+            reactiveAssignment
         };
     };
 
-    function reactiveAssignment() {
-        fader=fader
-    }
+    const { addSelfToRegistry, containerTransform, reactiveAssignment} = initialise();
 
-    const { addSelfToRegistry, containerTransform,} = initialise();
-
+    $:scale, reactiveAssignment()
     $:roundedReadout =
         roundTo(fader.getMappedValue(), fader.precis ? 1.0e-4 : 1.0e-2)
             .toFixed(fader.precis ? 3 : 1)
@@ -104,7 +106,7 @@
      on:mouseleave={ (e)=>{reactiveAssignment(); fader.componentMouseLeave(e, fader)} }
      on:mousemove={reactiveAssignment}
      on:mouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
-     style={containerTransform()}
+     style={containerTransform(scale)}
 >
 
     <!-- animated numerical readout mojo-->

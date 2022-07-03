@@ -18,7 +18,5 @@ export const ListeningWidget:Writable<BasicController> =
 export const ListeningElement:Writable<HTMLElement> =
     writable()
 
-export const rescaleDials: Writable<number> = writable( Default.DIAL_SCALE_FACTOR as number )
-export const rescaleFaders: Writable<number> = writable( Default.FADER_SCALE_FACTOR as number )
 export const touchedID: Writable<string> = writable('')
 export const readout: Writable<number> = writable(0)

@@ -15,6 +15,7 @@
     import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from './stores.js'
+    import read_script from "svelte/types/compiler/parse/read/script";
 
     let gearedValue;
     let offsetMap;
@@ -69,7 +70,6 @@
 
     // Construct a new instance of a Radial
     let dial:Radial = new Radial(settings)
-
     const initialise = function () {
         // add self to a layout group registry
         function addSelfToRegistry() {
@@ -81,13 +81,16 @@
                   transform: scale(${ s || dial.scale});
                   background: ${dial.background};`
         }
-
+        // the Svelte reactive assigment
+        function reactiveAssignment() {
+            dial=dial
+        }
         return {
             addSelfToRegistry,
             containerTransform,
+            reactiveAssignment
         };
     };
-
     // compute the current PointsArray used to plot the radial polyline
     function addPointerPlotToStore( ) {
        const plotPoints:PointsArray =  dial.spinPointer()
@@ -95,14 +98,11 @@
         dial=dial // reactive assignment
     }
 
-    function reactiveAssignment() {
-        dial=dial
-    }
-
-    const { addSelfToRegistry, containerTransform } = initialise();
+    const { addSelfToRegistry, containerTransform, reactiveAssignment } = initialise();
 
     addPointerPlotToStore()
 
+    $:scale, reactiveAssignment()
     $:pointerPlot =  dial.radialPoints
     $:roundedReadout =
         roundTo(dial.getMappedValue(), dial.precis ? 1.0e-4 : 1.0e-2)
@@ -125,7 +125,7 @@
      on:mouseleave={ (e)=>{reactiveAssignment(); dial.componentMouseLeave(e, dial)} }
      on:mousemove={addPointerPlotToStore}
      on:mouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
-     style={containerTransform(dial.scale)}
+     style={containerTransform(scale)}
 >
     <!-- animated numerical readout mojo-->
     {#if dial.changing && animatedReadout}

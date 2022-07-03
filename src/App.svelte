@@ -16,7 +16,7 @@
 	import Fader from './components/Fader.svelte'
     import {toFixed} from "./lib/Utils";
     import {Palette as C} from "./lib/PrecisControllers";
-    import {readout, touchedID, rescaleDials, rescaleFaders} from "./components/stores";
+    import {readout, touchedID} from "./components/stores";
 
     function handleOutputValue(event: CustomEvent) {
         readout.set(Number(toFixed(event.detail.value, 6)))
@@ -26,7 +26,8 @@
 	let posX;
 	let posY;
 	let rangeTest;
-    let scale = 1;
+    let scale;
+    let rescaleDials, rescaleFaders = 1
 
     // Test: Two Dials for scaling the other components
     const dialScaler = {
@@ -50,18 +51,19 @@
         max:2
     }
 
-    function resizeWidgets(ev) {
+    function resizeWidgets(ev:CustomEvent) {
         //rescale/redraw with stepped throttle
         //todo: make this a feature
         const throttle = 10
         switch (ev.detail.id) {
             case ('fader.rescale') :
-                $rescaleFaders = (Math.round((ev.detail.value) * throttle)) / throttle
+                rescaleFaders = (Math.round((ev.detail.value) * throttle)) / throttle
                 break;
             case ('dial.rescale') :
-                $rescaleDials = ((Math.round((ev.detail.value) * throttle)) / throttle)
+                rescaleDials = (Math.round((ev.detail.value) * throttle)) / throttle
                 break;
         }
+
     }
 
 </script>
@@ -85,7 +87,7 @@
         <svg style="height: 1rem;">
             <text style="transform:translate(5%, 100%);
 				font-size: xx-small" fill="cyan">
-                Output from: {$touchedID} - {$readout}
+                Output from: {$touchedID} - {$readout} - rescale: {rescaleDials} ◌ {rescaleFaders}
             </text>
             <line x1="0.5rem" y1="7.5%" x2="200%" y2="7.5%" stroke='antiqueWhite'/>
         </svg>
@@ -107,7 +109,7 @@
                 y={posY}
                 min=0
                 max={rangeTest}
-                scale={scale * $rescaleDials}
+                scale={rescaleDials}
                 on:output={handleOutputValue} />
     {/each}
 <!-- render some vert faders -->
@@ -119,6 +121,7 @@
 			   y="250"
 			   min=0
 			   max={rangeTest}
+               scale={rescaleFaders}
 			   on:output={handleOutputValue}/>
 	{/each}
 </main>
