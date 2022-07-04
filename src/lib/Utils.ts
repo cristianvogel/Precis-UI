@@ -1,6 +1,7 @@
 
-import {Default} from "../types/Precis-UI-Defaults";
+import {Default} from "../components/Precis-UI-Defaults";
 import type {TickMark, PointsArray} from "../types/Precis-UI-TypeDeclarations";
+
 
 // Type assert
 export function toNumber( value: string|number): number {
@@ -35,11 +36,10 @@ export function radialPoints(
 export function radialTickMarkAt( i:number,
                                   steps:number = 11,
                                   offsetDegrees:number = Default.DIAL_TICKMARKS_RADIAL_OFFSET ): TickMark {
-    let cx: number, cy: number, rMin: any, rMax: any, nPoints: Default.DIAL_TICKMARKS_rMIN;
-        cx = 50;
-        cy = 50;
-        rMin = 50 + Default.DIAL_TICKMARKS_rMIN;
-        rMax = 50 + Default.DIAL_TICKMARKS_rMAX;
+        const rx = Default.RADIAL_OVERLAY_rX,
+        cx = rx, cy = rx,
+        rMin = rx + Default.DIAL_TICKMARKS_rMIN,
+        rMax = rx + Default.DIAL_TICKMARKS_rMAX,
         nPoints = 8;
 
     let rotator = 270 / Math.max(0, steps-1)

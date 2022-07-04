@@ -3,7 +3,7 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DEFAULT_TAPER} from '../types/Precis-UI-Defaults';
+    import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {BasicController, Fader, Toggle} from '../lib/PrecisControllers';
     import {clamp, toNumber} from '../lib/Utils';
     import {onMount} from 'svelte';
@@ -20,7 +20,7 @@
         width: number = Default.BUTTON_WIDTH,
         height: number = Default.BUTTON_HEIGHT,
         scale: number = Default.BUTTON_SCALE_FACTOR,
-        rx: number = Default.RX,
+        rx: number = Default.FADER_rX,
         id: ToggleTag = 'toggle.0',
         label: string = 'Toggle',
         value: number = 0,

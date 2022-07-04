@@ -24,7 +24,7 @@ import type {
     ToggleTag
 } from '../types/Precis-UI-TypeDeclarations';
 import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
-import {Default} from '../types/Precis-UI-Defaults';
+import {Default, DEFAULT_RECT} from '../components/Precis-UI-Defaults';
 
 
 abstract class PrecisController {
@@ -50,7 +50,6 @@ abstract class PrecisController {
     abstract componentMouseDown(event: MouseEvent, caller: BasicController): void
     abstract componentMouseEnter(event: MouseEvent, caller:BasicController):void
     abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
-
 
     set stateFlags(settings: StateFlags) {
         this._stateFlags = {...settings};
@@ -109,12 +108,6 @@ abstract class PrecisController {
             `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width}px;height:${xywh.height}px;`
         return aRect
     }
-    resizeElementByID(elementID:string, scale: number): void {
-        const el = document.getElementById(`${elementID}`)
-        if (!el) return
-        const newStyle = `transform: scale(${scale});`
-        el.setAttribute('style', el.getAttribute('style') + newStyle)
-    }
     /**
      * add self to a layout group registry
      * @param widget
@@ -128,13 +121,12 @@ abstract class PrecisController {
      * todo: narrow down return type
      * @param widget
      * @param scale
+     * @param newRect  optionally assign to a valid Rect instead of the instanced rect
      */
-
-    // todo: I don't think this should be static, messing up the drawing when Default.DIAL_SQUARE is not 100
-     containerTransform(widget:BasicController, scale?:number, newRect?:Rect):string {
-        const dims = newRect??widget.rect
-        const inline = dims ?
-            `${widget.getCSSforRect(dims)};
+    containerTransform(widget:BasicController, scale?:number, newRect?:Rect):string {
+        const rect1 = {...DEFAULT_RECT, ...widget.rect, ...newRect} // really gotta have a rect at this point
+        const inline = rect1 ?
+            `${widget.getCSSforRect(rect1)};
                   transform: scale(${ scale || widget.scale});
                   background: ${widget.background};`
             : ''
