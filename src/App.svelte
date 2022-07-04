@@ -25,7 +25,6 @@
         touchedID.set(event.detail.id)
     }
 
-
     function resizeWidgets(ev:CustomEvent) {
         //rescale/redraw with stepped throttle
         //todo: make this a feature
@@ -41,11 +40,10 @@
 
     }
 
-
-    // Test: Two Dials for scaling the other components
+    // Test: Define some dials for scaling the other components
     const dialScaler = {
         id:"dial.rescale",
-        x:100, y:600,
+        rect: { x:100, y:600,  width: 100, height: 100},
         background: C.clear,
         scale: 0.5,
         value: 40, // initial value as percentage?
@@ -54,7 +52,7 @@
         max:2 }
     const faderScaler = {
         id:"fader.rescale",
-        x:200, y:600,
+        rect: { x:200, y:600,  width: 100, height: 100 },
         background: C.clear,
         scale: 0.5,
         value: 50, // initial value as percentage?
@@ -115,7 +113,7 @@
         {@const posX = 450 + ((i % 2) * 50)}
         {@const oddEvenSpreadD = rescaleDials * [-1, 1].at(i%2) }
         {@const posY = (((i / 3) % 8) + 1) * 150}
-        {@const rangeTest = [1, 10, 100, 16000].at(i)}
+        {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
         <Radial id="dial.{i}"
                 rect={{  x: posX + (50 * oddEvenSpreadD),
                          y: posY,
@@ -131,12 +129,10 @@
 	{#each Array(6) as _, i ('key-f-'+i)}
 		{@const posX = 100+(i*50)}
         {@const oddEvenSpreadF = rescaleFaders * [-1, 1].at(i%2) }
-		{@const rangeTest = [1, 10, 100, 16000].at(i)}
+		{@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
 		<Fader id="fader.{i}"
-               rect={{  x: posX ,
-                         y: 250 ,
-                         width: Default.FADER_WIDTH,
-                         height: Default.FADER_HEIGHT  }}
+               rect={{ x: posX,
+                       y: 250 }}
 			   min=0
 			   max={rangeTest}
                scale={rescaleFaders}

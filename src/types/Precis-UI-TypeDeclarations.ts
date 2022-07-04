@@ -11,6 +11,7 @@ export type RoundedReadout = string
 export type Point = { x: number, y: number}
 export type PointsArray = Array<Point>
 export type WidgetWithKey = { id:string, widget:BasicController, event?:Event}
+export type PositiveNumber = number
 
 
 // Widget agnostic types
@@ -24,18 +25,17 @@ export type FaderTag = `fader.${number}` | ''
 export type DialTag = `dial.${number}` | ''
 export type ToggleTag = `toggle.${number}` | ''
 
-
 // Shared Geometry
 export interface Rect {
     x: number,
     y: number,
     width: number,
-    height: number
+    height: PositiveNumber
 }
 export interface Taper {
     min: number,
-    max: number,
-    fineStep: number,
+    max: PositiveNumber,
+    fineStep: PositiveNumber,
     grid?: number
 }
 // Colours
