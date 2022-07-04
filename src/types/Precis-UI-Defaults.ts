@@ -3,6 +3,9 @@
 // @neverenginelabs
 
 // Geometry Defs
+import type {Rect, Taper} from './Precis-UI-TypeDeclarations';
+import {toNumber} from '../lib/Utils';
+
 export enum Default {
     EMPTY,
     SCALE,
@@ -12,8 +15,8 @@ export enum Default {
     FADER_HEIGHT = 300,
     FADER_SCALE_FACTOR = 1,
     RX = 2.75,
-    DIAL_SQUARE = 100,
-    DIAL_SCALE_FACTOR = 0.8,
+    SQUARE = 50,
+    DIAL_SCALE_FACTOR = 1,
     DIAL_TICKMARKS_COUNT=11, // best to keep this at 11
     DIAL_TICKMARKS_RADIAL_OFFSET = 135,
     DIAL_TICKMARKS_rMIN = -5,
@@ -25,9 +28,16 @@ export enum Default {
     BUTTON_BACKGROUND = 'transparent'
 }
 
-export enum DefaultTaper {
-    MIN,
-    MAX,
-    FINE = 1.0e-2
+export const DEFAULT_TAPER:Taper = {
+    min: 0,
+    max: 1,
+    fineStep: 1.0e-3
+}
+
+export const DEFAULT_RECT:Rect = {
+    x: toNumber(Default.X),
+    y: toNumber(Default.Y),
+    width: toNumber(Default.SQUARE),
+    height: toNumber(Default.SQUARE)
 }
 

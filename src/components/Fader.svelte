@@ -3,7 +3,7 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper} from "../types/Precis-UI-Defaults";
+    import {Default, DEFAULT_RECT, DEFAULT_TAPER} from '../types/Precis-UI-Defaults';
     import {BasicController, Fader} from "../lib/PrecisControllers";
     import {remap, toNumber} from "../lib/Utils";
     import { onMount} from "svelte";
@@ -12,9 +12,11 @@
     import {FaderTag, Palette as C, Rect, Taper} from "../types/Precis-UI-TypeDeclarations";
 
     export let
-        min:number = DefaultTaper.MIN,
-        max:number = DefaultTaper.MAX,
-        fineStep:number = DefaultTaper.FINE,
+        taper:Taper = DEFAULT_TAPER,
+        min:number = DEFAULT_TAPER.min,
+        max:number = DEFAULT_TAPER.max,
+        fineStep:number = DEFAULT_TAPER.fineStep,
+        rect:Rect = DEFAULT_RECT,
         x:number = Default.X,
         y:number = Default.Y,
         width:number = Default.FADER_WIDTH,
@@ -24,18 +26,21 @@
         id:FaderTag = 'fader.0',
         tickMarks:boolean = true, //todo: Fader tickmarks
         label:string = '',
-        value:number = 0,
-        rect:Rect = {
-            x: toNumber(x),
-            y: toNumber(y),
-            width: toNumber(width),
-            height: toNumber(height)
-        },
-        taper:Taper = {
-            min: toNumber(min),
-            max: toNumber(max),
-            fineStep: toNumber(fineStep)
-        };
+        value:number = 0;
+
+    // assert that we do actually have a rect and a taper
+    rect = {
+        x: toNumber(rect.x || x),
+        y: toNumber(rect.y || y),
+        width: toNumber(rect.width || width),
+        height: toNumber(rect.height || height)
+    }
+
+    taper = {
+        min: toNumber( taper.min || min),
+        max: toNumber(taper.max || max),
+        fineStep: toNumber(taper.fineStep || fineStep),
+    }
 
     const settings = {
         currentValue: value,
@@ -75,7 +80,7 @@
      on:mouseleave={ (e)=>{refresh(); fader.componentMouseLeave(e, fader)} }
      on:mousemove={refresh}
      on:mouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
-     style={BasicController.containerTransform(fader, scale)}
+     style={fader.containerTransform(fader, scale)}
 >
 
     <!-- animated numerical readout mojo-->
@@ -108,7 +113,7 @@
                 <stop offset="0" stop-color={C.black}/>
                 <!-- todo: abstract out the colour assign -->
                 <stop offset="80%"
-                      stop-color={[ C.red, C.sky, C.pink, C.aquaDark ].at(registrySize%4)}/>
+                      stop-color={[ C.red, C.sky, C.pink, C.aquaDark, C.slate ].at(registrySize%5)}/>
             </linearGradient>
             <filter id="shadow">
                 <feDropShadow dx="0" dy="0.4" stdDeviation="0.2"/>
@@ -171,8 +176,7 @@
                     <line x1="-20" x2="20" y1="-25" y2="-25" in:fade="{{duration: 2000}}"></line>
                     <text id='{id}-label.Text'
                           class='label rotated'
-                          lengthAdjust='spacingAndGlyphs'
-                          textLength={fader.height * 0.5} >
+                          textLength={fader.height * 0.25} >
                         {fader.label}
                     </text>
                 </g>

@@ -24,6 +24,7 @@ import type {
     ToggleTag
 } from '../types/Precis-UI-TypeDeclarations';
 import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
+import {Default} from '../types/Precis-UI-Defaults';
 
 
 abstract class PrecisController {
@@ -91,7 +92,7 @@ abstract class PrecisController {
         this.rect.width = toNumber(w) + this.rx
     }
     get height(): number {
-        return this.rect.height
+        return this.rect.height || Default.SQUARE
     }
     set height(h: number) {
         this.rect.height = toNumber(h)
@@ -103,9 +104,9 @@ abstract class PrecisController {
             id,
         })
     }
-    getCSSforRect(): BoundingRectCSS {
+    getCSSforRect(xywh:Rect): BoundingRectCSS {
         const aRect: BoundingRectCSS =
-            `top:${this.rect.y}px;left:${this.rect.x}px;width:${this.rect.width}px;height:${this.rect.height}px;`
+            `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width}px;height:${xywh.height}px;`
         return aRect
     }
     resizeElementByID(elementID:string, scale: number): void {
@@ -130,9 +131,10 @@ abstract class PrecisController {
      */
 
     // todo: I don't think this should be static, messing up the drawing when Default.DIAL_SQUARE is not 100
-    static containerTransform(widget:BasicController, scale?:number):string {
-        const inline = widget ?
-            `${widget.getCSSforRect()};
+     containerTransform(widget:BasicController, scale?:number, newRect?:Rect):string {
+        const dims = newRect??widget.rect
+        const inline = dims ?
+            `${widget.getCSSforRect(dims)};
                   transform: scale(${ scale || widget.scale});
                   background: ${widget.background};`
             : ''
@@ -144,14 +146,13 @@ export class BasicController extends PrecisController {
     currentValue: number;
     taper: Taper
     id: string
-    selfy:any
 
     constructor() {
         super()
     }
     static initialise(widget: BasicController){
         BasicController.addSelfToRegistry(widget)
-        BasicController.containerTransform(widget)
+        widget.containerTransform(widget)
     }
     getMappedValue(): number {
         return remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max)

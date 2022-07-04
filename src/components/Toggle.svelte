@@ -3,7 +3,7 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DefaultTaper} from '../types/Precis-UI-Defaults';
+    import {Default, DEFAULT_TAPER} from '../types/Precis-UI-Defaults';
     import {BasicController, Fader, Toggle} from '../lib/PrecisControllers';
     import {clamp, toNumber} from '../lib/Utils';
     import {onMount} from 'svelte';
@@ -13,8 +13,8 @@
 
     export let
         graphicStyle: number = 1,
-        min: number = DefaultTaper.MIN,
-        max: number = DefaultTaper.MAX,
+        min: number = DEFAULT_TAPER.MIN,
+        max: number = DEFAULT_TAPER.MAX,
         x: number = Default.X,
         y: number = Default.Y,
         width: number = Default.BUTTON_WIDTH,
@@ -74,7 +74,7 @@
      id='{toggle.id}-container'
      on:mousedown|preventDefault={(e)=>{toggle.componentMouseDown(e, toggle)}}
      on:mouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
-     style={BasicController.containerTransform(toggle, scale)}
+     style={toggle.containerTransform(toggle, scale)}
 >
     <div class={position ? `${toggleDesign} on` : `${toggleDesign}`}>
         <div class={position ? `${toggleDesign} led on` : `${toggleDesign} led`}>
