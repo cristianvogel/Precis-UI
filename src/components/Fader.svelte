@@ -3,7 +3,7 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DEFAULT_RECT, DEFAULT_TAPER} from '../types/Precis-UI-Defaults';
+    import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {BasicController, Fader} from "../lib/PrecisControllers";
     import {remap, toNumber} from "../lib/Utils";
     import { onMount} from "svelte";
@@ -12,21 +12,22 @@
     import {FaderTag, Palette as C, Rect, Taper} from "../types/Precis-UI-TypeDeclarations";
 
     export let
-        taper:Taper = DEFAULT_TAPER,
         min:number = DEFAULT_TAPER.min,
         max:number = DEFAULT_TAPER.max,
         fineStep:number = DEFAULT_TAPER.fineStep,
-        rect:Rect = DEFAULT_RECT,
+        taper:Taper = {} as Taper,
+        rect:Rect = {} as Rect,
         x:number = Default.X,
         y:number = Default.Y,
         width:number = Default.FADER_WIDTH,
         height:number = Default.FADER_HEIGHT,
         scale:number = Default.FADER_SCALE_FACTOR,
-        rx:number = Default.RX,
+        rx:number = Default.FADER_rX,
         id:FaderTag = 'fader.0',
         tickMarks:boolean = true, //todo: Fader tickmarks
         label:string = '',
-        value:number = 0;
+        value:number = 0,
+        animatedReadout:boolean = true;
 
     // assert that we do actually have a rect and a taper
     rect = {
@@ -56,13 +57,13 @@
     // Construct a new instance of a vertical fader
     let fader:Fader = new Fader(settings)
     BasicController.initialise(fader)
+    fader.label += fader.registryIndex.toString()
     const refresh = ()=> {fader = fader}
 
     onMount( () => {
         fader.dispatchOutput( fader.id, fader.getMappedValue());
     })
 
-    let animatedReadout = true;
     let gearedValue;
     let offsetMap;
     let sinMap;

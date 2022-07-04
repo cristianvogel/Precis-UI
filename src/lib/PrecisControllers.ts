@@ -8,7 +8,7 @@
 import {asLogicValue, radialPoints, remap, roundTo, toNumber} from './Utils';
 import {createEventDispatcher} from "svelte";
 import {addListeners} from "./Listeners";
-import {WidgetStore} from "../stores/stores";
+import {WidgetRegister, WidgetStore} from '../stores/stores';
 import {get} from "svelte/store";
 import type {
     PointsArray,
@@ -24,23 +24,28 @@ import type {
     ToggleTag
 } from '../types/Precis-UI-TypeDeclarations';
 import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
-import {Default} from '../types/Precis-UI-Defaults';
+import {Default, DEFAULT_RECT} from '../components/Precis-UI-Defaults';
 
+abstract class PrecisUI {
+    static getRegistry():WidgetRegister { return get(WidgetStore) }
+}
 
-abstract class PrecisController {
+abstract class PrecisController extends PrecisUI{
 
     protected dispatch
     selected: (HTMLElement | null) = null
-    // clientRect: DOMRect;
-    // boundingRectCSS: BoundingRectCSS
     rect: Rect
     rx: number
     scale: number
     label: string
     background: Tint
+    layer:number
+    private _registryIndex: number
+
     protected _stateFlags: StateFlags = {precis: false, focussed: false, changing: false}
 
     protected constructor() {
+        super();
         this.dispatch = createEventDispatcher()
     }
 
@@ -51,9 +56,12 @@ abstract class PrecisController {
     abstract componentMouseEnter(event: MouseEvent, caller:BasicController):void
     abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
 
-
     set stateFlags(settings: StateFlags) {
         this._stateFlags = {...settings};
+    }
+
+    get registryIndex(): number {
+        return this._registryIndex;
     }
     get changing(): boolean {
         return this._stateFlags.changing
@@ -109,12 +117,6 @@ abstract class PrecisController {
             `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width}px;height:${xywh.height}px;`
         return aRect
     }
-    resizeElementByID(elementID:string, scale: number): void {
-        const el = document.getElementById(`${elementID}`)
-        if (!el) return
-        const newStyle = `transform: scale(${scale});`
-        el.setAttribute('style', el.getAttribute('style') + newStyle)
-    }
     /**
      * add self to a layout group registry
      * @param widget
@@ -122,22 +124,23 @@ abstract class PrecisController {
     static addSelfToRegistry( widget: BasicController ): void {
         if (!widget) return
         get(WidgetStore).set(widget.id, widget)
+        widget._registryIndex = BasicController.getRegistry().size
     }
     /**
      * CSS transform which renders the widget's container element
      * todo: narrow down return type
      * @param widget
      * @param scale
+     * @param newRect  optionally assign to a valid Rect instead of the instanced rect
      */
-
-    // todo: I don't think this should be static, messing up the drawing when Default.DIAL_SQUARE is not 100
-     containerTransform(widget:BasicController, scale?:number, newRect?:Rect):string {
-        const dims = newRect??widget.rect
-        const inline = dims ?
-            `${widget.getCSSforRect(dims)};
-                  transform: scale(${ scale || widget.scale});
-                  background: ${widget.background};`
-            : ''
+    containerTransform(widget:BasicController, scale?:number, newRect?:Rect):string {
+        const rect1 = {...DEFAULT_RECT, ...widget.rect, ...newRect} // really gotta have a rect at this point
+        const inline =
+                    `${widget.getCSSforRect(rect1)};
+                    transform: scale( ${ scale || widget.scale} );
+                    background: ${widget.background};
+                    z-index: ${widget.layer || 0 };
+                  `
         return inline
     }
 }

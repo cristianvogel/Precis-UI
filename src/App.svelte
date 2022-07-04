@@ -18,7 +18,7 @@
     import {readout, touchedID} from "./stores/stores";
     import {Palette as C} from "./types/Precis-UI-TypeDeclarations";
     import Toggle from './components/Toggle.svelte'
-    import {Default} from './types/Precis-UI-Defaults'
+    import {Default} from './components/Precis-UI-Defaults'
 
     function handleOutputValue(event: CustomEvent) {
         readout.set(Number(toFixed(event.detail.value, 6)))
@@ -116,13 +116,14 @@
         {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
         <Radial id="dial.{i}"
                 rect={{  x: posX + (50 * oddEvenSpreadD),
-                         y: posY,
-                         width: 100,
-                         height: 100 }}
+                         y: posY
+                       }}
                 min=0
                 max={rangeTest}
                 scale={rescaleDials}
-                on:output={handleOutputValue} />
+                on:output={handleOutputValue}
+                dialPointer={true}
+        />
     {/each}
     </div>
 <!-- render some vert faders -->
@@ -136,8 +137,9 @@
 			   min=0
 			   max={rangeTest}
                scale={rescaleFaders}
-               label={'Precis-UI ◠◡ '+i}
-			   on:output={handleOutputValue}/>
+               label={'Precis-UI ◠◡ '}
+			   on:output={handleOutputValue}
+        />
 	{/each}
 
 <!--- a few groovy buttons -->

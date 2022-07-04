@@ -3,7 +3,7 @@
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DEFAULT_RECT, DEFAULT_TAPER} from '../types/Precis-UI-Defaults';
+    import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {
         BasicController,
         Radial
@@ -12,50 +12,50 @@
     import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from '../stores/stores.js'
-    import type {DialTag, Rect, Taper, PointsArray} from "../types/Precis-UI-TypeDeclarations";
+    import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-TypeDeclarations';
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
     export let
         min:number = DEFAULT_TAPER.min,
         max:number = DEFAULT_TAPER.max,
         fineStep:number = DEFAULT_TAPER.fineStep,
-        taper:Taper = {},
+        taper:Taper = {} as Taper,
+        rect:Rect = {} as Rect,
+        x:number = Default.X,
+        y:number = Default.Y,
+        width:number = Default.SQUARE,
+        height:number = Default.SQUARE,
         background = Default.DIAL_BACKGROUND,
         scale:number = Default.DIAL_SCALE_FACTOR,
-        rx:number = Default.RX,
+        rx:number = Default.FADER_rX,
         id:DialTag = 'dial.0',
         label:string = '',
         value:number = 0,
-        rect:Rect = DEFAULT_RECT,
-        x:number = Default.X,
-        y:number = Default.Y,
-        width:number = Default.FADER_WIDTH,
-        height:number = Default.FADER_HEIGHT,
-        pointer:boolean = true,
+        dialPointer:boolean = true,
         tickMarks:boolean = true,
         animatedReadout:boolean = true;
 
     // assert that we do actually have a rect and a taper
     rect = {
-        x: toNumber(rect.x || x),
-        y: toNumber(rect.y || y),
-        width: toNumber(rect.width || width),
-        height: toNumber(rect.height || height)
+            x: toNumber(rect.x || x),
+            y: toNumber(rect.y || y),
+            width: toNumber(rect.width || width),
+            height: toNumber(rect.height || height)
     }
 
     taper = {
         min: toNumber( taper.min || min),
         max: toNumber(taper.max || max),
-        fineStep: toNumber(taper.fineStep || fineStep),
+        fineStep: toNumber(taper.fineStep || fineStep)
     }
 
     const settings = {
         currentValue: value,
         id,
         label,
-        pointer,
+        dialPointer,
         rect,
-        rx,
+        rx: (rx > 0 ? rx : 1),
         scale,
         taper,
         tickMarks,
@@ -71,17 +71,19 @@
 
     onMount( () => {
         pointerLength = dial.radialPoints.length
-        dial.dispatchOutput( dial.id, dial.getMappedValue(),);
+        dial.dispatchOutput( dial.id, dial.getMappedValue());
     });
 
-    let gearedValue;
-    let offsetMap;
-    let sinMap;
-    let marks;
-    let numericalReadout = true; // can be user selected?
+    let gearedValue
+    let offsetMap
+    let sinMap
+    let marks
+    let numericalReadout = true
     let pointerPlot:PointsArray
     let pointerLength:number
     let roundedReadout:string
+    let ovrX:number
+    let tip:Point
 
     $:rect , refresh
     $:pointerPlot =  dial.radialPoints
@@ -94,6 +96,7 @@
         refresh() // reactive assignment
     }
 
+
 </script>
 
 
@@ -105,7 +108,7 @@
      on:mouseleave={ (e)=>{refresh(); dial.componentMouseLeave(e, dial)} }
      on:mousemove={addPointerPlotToStore}
      on:mouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
-     style={dial.containerTransform(dial, scale, rect)}
+     style={dial.containerTransform(dial, scale, rect )}
 >
     <!-- animated numerical readout mojo-->
     {#if dial.changing && animatedReadout}
@@ -116,7 +119,7 @@
         <div id='{dial.id}-animatedReadout'
              class="animatedReadout"
              style="transform: translate( 30%, 55%)" >
-            <svg in:fade out:fade >
+            <svg style="position: static;" in:fade out:fade >
                 <g stroke-width='1px'
                    opacity={Math.abs(sinMap) + 0.1}
                    transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
@@ -127,7 +130,7 @@
         </div>
     {/if}
 <!-- SVG defs -->
-    <svg transform=scale(0.9)>
+    <svg transform="scale(0.9)">
         <defs id='{dial.id}-gradients'>
             <radialGradient cx=50%
                             cy=50%
@@ -145,87 +148,93 @@
         </defs>
 
 <!-- circle body -->
-        <g id='{dial.id}-circleBody' stroke-width=8>
+        <g id='{dial.id}-circleBody' stroke-width="8"
+           transform="translate( {dial.width * 0.5} {dial.height * 0.5} )" >
             <circle id='{dial.id}-circleFigure'
-                    cx=50%
-                    cy=50% fill=#112211
-                    r={(dial.rx * 0.9) +'rem'} />
-        </g>
-
+                    fill=#112211
+                    r={ dial.width * (1/ dial.rx) } />
 <!-- circle ring   -->
-            <g id='{dial.id}-colourRing' stroke-width=8>
-                <circle id='{dial.id}-circleRingFigure'
-                        cx=50%
-                        cy=50% fill=transparent
-                        r={(dial.rx * 0.9) +'rem'}
-                        stroke="url('#{dial.id}-grad')"/>
-            </g>
+            <circle id='{dial.id}-circleRingFigure'
+                    fill=transparent
+                    r={ dial.width * (1/ dial.rx) }
+                    stroke="url('#{dial.id}-grad')"/>
+        </g>
+        <!-- label -->
+        <g id='{dial.id}-label'>
+            <text class:label={dial.label}
+                  x="50%" y="5%"
+                  dominant-baseline="middle"
+                  text-anchor="middle">
+                {dial.label}
+            </text>
+        </g>
+    </svg>
+    <svg transform="scale(0.9)" >
+      <g id='{dial.id}-dialOverlays'
+         transform="scale( {(dial.width / (Default.RADIAL_OVERLAY_rX * 2))} )" >
+    <!-- tick marks -->
+                {#if tickMarks}
+                <g id='{dial.id}-ticks'>
+                    {#each Array(Default.DIAL_TICKMARKS_COUNT) as tick, i}
+                        {@const marks = radialTickMarkAt(i)}
+                        <line x1={marks.x1}
+                              x2={marks.x2}
+                              y1={marks.y1}
+                              y2={marks.y2}
+                              stroke-width='2px'
+                              stroke = {i<(dial.getNormValue()*10) ? C.cyan : C.clear}
+                        />
+                    {/each}
+                </g>
+                {/if}
+    <!-- pointer plot -->
+                <g id="pointerPlot" stroke-width=8>
+                {#each pointerPlot.slice(4,14) as {x, y}, i}
+                    {@const width = dial.precis ? 5 : 2}
+                    {@const ovrX = Default.RADIAL_OVERLAY_rX}
+                    {#if dialPointer}
+                        {#if (i < pointerLength - 4)}
+                            <polyline id='{dial.id}-pointer'
+                                      points={`${x},${y},${ovrX},${ovrX}`}
+                                      stroke-width={width - (i/2)}
+                                      stroke='rgba(250,250,250,0.5)'
+                            />
+                        {/if}
+                    {/if}
 
-<!-- tick marks -->
-            {#if tickMarks}
-            <g id='{dial.id}-ticks'>
-                {#each Array(Default.DIAL_TICKMARKS_COUNT) as tick, i}
-                    {@const marks = radialTickMarkAt(i)}
-                    <line x1={marks.x1}
-                          x2={marks.x2}
-                          y1={marks.y1}
-                          y2={marks.y2}
-                          stroke-width='2px'
-                          stroke = {i<(dial.getNormValue()*10) ? `aquamarine` : 'grey'}
-                    />
+    <!-- LED indicator-->
+                    {#if dial.focussed}
+                        {@const value = dial.getNormValue()}
+                        {@const tip = pointerPlot.at(-6)}
+                        {@const gearedValue = ((value * 100) % 10) - 10 }
+                        <circle cx="80%" cy="80%" r = "4px"
+                              stroke={C.cyan}
+                                fill={C.clear}
+                              stroke-width="2"
+                              opacity={Math.abs(gearedValue / 10) - 0.1}
+                        />
+                    {/if}
                 {/each}
-            </g>
+                </g>
+    <!-- readouts -->
+            {#if (numericalReadout && !dial.changing) }
+                <g in:fade out:fade>
+                    <text id='{dial.id}-readout'
+                          class={ dial.precis ? 'readout dial precis' : 'readout dial' }
+                          style={ dial.focussed ? 'fill: aqua;' : '' }>
+                            {roundedReadout}
+                            {dial.precis ? '⋯' : ' ▹'}
+                    </text>
+                </g>
             {/if}
-<!-- pointer plot -->
-            <g id="pointerPlot" stroke-width=8>
-            {#each pointerPlot as {x, y}, i}
-                {@const width = dial.precis ? 10 : 5}
-                {#if (i < pointerLength - 4)}
-                    <polyline id='{dial.id}-pointer'
-                              points={`${x},${y}, 50,50 `}
-                              stroke-width={width - (i/2)}
-                              stroke='rgba(250,250,250,0.5)'/>
-                {/if}
-
-<!-- LED indicator-->
-                {#if (i === pointerLength - 1) && dial.focussed}
-                    {@const value = dial.getNormValue()}
-                    {@const gearedValue = ((value * 100) % 10) - 10 }
-                    <circle id='{id}-LED'
-                            cx=90% cy=90% r= 3
-                            fill=aqua
-                            opacity={Math.abs(gearedValue / 10) - 0.1}
-                            in:fade out:fade/>
-                {/if}
-            {/each}
-            </g>
-<!-- readouts -->
-        {#if (numericalReadout && !dial.changing) }
-            <g in:fade out:fade>
-                <text id='{dial.id}-readout'
-                      class={ dial.precis ? 'readout dial precis' : 'readout dial' }
-                      style={ dial.focussed ? 'fill: aqua;' : '' }>
-                        {roundedReadout}
-                        {dial.precis ? '⋯' : ' ▹'}
-                </text>
-            </g>
-        {/if}
-<!-- label -->
-            <g id='{dial.id}-label'>
-                <text class:label={dial.label}
-                      x="50%" y="5%"
-                      dominant-baseline="middle"
-                      text-anchor="middle">
-                    {dial.label}
-                </text>
-            </g>
-
+    </g>
     </svg>
 </div>
 
 
 <style>
     svg {
+        position: absolute;
         width: 100%;
         height: 100%;
         overflow: visible;
