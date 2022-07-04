@@ -122,7 +122,8 @@
                 max={rangeTest}
                 scale={rescaleDials}
                 on:output={handleOutputValue}
-                dialPointer={true}/>
+                dialPointer={true}
+        />
     {/each}
     </div>
 <!-- render some vert faders -->
@@ -136,8 +137,9 @@
 			   min=0
 			   max={rangeTest}
                scale={rescaleFaders}
-               label={'Precis-UI ◠◡ '+i}
-			   on:output={handleOutputValue}/>
+               label={'Precis-UI ◠◡ '}
+			   on:output={handleOutputValue}
+        />
 	{/each}
 
 <!--- a few groovy buttons -->

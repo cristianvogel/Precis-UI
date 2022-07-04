@@ -8,7 +8,7 @@
 import {asLogicValue, radialPoints, remap, roundTo, toNumber} from './Utils';
 import {createEventDispatcher} from "svelte";
 import {addListeners} from "./Listeners";
-import {WidgetStore} from "../stores/stores";
+import {WidgetRegister, WidgetStore} from '../stores/stores';
 import {get} from "svelte/store";
 import type {
     PointsArray,
@@ -26,21 +26,26 @@ import type {
 import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 import {Default, DEFAULT_RECT} from '../components/Precis-UI-Defaults';
 
+abstract class PrecisUI {
+    static getRegistry():WidgetRegister { return get(WidgetStore) }
+}
 
-abstract class PrecisController {
+abstract class PrecisController extends PrecisUI{
 
     protected dispatch
     selected: (HTMLElement | null) = null
-    // clientRect: DOMRect;
-    // boundingRectCSS: BoundingRectCSS
     rect: Rect
     rx: number
     scale: number
     label: string
     background: Tint
+    layer:number
+    private _registryIndex: number
+
     protected _stateFlags: StateFlags = {precis: false, focussed: false, changing: false}
 
     protected constructor() {
+        super();
         this.dispatch = createEventDispatcher()
     }
 
@@ -53,6 +58,10 @@ abstract class PrecisController {
 
     set stateFlags(settings: StateFlags) {
         this._stateFlags = {...settings};
+    }
+
+    get registryIndex(): number {
+        return this._registryIndex;
     }
     get changing(): boolean {
         return this._stateFlags.changing
@@ -115,6 +124,7 @@ abstract class PrecisController {
     static addSelfToRegistry( widget: BasicController ): void {
         if (!widget) return
         get(WidgetStore).set(widget.id, widget)
+        widget._registryIndex = BasicController.getRegistry().size
     }
     /**
      * CSS transform which renders the widget's container element
@@ -125,11 +135,12 @@ abstract class PrecisController {
      */
     containerTransform(widget:BasicController, scale?:number, newRect?:Rect):string {
         const rect1 = {...DEFAULT_RECT, ...widget.rect, ...newRect} // really gotta have a rect at this point
-        const inline = rect1 ?
-            `${widget.getCSSforRect(rect1)};
-                  transform: scale(${ scale || widget.scale});
-                  background: ${widget.background};`
-            : ''
+        const inline =
+                    `${widget.getCSSforRect(rect1)};
+                    transform: scale( ${ scale || widget.scale} );
+                    background: ${widget.background};
+                    z-index: ${widget.layer || 0 };
+                  `
         return inline
     }
 }

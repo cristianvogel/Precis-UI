@@ -12,7 +12,7 @@
     import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from '../stores/stores.js'
-    import type {DialTag, Rect, Taper, PointsArray} from "../types/Precis-UI-TypeDeclarations";
+    import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-TypeDeclarations';
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
     export let
@@ -83,6 +83,7 @@
     let pointerLength:number
     let roundedReadout:string
     let ovrX:number
+    let tip:Point
 
     $:rect , refresh
     $:pointerPlot =  dial.radialPoints
@@ -118,7 +119,7 @@
         <div id='{dial.id}-animatedReadout'
              class="animatedReadout"
              style="transform: translate( 30%, 55%)" >
-            <svg in:fade out:fade >
+            <svg style="position: static;" in:fade out:fade >
                 <g stroke-width='1px'
                    opacity={Math.abs(sinMap) + 0.1}
                    transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
@@ -188,8 +189,8 @@
                 {/if}
     <!-- pointer plot -->
                 <g id="pointerPlot" stroke-width=8>
-                {#each pointerPlot as {x, y}, i}
-                    {@const width = dial.precis ? 10 : 5}
+                {#each pointerPlot.slice(4,14) as {x, y}, i}
+                    {@const width = dial.precis ? 5 : 2}
                     {@const ovrX = Default.RADIAL_OVERLAY_rX}
                     {#if dialPointer}
                         {#if (i < pointerLength - 4)}
@@ -202,12 +203,14 @@
                     {/if}
 
     <!-- LED indicator-->
-                    {#if (i === pointerLength - 1) && dial.focussed}
+                    {#if dial.focussed}
                         {@const value = dial.getNormValue()}
+                        {@const tip = pointerPlot.at(-6)}
                         {@const gearedValue = ((value * 100) % 10) - 10 }
-                        <line x1={x} y1={y} x2={ovrX} y2={ovrX}
+                        <circle cx="80%" cy="80%" r = "4px"
                               stroke={C.cyan}
-                              stroke-width="8"
+                                fill={C.clear}
+                              stroke-width="2"
                               opacity={Math.abs(gearedValue / 10) - 0.1}
                         />
                     {/if}

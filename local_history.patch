@@ -1,0 +1,17 @@
+Index: src/components/Radial.svelte
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/components/Radial.svelte b/src/components/Radial.svelte
+--- a/src/components/Radial.svelte	
++++ b/src/components/Radial.svelte	(date 1656970209825)
+@@ -216,7 +216,7 @@
+                 {/each}
+                 </g>
+     <!-- readouts -->
+-            {#if ( dial.changing) }
++            {#if (numericalReadout && !dial.changing) }
+                 <g in:fade out:fade>
+                     <text id='{dial.id}-readout'
+                           class={ dial.precis ? 'readout dial precis' : 'readout dial' }

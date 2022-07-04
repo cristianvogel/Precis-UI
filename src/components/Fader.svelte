@@ -57,6 +57,7 @@
     // Construct a new instance of a vertical fader
     let fader:Fader = new Fader(settings)
     BasicController.initialise(fader)
+    fader.label += fader.registryIndex.toString()
     const refresh = ()=> {fader = fader}
 
     onMount( () => {

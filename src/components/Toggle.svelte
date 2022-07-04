@@ -13,8 +13,8 @@
 
     export let
         graphicStyle: number = 1,
-        min: number = DEFAULT_TAPER.MIN,
-        max: number = DEFAULT_TAPER.MAX,
+        min: number = DEFAULT_TAPER.min,
+        max: number = DEFAULT_TAPER.max,
         x: number = Default.X,
         y: number = Default.Y,
         width: number = Default.BUTTON_WIDTH,

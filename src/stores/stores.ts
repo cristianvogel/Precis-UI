@@ -2,8 +2,8 @@ import { Writable, writable} from 'svelte/store';
 import type {BasicController} from '../lib/PrecisControllers'
 import type {PointsArray} from "../types/Precis-UI-TypeDeclarations";
 
-type WidgetEntry = Map<string, BasicController> // widget.id , instance
-export const WidgetStore:Writable<WidgetEntry>  =
+export type WidgetRegister = Map<string, BasicController> // widget.id , instance
+export const WidgetStore:Writable<WidgetRegister>  =
     writable( new Map() )
 
 type PointerPlot = Map<string,PointsArray> // widget.id , array of points
