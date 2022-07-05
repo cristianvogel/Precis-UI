@@ -5,7 +5,7 @@
 
     import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {BasicController, Fader} from "../lib/PrecisControllers";
-    import {remap, toNumber} from "../lib/Utils";
+    import {remap, roundTo, toNumber} from '../lib/Utils';
     import { onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {WidgetStore} from '../stores/stores.js'
@@ -43,6 +43,7 @@
         fineStep: toNumber(taper.fineStep || fineStep),
     }
 
+    // initialise with these settings
     const settings = {
         currentValue: value,
         id,
@@ -57,22 +58,46 @@
     // Construct a new instance of a vertical fader
     let fader:Fader = new Fader(settings)
     BasicController.initialise(fader)
+
+    // demonstrates how to use the registry index of this instance
+    // to add a unique suffix to the fader's label
     fader.label += fader.registryIndex.toString()
+
+    // a Svelte reactive assigment if needed
     const refresh = ()=> {fader = fader}
 
     onMount( () => {
+        // send out an initial value message once
         fader.dispatchOutput( fader.id, fader.getMappedValue());
     })
 
-    let gearedValue;
-    let offsetMap;
-    let sinMap;
-
+    // Reactive
+    $:upperBand = fader.getNormValue() > 0.75
     $:roundedReadout = fader.getRoundedReadout()
     $:registrySize = $WidgetStore.size
 
+    // needed for {@const} assignments
+    let adjust;
+    let gearedValue;
+    let offsetMap;
+    let sinMap;
 </script>
 
+<!-- Here begins the computational graphic design in HTML/SVG
+
+Please be aware that this style of graphic design
+is accomplished through many hours of iterative design.
+I try not to rely too much on oddball magic constants,
+but there are places that have required some magic
+looking nudges and transforms.
+
+Different graphical components of the SVG are contained
+in <g>....</g> with an id to help readability or to further reference
+using DOM selectors if needed
+
+-->
+
+<!-- main wrapper element -->
 <div class='faderContainer'
      id='{fader.id}-container'
      on:contextmenu|preventDefault={ (e)=>{fader.componentMouseDown(e,fader)} }
@@ -90,22 +115,32 @@
         {@const gearedValue = (value * -200) % 20}
         {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
         {@const sinMap = Math.sin(Math.PI * offsetMap)}
+        {@const adjust = {
+            x: -Math.pow(roundedReadout.length, 1.6),
+            y: -100 + (gearedValue * 2),
+            scale: { x: 1, y:Math.abs(sinMap) + 0.125 },
+            opacity: Math.abs(sinMap) + 0.1
+        }}
         <div id='{fader.id}-animatedReadout'
-             class="animatedReadout"
-             style="transform: translate( {1.1 - roundedReadout.length * 0.25}em, 3em )">
+             class="animatedReadout" >
             <svg in:fade out:fade >
                 <g stroke-width='1px'
-                   opacity={Math.abs(sinMap) + 0.1}
-                   transform="translate ( {-fader.width * 0.5} {-100 + (gearedValue * 2)} )
-                                scale(1, {Math.abs(sinMap)  + 0.125} )"
-                > <text fill={C.aquaLight}>{roundedReadout}</text>
+                   opacity={adjust.opacity}
+                   transform="translate( {adjust.x}, {adjust.y} )
+                              scale({adjust.scale.x}, {fader.precis ? 1 : adjust.scale.y} )">
+                    <text fill={C.aquaLight}
+                       textLength="{fader.width * (roundedReadout.length / 2)}"
+                    >{roundedReadout}</text>
                 </g>
             </svg>
         </div>
     {/if}
-    <!-- SVG defs -->
-    <svg >
+
+    <!-- SVG with many procedural transformations  -->
+    <svg>
+
         <defs id='{id}-gradients'>
+            <!-- dynamically changing colours defined here -->
             <linearGradient id='{id}-grad'
                             x1=0
                             x2=0
@@ -130,7 +165,7 @@
                   x=0rem
                   on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
             />
-<!-- handle and inner readout -->
+<!-- handle -->
             <g id='{id}-handle+readout'
                on:contextmenu|preventDefault={(e)=>{fader.componentMouseDown(e, fader)} }
                stroke={C.offWhite}
@@ -142,25 +177,31 @@
                       stroke=none
                       style="filter:url(#shadow);"
                 />
+<!-- inner readout w/ some procedural transformations -->
                 <g id='{id}-readout'
                    class='readoutBox rotated'
                    style='opacity:{fader.changing ? 1 : 0.7}'>
                     <rect id='{id}-readout.Box'
-                          class={fader.precis ? 'readoutBox zoom' : 'readoutBox'}
+                          class={(fader.precis ? 'readoutBox zoom ' : 'readoutBox ') + (upperBand ? 'flipped' : '') }
                           height=1.25rem
                           rx=3px
                           width=2.75rem
                           x=-0.5rem
                           y=-0.5rem />
-                    <text id='{id}-readout.Text'
-                          class='readout'>
-                        {roundedReadout}
-                        {fader.precis ? '⋯' : ' ▹'}
-                    </text>
+                    {#if (!fader.precis)}
+                        <g transform="scale( {fader.precis ? 2 : 1} )" out:fade>
+                            <text id='{id}-readout.Text'
+                                  class={'readout ' + (upperBand ? 'flipped' : 'rotated') }>
+                                    {roundedReadout}
+                                    {fader.precis ? '⋯' : ' ▹'}
+                            </text>
+                        </g>
+                    {/if}
                 </g>
             </g>
         </g>
     </svg>
+
 <!-- label -->
     {#if fader.focussed }
         <div id='{id}-label'
@@ -172,7 +213,6 @@
                 <g id='{id}-LED'
                    stroke="aqua" fill=none stroke-width="2px"
                    transform="translate({fader.width/2})">
-<!--                    <circle id='{id}-LED' cy=-25 cx=-0.5 r=2 fill='aqua'/>-->
                     <line id='{id}-LED' x1="-0.5" x2="-0.5" y1="-5" y2="-25"></line>
                     <line x1="-20" x2="20" y1="-25" y2="-25" in:fade="{{duration: 2000}}"></line>
                     <text id='{id}-label.Text'
@@ -210,37 +250,38 @@
     }
 
     .label.rotated {
-        /*transform: rotate(90deg) translate(0.25rem, -0.75rem);*/
         transform: rotate(90deg) translate(0.25rem, -1rem);
     }
 
     .readout {
         font-family: 'Roboto', sans-serif;
         font-size: x-small;
-        transform: translate(-2.5rem, -0.3rem);
         stroke-width: 0;
         fill: aqua;
         cursor: grab;
     }
 
     .readout.rotated {
-        transform: rotate(90deg)
+        transform: translate(-8ex, -1ex)
+    }
+
+    .readout.flipped {
+        transform: rotate(-180deg) translate(-8ex, 2ex);
     }
 
     .readoutBox {
-        transform: translate(-2.5rem, -0.6rem) scaleY(0.5);
+        transform: translate(-2.5rem, -0.6rem) scale(1, 0.55);
         stroke-width: 0;
         fill: rgba(120,120,120,0.5);
         pointer-events: none;
     }
 
-    .readout.zoom {
-        font-size: large;
-        transform: translate(-2.5rem, -0.15rem)
-    }
-
     .readoutBox.rotated {
         transform: rotate(90deg)
+    }
+
+    .readoutBox.flipped {
+        transform: rotate(-180deg) scale(-1, -0.5) translate(2ex,-2ex) ;
     }
 
     .readoutBox.zoom {
@@ -251,6 +292,7 @@
         position: absolute;
         background-color: transparent;
         font-size: x-large;
+        transform: translateY(3.25em);
         z-index: 100;
     }
 </style>

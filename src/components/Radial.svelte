@@ -49,6 +49,7 @@
         fineStep: toNumber(taper.fineStep || fineStep)
     }
 
+    // initialise with these settings
     const settings = {
         currentValue: value,
         id,
@@ -65,15 +66,36 @@
     // Construct a new instance of a Radial
     let dial:Radial = new Radial(settings)
     BasicController.initialise(dial)
+
+    // a Svelte reactive assigment if needed
     const refresh = ()=> {dial = dial}
 
+    // Hoisted function: Compute and store radial points for the dial overlays
     addPointerPlotToStore()
 
     onMount( () => {
+        // set pointer 'length'
         pointerLength = dial.radialPoints.length
+        // send out an initial value message once
         dial.dispatchOutput( dial.id, dial.getMappedValue());
     });
 
+    // Reactive
+    $:rect , refresh
+    $:pointerPlot =  dial.radialPoints
+    $:roundedReadout = dial.getRoundedReadout()
+    $:registrySize = $WidgetStore.size
+
+    /** addPointerPlotToStore()
+     * compute and store PointsArray used to plot the radial polyline
+     */
+    function addPointerPlotToStore() {
+        const plotPoints:PointsArray =  dial.spinPointer()
+        $PointerPlotStore.set( dial.id, plotPoints)
+        refresh()
+    }
+
+    // needed for {@const} assignments
     let gearedValue
     let offsetMap
     let sinMap
@@ -84,22 +106,25 @@
     let roundedReadout:string
     let ovrX:number
     let tip:Point
-
-    $:rect , refresh
-    $:pointerPlot =  dial.radialPoints
-    $:roundedReadout = dial.getRoundedReadout()
-    $:registrySize = $WidgetStore.size
-    // compute the current PointsArray used to plot the radial polyline
-    function addPointerPlotToStore() {
-        const plotPoints:PointsArray =  dial.spinPointer()
-        $PointerPlotStore.set( dial.id, plotPoints)
-        refresh() // reactive assignment
-    }
-
+    let adjust;
 
 </script>
 
+<!-- Here begins computational graphic design in HTML/SVG
 
+Please be aware that this style of graphic design
+is accomplished through many hours of iterative design.
+I try not to rely too much on oddball magic constants,
+but there are places that have required some magic
+looking nudges and transforms.
+
+Different graphical components of the SVG are contained
+in <g>....</g> with an id to help readability or to further reference
+using DOM selectors if needed
+
+-->
+
+<!-- main wrapper element -->
 <div class='dialContainer'
      id='{dial.id}-container'
      on:contextmenu|preventDefault={ (e)=>{dial.componentMouseDown(e,dial)} }
@@ -116,21 +141,30 @@
         {@const gearedValue = (value * -200) % 20}
         {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
         {@const sinMap = Math.sin(Math.PI * offsetMap)}
+        {@const adjust = {
+            x: -dial.width * 0.5,
+            y: -100 + (gearedValue * 2),
+            scale: { x: 1, y: Math.abs(sinMap)  + 0.125 },
+            opacity: 0
+        }}
         <div id='{dial.id}-animatedReadout'
              class="animatedReadout"
              style="transform: translate( 30%, 55%)" >
             <svg style="position: static;" in:fade out:fade >
                 <g stroke-width='1px'
                    opacity={Math.abs(sinMap) + 0.1}
-                   transform="translate ( {-dial.width * 0.5} {-100 + (gearedValue * 2)} )
-                                scale(1, {Math.abs(sinMap)  + 0.125} )" >
+                   transform="translate ( {adjust.x} {adjust.y} )
+                                scale({adjust.scale.x}, {dial.precis ? 1 : adjust.scale.y} )" >
                  <text fill={C.aquaLight}>{roundedReadout}</text>
                 </g>
             </svg>
         </div>
     {/if}
-<!-- SVG defs -->
-    <svg transform="scale(0.9)">
+
+<!-- SVG with many procedural transformations -->
+    <svg transform="scale(0.9)">  <!-- slight shrinkage of dial within container -->
+
+        <!-- dynamically changing colours defined here -->
         <defs id='{dial.id}-gradients'>
             <radialGradient cx=50%
                             cy=50%
@@ -159,7 +193,8 @@
                     r={ dial.width * (1/ dial.rx) }
                     stroke="url('#{dial.id}-grad')"/>
         </g>
-        <!-- label -->
+
+<!-- label -->
         <g id='{dial.id}-label'>
             <text class:label={dial.label}
                   x="50%" y="5%"
@@ -172,7 +207,8 @@
     <svg transform="scale(0.9)" >
       <g id='{dial.id}-dialOverlays'
          transform="scale( {(dial.width / (Default.RADIAL_OVERLAY_rX * 2))} )" >
-    <!-- tick marks -->
+
+<!-- tick marks  -->
                 {#if tickMarks}
                 <g id='{dial.id}-ticks'>
                     {#each Array(Default.DIAL_TICKMARKS_COUNT) as tick, i}
@@ -187,7 +223,8 @@
                     {/each}
                 </g>
                 {/if}
-    <!-- pointer plot -->
+
+ <!-- pointer plot -->
                 <g id="pointerPlot" stroke-width=8>
                 {#each pointerPlot.slice(4,14) as {x, y}, i}
                     {@const width = dial.precis ? 5 : 2}
