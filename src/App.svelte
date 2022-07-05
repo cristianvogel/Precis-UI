@@ -1,8 +1,4 @@
-<!-- App.svelte
-	// Precision Audio UI © Cristian Vogel 2022
-	// No unauthorised use or derivatives!
-	// contact @neverenginelabs
--->
+<!-- App.svelte -->
 
 <!-- prevent default mouse actions but allow key events through -->
 <svelte:body
@@ -11,7 +7,11 @@
 />
 
 <script lang="ts">
-
+/**
+ * Precis-UI © Cristian Vogel 2022
+ * No unauthorised use or derivatives!
+ * @neverenginelabs
+ */
     import Radial from "./components/Radial.svelte";
 	import Fader from './components/Fader.svelte'
     import {toFixed} from "./lib/Utils";
@@ -89,7 +89,7 @@
 				font-size: xx-small" fill="cyan">
                 Output from: {$touchedID} - {$readout} - rescale: {rescaleDials} ◌ {rescaleFaders}
             </text>
-            <line x1="0.5rem" y1="7.5%" x2="200%" y2="7.5%" stroke='antiqueWhite'/>
+            <line x1="0.5rem" y1="7.5%" x2="225%" y2="7.5%" stroke='antiqueWhite'/>
         </svg>
         <h3>
             𝌺 <a href='https://twitter.com/neverenginelabs'>@neverenginelabs</a>
@@ -108,22 +108,26 @@
         example: rect={{x: posX * rescaleDials, y: posY, width: 100, height: 100}}
 -->
 
-    <div style="transform-origin:center" >
+    <div style="transform: translateY(-14em)" >
     {#each Array(8) as _, i ('key-d-' + i)}
-        {@const posX = 450 + ((i % 2) * 50)}
-        {@const oddEvenSpreadD = rescaleDials * [-1, 1].at(i%2) }
-        {@const posY = (((i / 3) % 8) + 1) * 150}
-        {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
-        <Radial id="dial.{i}"
-                rect={{  x: posX + (50 * oddEvenSpreadD),
-                         y: posY
-                       }}
-                min=0
-                max={rangeTest}
-                scale={rescaleDials}
-                on:output={handleOutputValue}
-                dialPointer={true}
-        />
+        <!-- aesthetically, skip the first dial -->
+        {#if (i>0)}
+            {@const posX = 450 + ((i % 2) * 50)}
+            {@const oddEvenSpreadD = rescaleDials * [-1, 1].at(i%2) }
+            {@const posY = (((i / 3) % 8) + 1) * 200}
+            {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
+            <Radial id="dial.{i}"
+                    rect={{  x: posX + (50 * oddEvenSpreadD),
+                             y: posY
+                           }}
+                    min=0
+                    max={rangeTest}
+                    scale={rescaleDials}
+                    on:output={handleOutputValue}
+                    dialPointer={true}
+                    background='rgba(127,127,127,{i * 0.1})'
+            />
+        {/if}
     {/each}
     </div>
 <!-- render some vert faders -->

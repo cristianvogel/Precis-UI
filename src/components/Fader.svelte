@@ -1,7 +1,9 @@
 <script lang="ts">
-    // Precision Audio UI © Cristian Vogel 2022
-    // No unauthorised use or derivatives!
-    // @neverenginelabs
+/**
+ * Precis-UI © Cristian Vogel 2022
+ * No unauthorised use or derivatives!
+ * @neverenginelabs
+ */
 
     import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {BasicController, Fader} from "../lib/PrecisControllers";
@@ -23,6 +25,7 @@
         height:number = Default.FADER_HEIGHT,
         scale:number = Default.FADER_SCALE_FACTOR,
         rx:number = Default.FADER_rX,
+        background = Default.FADER_BACKGROUND,
         id:FaderTag = 'fader.0',
         tickMarks:boolean = true, //todo: Fader tickmarks
         label:string = '',
@@ -53,13 +56,15 @@
         scale,
         taper,
         tickMarks,
+        background
     }
 
     // Construct a new instance of a vertical fader
     let fader:Fader = new Fader(settings)
     BasicController.initialise(fader)
 
-    // demonstrates how to use the registry index of this instance
+
+    // how to use the registry index of this instance
     // to add a unique suffix to the fader's label
     fader.label += fader.registryIndex.toString()
 
@@ -83,8 +88,7 @@
     let sinMap;
 </script>
 
-<!-- Here begins the computational graphic design in HTML/SVG
-
+<!-- Here begins the computational graphic design in Svelte/HTML/SVG
 Please be aware that this style of graphic design
 is accomplished through many hours of iterative design.
 I try not to rely too much on oddball magic constants,
@@ -94,10 +98,9 @@ looking nudges and transforms.
 Different graphical components of the SVG are contained
 in <g>....</g> with an id to help readability or to further reference
 using DOM selectors if needed
-
 -->
 
-<!-- main wrapper element -->
+<!-- container and functionality -->
 <div class='faderContainer'
      id='{fader.id}-container'
      on:contextmenu|preventDefault={ (e)=>{fader.componentMouseDown(e,fader)} }
@@ -189,7 +192,8 @@ using DOM selectors if needed
                           x=-0.5rem
                           y=-0.5rem />
                     {#if (!fader.precis)}
-                        <g transform="scale( {fader.precis ? 2 : 1} )" out:fade>
+                        <g transform="scale( {fader.precis ? 2 : 1} )"
+                           out:fade >
                             <text id='{id}-readout.Text'
                                   class={'readout ' + (upperBand ? 'flipped' : 'rotated') }>
                                     {roundedReadout}

@@ -1,35 +1,36 @@
-// Precision Audio UI © Cristian Vogel 2022
-// No unauthorised use or derivatives!
-// @neverenginelabs
-
 /**
- * Declares and implements the Base Classes for all controller types
+ *  Precis-UI © Cristian Vogel 2022
+ *  No unauthorised use or derivatives!
+ *  @neverenginelabs
+ *
+ * __PrecisControllers__
+ *
+ * Annotates and implements Base classes and all derived controller classes
  */
 import {asLogicValue, radialPoints, remap, roundTo, toNumber} from './Utils';
 import {createEventDispatcher} from "svelte";
 import {addListeners} from "./Listeners";
 import {WidgetRegister, WidgetStore} from '../stores/stores';
 import {get} from "svelte/store";
-import type {
-    PointsArray,
-    RoundedReadout,
-    BoundingRectCSS,
-    DialTag,
-    FaderTag,
-    Output,
-    Rect,
-    StateFlags,
-    Taper,
-    Tint,
-    ToggleTag
-} from '../types/Precis-UI-TypeDeclarations';
+import type {PointsArray, RoundedReadout, BoundingRectCSS, DialTag, FaderTag, Output, Rect, StateFlags, Taper, Tint, ToggleTag} from '../types/Precis-UI-TypeDeclarations';
 import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 import {Default, DEFAULT_RECT} from '../components/Precis-UI-Defaults';
 
+/**
+ * __Precis UI__
+ *
+ * Base class. For layout and global specifications.
+ */
 abstract class PrecisUI {
     static getRegistry():WidgetRegister { return get(WidgetStore) }
 }
-
+/**
+ * __PrecisController__
+ *
+ * Base architecture for a controller.
+ *
+ * Dispatcher, geometry, state flags, label etc
+ */
 abstract class PrecisController extends PrecisUI{
 
     protected dispatch
@@ -144,7 +145,11 @@ abstract class PrecisController extends PrecisUI{
         return inline
     }
 }
-
+/**
+ * __BasicController__
+ *
+ * Base controller class implementing widget agnostic events, value methods, state
+ */
 export class BasicController extends PrecisController {
     currentValue: number;
     taper: Taper
@@ -153,20 +158,42 @@ export class BasicController extends PrecisController {
     constructor() {
         super()
     }
+    /**
+     * Add that widget to the widget registry store
+     * then render its container element
+     * @param widget
+     */
     static initialise(widget: BasicController){
         BasicController.addSelfToRegistry(widget)
         widget.containerTransform(widget)
     }
+
+    /**
+     * The main value computing functions
+     * Overrides for buttons/selectors that won't require
+     * fine value updates
+     */
     getMappedValue(): number {
         return remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max)
     }
     getNormValue(): number {
         return (this.currentValue / this.height)
     }
+
+    /**
+     * returns a nicely formatted string for displaying the widgets' values
+     */
     getRoundedReadout():RoundedReadout {
         return roundTo(this.getMappedValue(), this.precis ? 1.0e-4 : 1.0e-2)
             .toFixed(this.precis ? 3 : 1);
     };
+
+    /**
+     * First layer of methods for widget interaction, called from Svelte on: directives
+     * Mouse Down will subscribe listeners through the addListeners interface
+     * @param event
+     * @param caller
+     */
     componentMouseDown(event: MouseEvent, caller:BasicController): void {
         if (!event.target) return
         // console.info('Element belongs to ⇢ ' + caller.id)
@@ -191,6 +218,16 @@ export class BasicController extends PrecisController {
     }
 }
 
+/**
+ * ▽ ▽ *Widget Classes* ▽ ▽
+ *
+ *
+ * __RADIAL aka Dial__
+ *
+ * Specialisations:
+ *
+ ⦿ 2D radial geometry calculations
+ */
 export class Radial extends BasicController {
     background = C.dim
     pointer = true
@@ -212,6 +249,11 @@ export class Radial extends BasicController {
         return (this.getNormValue() * 270) + 230
     }
 }
+
+/**
+ * __FADER aka Slider__
+ *
+ */
 export class Fader extends BasicController {
     background = C.dim
     id:FaderTag = 'fader.0'
@@ -223,6 +265,15 @@ export class Fader extends BasicController {
         console.log('Constructed -> ' + this.id)
     }
 }
+/**
+ * __TOGGLE aka Button__
+ *
+ * Specialisations:
+ *
+ ⦿ Boolean state management
+ *
+ ⦿ Min or Max value return
+ */
 export class Toggle extends BasicController {
     background = C.clear
     id:ToggleTag = 'toggle.0'
@@ -247,17 +298,12 @@ export class Toggle extends BasicController {
     getMappedValue(): number {
         return Math.round(((this.state as number | 1) * this.taper.max) + this.taper.min);
     }
-
     changeState():number|boolean {
         this._state = asLogicValue(this._state, 'not')
         return this._state
     }
-
     get state(): number|boolean {
         return this._state;
-    }
-    set state(value: number|boolean) {
-        this._state = value;
     }
 }
 
