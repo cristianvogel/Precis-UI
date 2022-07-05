@@ -1,7 +1,9 @@
 <script lang="ts">
-    // Precision Audio UI © Cristian Vogel 2022
-    // No unauthorised use or derivatives!
-    // @neverenginelabs
+/**
+ * Precis-UI © Cristian Vogel 2022
+ * No unauthorised use or derivatives!
+ * @neverenginelabs
+ */
 
     import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {BasicController, Fader} from "../lib/PrecisControllers";
@@ -59,7 +61,8 @@
     let fader:Fader = new Fader(settings)
     BasicController.initialise(fader)
 
-    // demonstrates how to use the registry index of this instance
+
+    // how to use the registry index of this instance
     // to add a unique suffix to the fader's label
     fader.label += fader.registryIndex.toString()
 
@@ -83,8 +86,7 @@
     let sinMap;
 </script>
 
-<!-- Here begins the computational graphic design in HTML/SVG
-
+<!-- Here begins the computational graphic design in Svelte/HTML/SVG
 Please be aware that this style of graphic design
 is accomplished through many hours of iterative design.
 I try not to rely too much on oddball magic constants,
@@ -94,7 +96,6 @@ looking nudges and transforms.
 Different graphical components of the SVG are contained
 in <g>....</g> with an id to help readability or to further reference
 using DOM selectors if needed
-
 -->
 
 <!-- main wrapper element -->

@@ -1,7 +1,9 @@
 <script lang="ts">
-    // Precision Audio UI © Cristian Vogel 2022
-    // No unauthorised use or derivatives!
-    // @neverenginelabs
+/**
+ * Precis-UI © Cristian Vogel 2022
+ * No unauthorised use or derivatives!
+ * @neverenginelabs
+ */
 
     import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {
@@ -15,6 +17,7 @@
     import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-TypeDeclarations';
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
+    // ingest props from caller
     export let
         min:number = DEFAULT_TAPER.min,
         max:number = DEFAULT_TAPER.max,
@@ -95,7 +98,7 @@
         refresh()
     }
 
-    // needed for {@const} assignments
+    // initialisations needed for parsing Svelte {@const} assignments
     let gearedValue
     let offsetMap
     let sinMap
@@ -110,7 +113,7 @@
 
 </script>
 
-<!-- Here begins computational graphic design in HTML/SVG
+<!-- Here begins computational graphic design in Svelte/HTML/SVG
 
 Please be aware that this style of graphic design
 is accomplished through many hours of iterative design.

@@ -1,11 +1,20 @@
-// Precision Audio UI © Cristian Vogel 2022
-// No unauthorised use or derivatives!
-// @neverenginelabs
+/**
+*  Precis-UI © Cristian Vogel 2022
+*  No unauthorised use or derivatives!
+*  @neverenginelabs
+*/
 
-// Geometry Defs
 import type {Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
 import {toNumber} from '../lib/Utils';
 
+/**
+ * __Default__
+ *
+ * This enum contains constants used as defaults when
+ * custom values are not provided through constructors
+ * or component props. They can be tweaked and used to
+ * set custom defaults.
+ */
 export enum Default {
     EMPTY,
     SCALE,
@@ -28,13 +37,22 @@ export enum Default {
     BUTTON_BACKGROUND = 'transparent',
     RADIAL_OVERLAY_rX = 50 // coefficient for radial layout computed values
 }
-
+/**
+ * __Taper__
+ *
+ * Type represents the minium and maxium of a widget and its fine step
+ * which is a factor that will be used in _Precision_ mode
+ */
 export const DEFAULT_TAPER:Taper = {
     min: 0,
     max: 1,
     fineStep: 1.0e-3
 }
-
+/**
+ * __Rect__
+ *
+ * a default for positioning rect
+ */
 export const DEFAULT_RECT:Rect = {
     x: toNumber(Default.X),
     y: toNumber(Default.Y),

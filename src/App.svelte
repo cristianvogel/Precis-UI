@@ -1,8 +1,4 @@
-<!-- App.svelte
-	// Precision Audio UI © Cristian Vogel 2022
-	// No unauthorised use or derivatives!
-	// contact @neverenginelabs
--->
+<!-- App.svelte -->
 
 <!-- prevent default mouse actions but allow key events through -->
 <svelte:body
@@ -11,7 +7,11 @@
 />
 
 <script lang="ts">
-
+/**
+ * Precis-UI © Cristian Vogel 2022
+ * No unauthorised use or derivatives!
+ * @neverenginelabs
+ */
     import Radial from "./components/Radial.svelte";
 	import Fader from './components/Fader.svelte'
     import {toFixed} from "./lib/Utils";

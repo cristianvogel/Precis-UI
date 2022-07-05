@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Precision Audio UI © Cristian Vogel 2022
+    // Precis-UI © Cristian Vogel 2022
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
@@ -11,10 +11,13 @@
     import {WidgetStore} from '../stores/stores.js'
     import {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
 
+    // ingest props from caller
     export let
         graphicStyle: number = 1,
         min: number = DEFAULT_TAPER.min,
         max: number = DEFAULT_TAPER.max,
+        taper:Taper = {} as Taper,
+        rect:Rect = {} as Rect,
         x: number = Default.X,
         y: number = Default.Y,
         width: number = Default.BUTTON_WIDTH,
@@ -24,20 +27,23 @@
         id: ToggleTag = 'toggle.0',
         label: string = 'Toggle',
         value: number = 0,
-        rect: Rect = {
-            x: toNumber(x),
-            y: toNumber(y),
-            width: toNumber(width),
-            height: toNumber(height)
-        },
-        taper: Taper = {
-            min: toNumber(min),
-            max: toNumber(max),
-            fineStep: 0.5
-        },
         background = Default.BUTTON_BACKGROUND
 
+    // assert that we do actually have a rect and a taper
+    rect = {
+        x: toNumber(rect.x || x),
+        y: toNumber(rect.y || y),
+        width: toNumber(rect.width || width),
+        height: toNumber(rect.height || height)
+    }
 
+    taper = {
+        min: toNumber( taper.min || min),
+        max: toNumber(taper.max || max),
+        fineStep: 1
+    }
+
+    // initialise with these settings
     const settings = {
         currentValue: value,
         id,
@@ -51,13 +57,17 @@
     // Construct a new instance of a  toggle
     let toggle:Toggle = new Toggle(settings)
     BasicController.initialise(toggle)
+
+    // a Svelte reactive assigment if needed
     const refresh = ()=> {toggle = toggle}
 
     onMount(() => {
+        // send out an initial value message once
         toggle.dispatchOutput(toggle.id, toggle.getMappedValue());
     })
 
-    let position: number | boolean = 0;
+    let toggleState: number | boolean = 0;
+    let popup:boolean
     const design = {
         designIndex: ()=>clamp(graphicStyle, [0,1], true),
         trimColour: [ 'coral' , 'green']
@@ -65,32 +75,43 @@
     const {designIndex, trimColour} = design
     let toggleDesign:string|undefined =  [ 'toggle-alt', 'toggle' ].at(designIndex())
 
-    $:registrySize = $WidgetStore.size
-    $:position = toggle.state
+    $:toggleState = toggle.state
+    $:popup = false
 
 </script>
 
 <div class='toggleContainer'
      id='{toggle.id}-container'
+     on:mouseenter={()=>popup = true }
+     on:mouseleave={()=>popup = false }
      on:mousedown|preventDefault={(e)=>{toggle.componentMouseDown(e, toggle)}}
      on:mouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
      style={toggle.containerTransform(toggle, scale)}
 >
-    <div class={position ? `${toggleDesign} on` : `${toggleDesign}`}>
-        <div class={position ? `${toggleDesign} led on` : `${toggleDesign} led`}>
+    <div class={toggleState ? `${toggleDesign} on` : `${toggleDesign}`}>
+        <div class={toggleState ? `${toggleDesign} led on` : `${toggleDesign} led`}>
         </div>
-        <div id='{toggle.id}-button-text'>
-        <svg>
+        <svg dominant-baseline="mathematical" text-anchor="middle">
             <g transform="translate({toggle.width/2} {(toggle.height/2) * 0.8})">
                 <text class="toggle-text"
-                      fill={position ? trimColour.at(designIndex()): 'darkslategray'}
-                      text-anchor="middle"
-                      dominant-baseline="mathematical">
+                      fill={toggleState ? trimColour.at(designIndex()): 'darkslategray'}
+                >
                     {label}︎
                 </text>
             </g>
+
+            {#if (popup) }
+                <g transform="translate(0, 60)" in:fade out:fade>
+                    <rect  width="{toggle.width}" height="20" fill="antiquewhite" rx="5" />
+                    <text textLength="{toggle.width * 0.75}"
+                          text-anchor="start"
+                          alignment-baseline="hanging"
+                          transform="translate(10 5)"
+                          font-size="12">{toggle.label} widget {toggle.registryIndex} </text>
+                </g>
+            {/if}
+
         </svg>
-        </div>
     </div>
 
 </div>
@@ -114,7 +135,7 @@
         width: 100%;
         display: block;
         cursor: pointer;
-        border-radius: 0.5em;
+        border-radius: 0.75em;
         transition: 150ms ease-in-out;
         background: linear-gradient(#eee 10%, #fff);
         border: 1px solid #ddd
@@ -145,7 +166,7 @@
     .toggle-text {
         font-size: xx-large;
         color: darkslategray;
-        stroke: white;
+        stroke: #cccccc;
     }
 
     .toggle-alt {
@@ -154,9 +175,9 @@
         width: 100%;
         display: block;
         cursor: pointer;
-        border-radius: 0.5em;
+        border-radius: 0.75em;
         transition: 350ms;
-        background: linear-gradient(white 5%, silver 33%, antiquewhite 85%);
+       background: linear-gradient(white 5%, silver 33%, slategrey 85%);
         border: 1px solid darkgrey
     }
 
