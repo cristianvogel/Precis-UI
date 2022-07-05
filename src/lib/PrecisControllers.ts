@@ -24,7 +24,13 @@ import {Default, DEFAULT_RECT} from '../components/Precis-UI-Defaults';
 abstract class PrecisUI {
     static getRegistry():WidgetRegister { return get(WidgetStore) }
 }
-
+/**
+ * __PrecisController__
+ *
+ * Base architecture for a controller.
+ *
+ * Dispatcher, geometry, state flags, label etc
+ */
 abstract class PrecisController extends PrecisUI{
 
     protected dispatch
@@ -142,7 +148,7 @@ abstract class PrecisController extends PrecisUI{
 /**
  * __BasicController__
  *
- * Base controller class implementing widget agnostic methods and state
+ * Base controller class implementing widget agnostic events, value methods, state
  */
 export class BasicController extends PrecisController {
     currentValue: number;
@@ -164,7 +170,7 @@ export class BasicController extends PrecisController {
 
     /**
      * The main value computing functions
-     * Override for buttons and selectors that don't require
+     * Overrides for buttons/selectors that won't require
      * fine value updates
      */
     getMappedValue(): number {

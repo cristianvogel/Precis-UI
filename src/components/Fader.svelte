@@ -25,6 +25,7 @@
         height:number = Default.FADER_HEIGHT,
         scale:number = Default.FADER_SCALE_FACTOR,
         rx:number = Default.FADER_rX,
+        background = Default.FADER_BACKGROUND,
         id:FaderTag = 'fader.0',
         tickMarks:boolean = true, //todo: Fader tickmarks
         label:string = '',
@@ -55,6 +56,7 @@
         scale,
         taper,
         tickMarks,
+        background
     }
 
     // Construct a new instance of a vertical fader
@@ -98,7 +100,7 @@ in <g>....</g> with an id to help readability or to further reference
 using DOM selectors if needed
 -->
 
-<!-- main wrapper element -->
+<!-- container and functionality -->
 <div class='faderContainer'
      id='{fader.id}-container'
      on:contextmenu|preventDefault={ (e)=>{fader.componentMouseDown(e,fader)} }
@@ -190,7 +192,8 @@ using DOM selectors if needed
                           x=-0.5rem
                           y=-0.5rem />
                     {#if (!fader.precis)}
-                        <g transform="scale( {fader.precis ? 2 : 1} )" out:fade>
+                        <g transform="scale( {fader.precis ? 2 : 1} )"
+                           out:fade >
                             <text id='{id}-readout.Text'
                                   class={'readout ' + (upperBand ? 'flipped' : 'rotated') }>
                                     {roundedReadout}

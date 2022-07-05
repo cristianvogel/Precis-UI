@@ -67,7 +67,7 @@
     })
 
     let toggleState: number | boolean = 0;
-    let popup:boolean
+    let toolTip:boolean
     const design = {
         designIndex: ()=>clamp(graphicStyle, [0,1], true),
         trimColour: [ 'coral' , 'green']
@@ -76,31 +76,32 @@
     let toggleDesign:string|undefined =  [ 'toggle-alt', 'toggle' ].at(designIndex())
 
     $:toggleState = toggle.state
-    $:popup = false
+    $:toolTip = false
 
 </script>
-
+<!-- container and functionality -->
 <div class='toggleContainer'
      id='{toggle.id}-container'
-     on:mouseenter={()=>popup = true }
-     on:mouseleave={()=>popup = false }
+     on:mouseenter={()=>toolTip = true }
+     on:mouseleave={()=>toolTip = false }
      on:mousedown|preventDefault={(e)=>{toggle.componentMouseDown(e, toggle)}}
      on:mouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
      style={toggle.containerTransform(toggle, scale)}
 >
+<!-- led and text -->
     <div class={toggleState ? `${toggleDesign} on` : `${toggleDesign}`}>
-        <div class={toggleState ? `${toggleDesign} led on` : `${toggleDesign} led`}>
-        </div>
+        <div class={toggleState ? `${toggleDesign} led on` : `${toggleDesign} led`}></div>
+<!-- button text -->
         <svg dominant-baseline="mathematical" text-anchor="middle">
             <g transform="translate({toggle.width/2} {(toggle.height/2) * 0.8})">
-                <text class="toggle-text"
-                      fill={toggleState ? trimColour.at(designIndex()): 'darkslategray'}
+                <text class={`${toggleDesign} text`}
+                      fill={toggleState ? trimColour.at(designIndex()): ''}
                 >
                     {label}︎
                 </text>
             </g>
-
-            {#if (popup) }
+<!-- simple tool tip -->
+            {#if (toolTip) }
                 <g transform="translate(0, 60)" in:fade out:fade>
                     <rect  width="{toggle.width}" height="20" fill="antiquewhite" rx="5" />
                     <text textLength="{toggle.width * 0.75}"
@@ -110,7 +111,6 @@
                           font-size="12">{toggle.label} widget {toggle.registryIndex} </text>
                 </g>
             {/if}
-
         </svg>
     </div>
 
@@ -136,14 +136,16 @@
         display: block;
         cursor: pointer;
         border-radius: 0.75em;
-        transition: 150ms ease-in-out;
-        background: linear-gradient(#eee 10%, #fff);
+        transition: 100ms ease-in-out;
+        /*background: linear-gradient(#eee 10%, #aaa);*/
+        background: darkslategray;
         border: 1px solid #ddd
     }
 
     .toggle.on {
-        background: linear-gradient(#fff 10%, #eee);
-        border: 1px solid darkgrey;
+        /*background: linear-gradient(#aaa 10%, #eee);*/
+        background: darkslategray;
+        border: 1px solid springgreen;
     }
 
     .toggle.led {
@@ -163,10 +165,9 @@
     }
 
 
-    .toggle-text {
+    .toggle.text {
         font-size: xx-large;
-        color: darkslategray;
-        stroke: #cccccc;
+        fill: cyan;
     }
 
     .toggle-alt {
@@ -177,13 +178,13 @@
         cursor: pointer;
         border-radius: 0.75em;
         transition: 350ms;
-       background: linear-gradient(white 5%, silver 33%, slategrey 85%);
+       background: linear-gradient(white 5%, antiquewhite 33%, slategrey 85%);
         border: 1px solid darkgrey
     }
 
     .toggle-alt.on {
         border: 1px solid #ddd;
-        background: linear-gradient(whitesmoke 5%, silver 33%, whitesmoke 85%);
+        background: linear-gradient(whitesmoke 5%, silver 33%, antiquewhite 85%);
     }
 
     .toggle-alt.led {
@@ -201,6 +202,12 @@
     .toggle-alt.led.on {
         transform: scale(0.95);
         background: radial-gradient(whitesmoke 5%, orange 45%, #2e2e2e 75%);
+    }
+
+    .toggle-alt.text {
+        font-size: xx-large;
+        fill: darkslategray;
+        stroke: #cccccc;
     }
 
 

@@ -24,7 +24,8 @@ export enum Default {
     FADER_HEIGHT = 300,
     FADER_SCALE_FACTOR = 1,
     FADER_rX = 2.75, // layout coefficient
-    SQUARE = 108,
+    FADER_BACKGROUND = 'transparent',
+    SQUARE = 108, // dial square
     DIAL_SCALE_FACTOR = 1,
     DIAL_TICKMARKS_COUNT=11, // best to keep this at 11
     DIAL_TICKMARKS_RADIAL_OFFSET = 135,

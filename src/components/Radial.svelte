@@ -14,7 +14,7 @@
     import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from '../stores/stores.js'
-    import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-TypeDeclarations';
+import type {DialTag, Rect, Taper, PointsArray, Point, Tint} from '../types/Precis-UI-TypeDeclarations';
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
     // ingest props from caller
@@ -63,7 +63,7 @@
         scale,
         taper,
         tickMarks,
-        background: C.dim
+        background
     }
 
     // Construct a new instance of a Radial
@@ -127,7 +127,7 @@ using DOM selectors if needed
 
 -->
 
-<!-- main wrapper element -->
+<!-- container and functionality -->
 <div class='dialContainer'
      id='{dial.id}-container'
      on:contextmenu|preventDefault={ (e)=>{dial.componentMouseDown(e,dial)} }
