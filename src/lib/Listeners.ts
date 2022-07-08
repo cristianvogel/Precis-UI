@@ -23,9 +23,6 @@ export function addListeners(element:HTMLElement | null, widget:BasicController)
     _widget = get(ListeningWidget)
     _element = get(ListeningElement)
 
-    console.log('widget -> ' + _widget.id)
-
-
     addMouseListeners()
     addKeyListeners()
 }

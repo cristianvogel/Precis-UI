@@ -10,19 +10,54 @@
 import {asLogicValue, radialPoints, remap, roundTo, toNumber} from './Utils';
 import {createEventDispatcher} from "svelte";
 import {addListeners} from "./Listeners";
-import {WidgetRegister, WidgetStore} from '../stores/stores';
-import {get} from "svelte/store";
-import type {PointsArray, RoundedReadout, BoundingRectCSS, DialTag, FaderTag, Output, Rect, StateFlags, Taper, Tint, ToggleTag} from '../types/Precis-UI-TypeDeclarations';
+import {Dirty, WidgetRegister, WidgetStore} from '../stores/stores';
+import {get} from 'svelte/store';
 import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 import {Default, DEFAULT_RECT} from '../components/Precis-UI-Defaults';
+import type {
+    PointsArray,
+    RoundedReadout,
+    BoundingRectCSS,
+    DialTag,
+    FaderTag,
+    Output,
+    Rect,
+    StateFlags,
+    Taper,
+    Tint,
+    ToggleTag,
+    PositiveNumber
+} from '../types/Precis-UI-TypeDeclarations';
+import {dirty_components} from 'svelte/internal';
+
+
 
 /**
  * __Precis UI__
  *
  * Base class. For layout and global specifications.
  */
-abstract class PrecisUI {
+ export class PrecisUI  {
+    protected static  dispatch
+
+    protected constructor() {
+        PrecisUI.dispatch = createEventDispatcher()
+    }
+
+     static dispatchRefresh() {
+        console.log('layout refresh event')
+        PrecisUI.dispatch('refresh')
+    }
+
     static getRegistry():WidgetRegister { return get(WidgetStore) }
+    static getWidgetByTag( tag:string) {return get(WidgetStore).get(tag) || undefined}
+    static scaleAllWidgets( scaleFactor: PositiveNumber) {
+           get(WidgetStore).forEach( (e)=>{
+               e.scale = scaleFactor
+           })
+        Dirty.trigger()
+    }
+
 }
 /**
  * __PrecisController__
@@ -32,8 +67,6 @@ abstract class PrecisUI {
  * Dispatcher, geometry, state flags, label etc
  */
 abstract class PrecisController extends PrecisUI{
-
-    protected dispatch
     selected: (HTMLElement | null) = null
     rect: Rect
     rx: number
@@ -47,7 +80,6 @@ abstract class PrecisController extends PrecisUI{
 
     protected constructor() {
         super();
-        this.dispatch = createEventDispatcher()
     }
 
     abstract getNormValue():number
@@ -56,11 +88,11 @@ abstract class PrecisController extends PrecisUI{
     abstract componentMouseDown(event: MouseEvent, caller: BasicController): void
     abstract componentMouseEnter(event: MouseEvent, caller:BasicController):void
     abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
+    static dispatchOutput(widget: BasicController): void {}
 
     set stateFlags(settings: StateFlags) {
         this._stateFlags = {...settings};
     }
-
     get registryIndex(): number {
         return this._registryIndex;
     }
@@ -106,13 +138,7 @@ abstract class PrecisController extends PrecisUI{
     set height(h: number) {
         this.rect.height = toNumber(h)
     }
-    dispatchOutput(id: string, value: Output,): void {
-        //console.log( 'dispatching '+value+' from -> ' + id)
-        this.dispatch('output', {
-            value,
-            id,
-        })
-    }
+
     getCSSforRect(xywh:Rect): BoundingRectCSS {
         const aRect: BoundingRectCSS =
             `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width}px;height:${xywh.height}px;`
@@ -164,8 +190,16 @@ export class BasicController extends PrecisController {
      * @param widget
      */
     static initialise(widget: BasicController){
-        BasicController.addSelfToRegistry(widget)
+        PrecisController.addSelfToRegistry(widget)
         widget.containerTransform(widget)
+    }
+
+    static dispatchOutput(widget: BasicController): void {
+        PrecisUI.dispatch('output', {
+            value: widget.getMappedValue(),
+            id: widget.id,
+            widget: widget || undefined
+        })
     }
 
     /**
@@ -216,6 +250,7 @@ export class BasicController extends PrecisController {
         caller.selected.focus()
         caller.focussed = true
     }
+
 }
 
 /**
@@ -257,6 +292,7 @@ export class Radial extends BasicController {
 export class Fader extends BasicController {
     background = C.dim
     id:FaderTag = 'fader.0'
+    _instance
 
     constructor(initialSettings) {
         super();
@@ -272,6 +308,8 @@ export class Fader extends BasicController {
  *
  ⦿ Boolean state management
  *
+ ⦿ MouseDown override
+ *
  ⦿ Min or Max value return
  */
 export class Toggle extends BasicController {
@@ -284,16 +322,17 @@ export class Toggle extends BasicController {
         super.id = this.id
         console.log('Constructed -> ' + this.id)
     }
-    componentMouseDown(event: MouseEvent, caller:BasicController): void{
+
+    componentMouseDown(event: MouseEvent, widget:BasicController): void{
         if (!event.target) return
-        caller.stateFlags = {
+        widget.stateFlags = {
             changing: true,
             precis: false,
             focussed: true
         }
-        caller.currentValue = this.changeState() as number
-        caller.selected = event.target as HTMLElement
-        super.dispatchOutput(this.id, this.getMappedValue())
+        widget.currentValue = this.changeState() as number
+        widget.selected = event.target as HTMLElement
+        BasicController.dispatchOutput(widget)
     }
     getMappedValue(): number {
         return Math.round(((this.state as number | 1) * this.taper.max) + this.taper.min);

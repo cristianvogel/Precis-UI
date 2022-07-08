@@ -1,6 +1,6 @@
 import {clamp, remap } from "./Utils";
 import {removeListeners} from "./Listeners";
-import type {BasicController} from "./PrecisControllers";
+import {BasicController} from "./PrecisControllers";
 import type {WidgetWithKey} from "../types/Precis-UI-TypeDeclarations";
 
 export function handleMouseDrag(event: MouseEvent, widget: BasicController): void {
@@ -19,6 +19,10 @@ export function handleModifier(event: KeyboardEvent): void {
     //todo: implement keyboard shift-key modifier for precise mode
 }
 
+/**
+ * Mouse and Screen mapped output values are computed here and dispatched as custom events
+ * @param caller Object containing references to Widget.id , Widget itself and the trigger event
+ */
 function updatesForMouseDrag(caller) {
     const {id, widget, event} = caller
     if (!widget.changing || !widget.focussed) {
@@ -39,7 +43,7 @@ function updatesForMouseDrag(caller) {
         widget.currentValue =
             clamp(widget.currentValue + (-dy * (remap(widget.getNormValue(), 0, 1, 1, 0.25))), [0, height])
     }
-    widget.dispatchOutput(id, widget.getMappedValue())
+    BasicController.dispatchOutput(widget)
 }
 
 function updatesForMouseDragEnd(caller) {
@@ -47,7 +51,7 @@ function updatesForMouseDragEnd(caller) {
     if (!widget) return
     widget.changing = false
     widget.precis = false
-    widget.dispatchOutput(id, widget.getMappedValue())
+    BasicController.dispatchOutput(widget)
     widget.selected.blur()
     removeListeners()
 }

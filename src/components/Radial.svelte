@@ -80,7 +80,7 @@ import type {DialTag, Rect, Taper, PointsArray, Point, Tint} from '../types/Prec
         // set pointer 'length'
         pointerLength = dial.radialPoints.length
         // send out an initial value message once
-        dial.dispatchOutput( dial.id, dial.getMappedValue());
+        BasicController.dispatchOutput(dial);
     });
 
     // Reactive

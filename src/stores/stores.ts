@@ -16,5 +16,19 @@ export const ListeningWidget:Writable<BasicController> =
 export const ListeningElement:Writable<HTMLElement> =
     writable()
 
-export const touchedID: Writable<string> = writable('')
-export const readout: Writable<number> = writable(0)
+/**
+ * this is an experimental implementation
+ * of a Dirty flag in a store. When it is triggered, its value increments
+ * by 1 and can then be used to trigger use() actions
+ */
+function createDirty() {
+    const { subscribe, set, update } = writable(0);
+
+    return {
+        subscribe,
+        resetTo: (v)=> {set(v)},
+        trigger: ()=> update( n => (n+1) )
+    }
+}
+
+export const Dirty = createDirty()

@@ -73,7 +73,7 @@
 
     onMount( () => {
         // send out an initial value message once
-        fader.dispatchOutput( fader.id, fader.getMappedValue());
+        BasicController.dispatchOutput(fader);
     })
 
     // Reactive
@@ -86,6 +86,7 @@
     let gearedValue;
     let offsetMap;
     let sinMap;
+
 </script>
 
 <!-- Here begins the computational graphic design in Svelte/HTML/SVG
@@ -108,6 +109,7 @@ using DOM selectors if needed
      on:mouseenter|preventDefault={ (e)=>{fader.componentMouseEnter(e, fader)} }
      on:mouseleave={ (e)=>{refresh(); fader.componentMouseLeave(e, fader)} }
      on:mousemove={refresh}
+     on:refresh={()=>console.log('refresh on dial')}
      on:mouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
      style={fader.containerTransform(fader, scale)}
 >

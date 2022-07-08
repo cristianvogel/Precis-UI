@@ -4,7 +4,7 @@
     // @neverenginelabs
 
     import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
-    import {BasicController, Fader, Toggle} from '../lib/PrecisControllers';
+    import {BasicController, Fader, PrecisUI, Toggle} from '../lib/PrecisControllers';
     import {clamp, toNumber} from '../lib/Utils';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
@@ -62,8 +62,7 @@
     const refresh = ()=> {toggle = toggle}
 
     onMount(() => {
-        // send out an initial value message once
-        toggle.dispatchOutput(toggle.id, toggle.getMappedValue());
+    // Don't send out anything on Mount
     })
 
     let toggleState: number | boolean = 0;
@@ -82,6 +81,7 @@
 <!-- container and functionality -->
 <div class='toggleContainer'
      id='{toggle.id}-container'
+     on:refresh={refresh}
      on:mouseenter={()=>toolTip = true }
      on:mouseleave={()=>toolTip = false }
      on:mousedown|preventDefault={(e)=>{toggle.componentMouseDown(e, toggle)}}
