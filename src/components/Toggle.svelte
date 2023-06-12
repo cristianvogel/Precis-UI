@@ -4,12 +4,11 @@
     // @neverenginelabs
 
     import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
-    import {BasicController, Fader, PrecisUI, Toggle} from '../lib/PrecisControllers';
+    import {BasicController, Toggle} from '../lib/PrecisControllers';
     import {clamp, toNumber} from '../lib/Utils';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import {WidgetStore} from '../stores/stores.js'
-    import {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
+    import type {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
 
     // ingest props from caller
     export let
@@ -81,7 +80,6 @@
 <!-- container and functionality -->
 <div class='toggleContainer'
      id='{toggle.id}-container'
-     on:refresh={refresh}
      on:mouseenter={()=>toolTip = true }
      on:mouseleave={()=>toolTip = false }
      on:mousedown|preventDefault={(e)=>{toggle.componentMouseDown(e, toggle)}}
@@ -89,7 +87,7 @@
      style={toggle.containerTransform(toggle, scale)}
 >
 <!-- led and text -->
-    <div class={toggleState ? `${toggleDesign} on` : `${toggleDesign}`}>
+        <div class={toggleState ? `${toggleDesign} on` : `${toggleDesign}`}> 
         <div class={toggleState ? `${toggleDesign} led on` : `${toggleDesign} led`}></div>
 <!-- button text -->
         <svg dominant-baseline="mathematical" text-anchor="middle">

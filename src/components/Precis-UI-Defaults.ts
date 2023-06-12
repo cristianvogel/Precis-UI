@@ -4,7 +4,7 @@
 *  @neverenginelabs
 */
 
-import type {Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
+import { Palette, type Rect, type Taper } from '../types/Precis-UI-TypeDeclarations';
 import {toNumber} from '../lib/Utils';
 
 /**
@@ -24,18 +24,18 @@ export enum Default {
     FADER_HEIGHT = 300,
     FADER_SCALE_FACTOR = 1,
     FADER_rX = 2.75, // layout coefficient
-    FADER_BACKGROUND = 'transparent',
+    FADER_BACKGROUND = Palette.clear,
     SQUARE = 108, // dial square
     DIAL_SCALE_FACTOR = 1,
     DIAL_TICKMARKS_COUNT=11, // best to keep this at 11
     DIAL_TICKMARKS_RADIAL_OFFSET = 135,
     DIAL_TICKMARKS_rMIN = -5,
     DIAL_TICKMARKS_rMAX = 1,
-    DIAL_BACKGROUND = 'transparent',
+    DIAL_BACKGROUND = Palette.clear,
     BUTTON_WIDTH = 72,
     BUTTON_HEIGHT = 45,
     BUTTON_SCALE_FACTOR = 1,
-    BUTTON_BACKGROUND = 'transparent',
+    BUTTON_BACKGROUND = Palette.clear,
     RADIAL_OVERLAY_rX = 50 // coefficient for radial layout computed values
 }
 /**

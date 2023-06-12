@@ -5,7 +5,7 @@
  * @neverenginelabs
  */
 
-    import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
+    import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {
         BasicController,
         Radial
@@ -14,7 +14,7 @@
     import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {PointerPlotStore, WidgetStore} from '../stores/stores.js'
-import type {DialTag, Rect, Taper, PointsArray, Point, Tint} from '../types/Precis-UI-TypeDeclarations';
+import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-TypeDeclarations';
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
     // ingest props from caller
@@ -83,11 +83,7 @@ import type {DialTag, Rect, Taper, PointsArray, Point, Tint} from '../types/Prec
         BasicController.dispatchOutput(dial);
     });
 
-    // Reactive
-    $:rect , refresh
-    $:pointerPlot =  dial.radialPoints
-    $:roundedReadout = dial.getRoundedReadout()
-    $:registrySize = $WidgetStore.size
+
 
     /** addPointerPlotToStore()
      * compute and store PointsArray used to plot the radial polyline
@@ -110,6 +106,12 @@ import type {DialTag, Rect, Taper, PointsArray, Point, Tint} from '../types/Prec
     let ovrX:number
     let tip:Point
     let adjust;
+
+        // Reactive
+    $:rect , refresh
+    $:pointerPlot =  dial.radialPoints
+    $:roundedReadout = dial.getRoundedReadout()
+    $:registrySize = $WidgetStore.size
 
 </script>
 
@@ -179,7 +181,6 @@ using DOM selectors if needed
                 <stop offset="5%" stop-color="darkblue"/>
                 <!-- todo: pull up a colour assign method -->
                 <stop offset="80%" stop-color={[ C.aquaLight, C.pink, C.aquaDark, C.tan, C.whiteBis ].at(registrySize%5)}/>
-                />
                 <stop offset="99%" stop-color="aquamarine"/>
             </radialGradient>
         </defs>
