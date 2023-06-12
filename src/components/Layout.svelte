@@ -116,7 +116,7 @@
                         rect={{  x: posX + (50 * oddEvenSpreadD),
                              y: posY
                            }}
-                        min=0
+                        min={0}
                         max={rangeTest}
                         scale={rescaleDials}
                         dialPointer={true}
@@ -133,7 +133,7 @@
         <Fader id="fader.{i}"
                rect={{ x: posX,
                        y: 250 }}
-               min=0
+               min={0}
                max={rangeTest}
                scale={rescaleFaders}
                label={'Precis-UI ◠◡ '}
@@ -144,12 +144,12 @@
     {#each Array(4) as _, i ('key-t-'+i)}
         {@const posX = 100+(i*90)}
         <Toggle x={posX}
-                y="700"
-                width="81"
-                height="50"
+                y={700}
+                width={81}
+                height={50}
                 graphicStyle={i%2}
                 label= { ['▷' , '⚠︎' , '⏏︎︎︎' , '𝌺' ].at(i) }
-                min="0"
+                min={0}
                 max={i+1}
                 id="toggle.{i}"
                 on:output={handleOutputValue}

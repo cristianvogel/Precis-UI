@@ -5,9 +5,9 @@
  * @neverenginelabs
  */
 
-    import {Default, DEFAULT_RECT, DEFAULT_TAPER} from './Precis-UI-Defaults';
+    import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {BasicController, Fader} from "../lib/PrecisControllers";
-    import {remap, roundTo, toNumber} from '../lib/Utils';
+    import {remap, toNumber} from '../lib/Utils';
     import { onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {WidgetStore} from '../stores/stores.js'
