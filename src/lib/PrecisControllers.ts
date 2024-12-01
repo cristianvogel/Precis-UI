@@ -84,8 +84,8 @@ abstract class PrecisController extends PrecisUI{
     abstract getNormValue():number
     abstract getMappedValue():number
     abstract getRoundedReadout():RoundedReadout
-    abstract componentMouseDown(event: MouseEvent, caller: BasicController): void
-    abstract componentMouseEnter(event: MouseEvent, caller:BasicController):void
+    abstract componentMouseDown(event: Event, caller: BasicController): void
+    abstract componentMouseEnter(event: Event, caller: BasicController):void
     abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
     static dispatchOutput(widget: BasicController): void {}
 
@@ -227,7 +227,7 @@ export class BasicController extends PrecisController {
      * @param event
      * @param caller
      */
-    componentMouseDown(event: MouseEvent, caller:BasicController): void {
+    componentMouseDown(event: Event, caller: BasicController): void {
         if (!event.target) return
         // console.info('Element belongs to ⇢ ' + caller.id)
         const mode = (event.type)
@@ -244,7 +244,8 @@ export class BasicController extends PrecisController {
         if (caller.changing) return
         caller.focussed = false
     }
-    componentMouseEnter(event: MouseEvent, caller:BasicController) {
+
+    componentMouseEnter(event: Event, caller: BasicController): void {
         caller.selected = event.target as HTMLElement
         caller.selected.focus()
         caller.focussed = true
@@ -322,16 +323,16 @@ export class Toggle extends BasicController {
         console.log('Constructed -> ' + this.id)
     }
 
-    componentMouseDown(event: MouseEvent, widget:BasicController): void{
+    componentMouseDown(event: Event, caller: BasicController): void{
         if (!event.target) return
-        widget.stateFlags = {
+        caller.stateFlags = {
             changing: true,
             precis: false,
             focussed: true
         }
-        widget.currentValue = this.changeState() as number
-        widget.selected = event.target as HTMLElement
-        BasicController.dispatchOutput(widget)
+        caller.currentValue = this.changeState() as number
+        caller.selected = event.target as HTMLElement
+        BasicController.dispatchOutput(caller)
     }
     getMappedValue(): number {
         return Math.round(((this.state as number | 1) * this.taper.max) + this.taper.min);

@@ -1,19 +1,20 @@
 <script lang="ts">
-    import { preventDefault } from 'svelte/legacy';
+    import {preventDefault} from 'svelte/legacy';
 
-/**
- * Precis-UI © Cristian Vogel 2022
- * No unauthorised use or derivatives!
- * @neverenginelabs
- */
+    /**
+     * Precis-UI © Cristian Vogel 2022
+     * No unauthorised use or derivatives!
+     * @neverenginelabs
+     */
 
     import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
     import {BasicController, Fader} from "../lib/PrecisControllers";
     import {remap, toNumber} from '../lib/Utils';
-    import { onMount} from "svelte";
+    import {onMount} from "svelte";
     import {fade} from 'svelte/transition';
     import {WidgetStore} from '../stores/stores.js'
-    import {FaderTag, Palette as C, Rect, Taper} from "../types/Precis-UI-TypeDeclarations";
+    import type {FaderTag, Rect, Taper} from "../types/Precis-UI-TypeDeclarations";
+    import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
     interface Props {
         min?: number;
@@ -64,7 +65,7 @@
     }
 
     taper = {
-        min: toNumber( taper.min || min),
+        min: toNumber(taper.min || min),
         max: toNumber(taper.max || max),
         fineStep: toNumber(taper.fineStep || fineStep),
     }
@@ -83,18 +84,16 @@
     }
 
     // Construct a new instance of a vertical fader
-    let fader:Fader = $state(new Fader(settings))
-    BasicController.initialise(fader)
+    let fader: Fader = $state(new Fader(settings));
+    $effect(() => {
+        BasicController.initialise(fader);
+        // how to use the registry index of this instance
+        // to add a unique suffix to the fader's label
+        fader.label += fader.registryIndex.toString()
+    })
 
 
-    // how to use the registry index of this instance
-    // to add a unique suffix to the fader's label
-    fader.label += fader.registryIndex.toString()
-
-    // a Svelte reactive assigment if needed
-    const refresh = ()=> {fader = fader}
-
-    onMount( () => {
+    onMount(() => {
         // send out an initial value message once
         BasicController.dispatchOutput(fader);
     })
@@ -128,11 +127,9 @@ using DOM selectors if needed
 <div class='faderContainer'
      id='{fader.id}-container'
      oncontextmenu={preventDefault((e)=>{fader.componentMouseDown(e,fader)})}
-     onmousedown={preventDefault((e)=>{fader.componentMouseDown(e, fader)})}
-     onmouseenter={preventDefault((e)=>{fader.componentMouseEnter(e, fader)})}
-     onmouseleave={(e)=>{refresh(); fader.componentMouseLeave(e, fader)}}
-     onmousemove={refresh}
-     onrefresh={()=>console.log('refresh on dial')}
+     onmousedown={preventDefault((e)=>{fader.componentMouseDown(e,fader)})}
+     onmouseenter={preventDefault((e)=>{fader.componentMouseEnter(e,fader)})}
+     onmouseleave={(e)=>{ fader.componentMouseLeave(e, fader)}}
      onmouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
      style={fader.containerTransform(fader, scale)}
 >
@@ -146,18 +143,18 @@ using DOM selectors if needed
         {@const adjust = {
             x: -Math.pow(roundedReadout.length, 1.6),
             y: -100 + (gearedValue * 2),
-            scale: { x: 1, y:Math.abs(sinMap) + 0.125 },
+            scale: {x: 1, y: Math.abs(sinMap) + 0.125},
             opacity: Math.abs(sinMap) + 0.1
         }}
         <div id='{fader.id}-animatedReadout'
-             class="animatedReadout" >
-            <svg in:fade|global out:fade|global >
+             class="animatedReadout">
+            <svg in:fade|global out:fade|global>
                 <g stroke-width='1px'
                    opacity={adjust.opacity}
                    transform="translate( {adjust.x}, {adjust.y} )
                               scale({adjust.scale.x}, {fader.precis ? 1 : adjust.scale.y} )">
                     <text fill={C.aquaLight}
-                       textLength="{fader.width * (roundedReadout.length / 2)}"
+                          textLength="{fader.width * (roundedReadout.length / 2)}"
                     >{roundedReadout}</text>
                 </g>
             </svg>
@@ -183,8 +180,8 @@ using DOM selectors if needed
                 <feDropShadow dx="0" dy="0.4" stdDeviation="0.2"/>
             </filter>
         </defs>
-<!-- todo: double click on track is broken -->
-<!-- fader track -->
+        <!-- todo: double click on track is broken -->
+        <!-- fader track -->
         <g fill="url('#{id}-grad')" stroke={C.whiteBis} stroke-width="0.0625rem">
             <rect id='#{id}-track'
                   width={fader.width}
@@ -193,9 +190,9 @@ using DOM selectors if needed
                   x=0rem
                   ondblclick={preventDefault((ev)=>{fader.currentValue= fader.height - ev.offsetY})}
             />
-<!-- handle -->
+            <!-- handle -->
             <g id='{id}-handle+readout'
-               oncontextmenu={preventDefault((e)=>{fader.componentMouseDown(e, fader)})}
+               oncontextmenu={preventDefault((e)=>{fader.componentMouseDown(e,fader)})}
                stroke={C.offWhite}
                transform="translate(0,{fader.height - fader.currentValue}) scale(1.5)">
                 <rect fill={C.whiteBis}
@@ -205,7 +202,7 @@ using DOM selectors if needed
                       stroke=none
                       style="filter:url(#shadow);"
                 />
-<!-- inner readout w/ some procedural transformations -->
+                <!-- inner readout w/ some procedural transformations -->
                 <g id='{id}-readout'
                    class='readoutBox rotated'
                    style='opacity:{fader.changing ? 1 : 0.7}'>
@@ -215,14 +212,14 @@ using DOM selectors if needed
                           rx=3px
                           width=2.75rem
                           x=-0.5rem
-                          y=-0.5rem />
+                          y=-0.5rem/>
                     {#if (!fader.precis)}
                         <g transform="scale( {fader.precis ? 2 : 1} )"
-                           out:fade|global >
+                           out:fade|global>
                             <text id='{id}-readout.Text'
                                   class={'readout ' + (upperBand ? 'flipped' : 'rotated') }>
-                                    {roundedReadout}
-                                    {fader.precis ? '⋯' : ' ▹'}
+                                {roundedReadout}
+                                {fader.precis ? '⋯' : ' ▹'}
                             </text>
                         </g>
                     {/if}
@@ -231,13 +228,13 @@ using DOM selectors if needed
         </g>
     </svg>
 
-<!-- label -->
+    <!-- label -->
     {#if fader.focussed}
         <div id='{id}-label'
              class='faderContainer'
              style={'z-index: -1000'}>
 
-<!-- LED indicator -->
+            <!-- LED indicator -->
             <svg in:fade|global out:fade|global>
                 <g id='{id}-LED'
                    stroke="aqua" fill=none stroke-width="2px"
@@ -246,7 +243,7 @@ using DOM selectors if needed
                     <line x1="-20" x2="20" y1="-25" y2="-25" in:fade|global="{{duration: 2000}}"></line>
                     <text id='{id}-label.Text'
                           class='label rotated'
-                          textLength={fader.height * 0.25} >
+                          textLength={fader.height * 0.25}>
                         {fader.label}
                     </text>
                 </g>
@@ -301,7 +298,7 @@ using DOM selectors if needed
     .readoutBox {
         transform: translate(-2.5rem, -0.6rem) scale(1, 0.55);
         stroke-width: 0;
-        fill: rgba(120,120,120,0.5);
+        fill: rgba(120, 120, 120, 0.5);
         pointer-events: none;
     }
 
@@ -310,7 +307,7 @@ using DOM selectors if needed
     }
 
     .readoutBox.flipped {
-        transform: rotate(-180deg) scale(-1, -0.5) translate(2ex,-2ex) ;
+        transform: rotate(-180deg) scale(-1, -0.5) translate(2ex, -2ex);
     }
 
     .readoutBox.zoom {

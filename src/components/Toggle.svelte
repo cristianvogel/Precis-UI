@@ -91,14 +91,13 @@
 
     // Construct a new instance of a  toggle
     let toggle:Toggle = $state(new Toggle(settings))
-    BasicController.initialise(toggle)
+    $effect ( ()=>
+        {
+            BasicController.initialise(toggle);
+        }
 
-    // a Svelte reactive assigment if needed
-    const refresh = ()=> {toggle = toggle}
+    )
 
-    onMount(() => {
-    // Don't send out anything on Mount
-    })
 
     let toggleState: number | boolean = $state(0);
     let toolTip:boolean = $state(false)
@@ -109,9 +108,6 @@
     const {designIndex, trimColour} = design
     let toggleDesign:string|undefined =  [ 'toggle-alt', 'toggle' ].at(designIndex())
 
-    run(() => {
-        toggleState = toggle.state
-    });
     
 
 </script>
@@ -120,7 +116,7 @@
      id='{toggle.id}-container'
      onmouseenter={()=>toolTip = true}
      onmouseleave={()=>toolTip = false}
-     onmousedown={preventDefault((e)=>{toggle.componentMouseDown(e, toggle)})}
+     onmousedown={preventDefault((e)=>{toggle.componentMouseDown(e,toggle)})}
      onmouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
      style={toggle.containerTransform(toggle, scale)}
 >
