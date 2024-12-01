@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { run, preventDefault } from 'svelte/legacy';
+
 
 /**
  * Precis-UI © Cristian Vogel 2022
@@ -174,6 +174,7 @@ using DOM selectors if needed
 -->
 
 <!-- container and functionality -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class='dialContainer'
      id='{dial.id}-container'
      oncontextmenu={preventDefault((e)=>{dial.componentMouseDown(e,dial)})}
@@ -218,7 +219,7 @@ using DOM selectors if needed
             <radialGradient cx=50%
                             cy=50%
                             fx=100%
-                            gradientTransform=rotate({270/12})
+                            gradientTransform="rotate({270/12})"
                             id='{dial.id}-grad'
                             r={remap(dial.getNormValue(),0,1,2,0.75)}
             >
