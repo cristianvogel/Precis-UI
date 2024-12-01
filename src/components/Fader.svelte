@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { preventDefault } from 'svelte/legacy';
+
 /**
  * Precis-UI © Cristian Vogel 2022
  * No unauthorised use or derivatives!
@@ -13,24 +15,45 @@
     import {WidgetStore} from '../stores/stores.js'
     import {FaderTag, Palette as C, Rect, Taper} from "../types/Precis-UI-TypeDeclarations";
 
-    export let
-        min:number = DEFAULT_TAPER.min,
-        max:number = DEFAULT_TAPER.max,
-        fineStep:number = DEFAULT_TAPER.fineStep,
-        taper:Taper = {} as Taper,
-        rect:Rect = {} as Rect,
-        x:number = Default.X,
-        y:number = Default.Y,
-        width:number = Default.FADER_WIDTH,
-        height:number = Default.FADER_HEIGHT,
-        scale:number = Default.FADER_SCALE_FACTOR,
-        rx:number = Default.FADER_rX,
+    interface Props {
+        min?: number;
+        max?: number;
+        fineStep?: number;
+        taper?: Taper;
+        rect?: Rect;
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        scale?: number;
+        rx?: number;
+        background?: any;
+        id?: FaderTag;
+        tickMarks?: boolean;
+        label?: string;
+        value?: number;
+        animatedReadout?: boolean;
+    }
+
+    let {
+        min = DEFAULT_TAPER.min,
+        max = DEFAULT_TAPER.max,
+        fineStep = DEFAULT_TAPER.fineStep,
+        taper = $bindable({} as Taper),
+        rect = $bindable({} as Rect),
+        x = Default.X,
+        y = Default.Y,
+        width = Default.FADER_WIDTH,
+        height = Default.FADER_HEIGHT,
+        scale = Default.FADER_SCALE_FACTOR,
+        rx = Default.FADER_rX,
         background = Default.FADER_BACKGROUND,
-        id:FaderTag = 'fader.0',
-        tickMarks:boolean = true, //todo: Fader tickmarks
-        label:string = '',
-        value:number = 0,
-        animatedReadout:boolean = true;
+        id = 'fader.0',
+        tickMarks = true,
+        label = '',
+        value = 0,
+        animatedReadout = true
+    }: Props = $props();
 
     // assert that we do actually have a rect and a taper
     rect = {
@@ -60,7 +83,7 @@
     }
 
     // Construct a new instance of a vertical fader
-    let fader:Fader = new Fader(settings)
+    let fader:Fader = $state(new Fader(settings))
     BasicController.initialise(fader)
 
 
@@ -77,9 +100,9 @@
     })
 
     // Reactive
-    $:upperBand = fader.getNormValue() > 0.75
-    $:roundedReadout = fader.getRoundedReadout()
-    $:registrySize = $WidgetStore.size
+    let upperBand = $derived(fader.getNormValue() > 0.75)
+    let roundedReadout = $derived(fader.getRoundedReadout())
+    let registrySize = $derived($WidgetStore.size)
 
     // needed for {@const} assignments
     let adjust;
@@ -104,13 +127,13 @@ using DOM selectors if needed
 <!-- container and functionality -->
 <div class='faderContainer'
      id='{fader.id}-container'
-     on:contextmenu|preventDefault={ (e)=>{fader.componentMouseDown(e,fader)} }
-     on:mousedown|preventDefault={ (e)=>{fader.componentMouseDown(e, fader)} }
-     on:mouseenter|preventDefault={ (e)=>{fader.componentMouseEnter(e, fader)} }
-     on:mouseleave={ (e)=>{refresh(); fader.componentMouseLeave(e, fader)} }
-     on:mousemove={refresh}
-     on:refresh={()=>console.log('refresh on dial')}
-     on:mouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
+     oncontextmenu={preventDefault((e)=>{fader.componentMouseDown(e,fader)})}
+     onmousedown={preventDefault((e)=>{fader.componentMouseDown(e, fader)})}
+     onmouseenter={preventDefault((e)=>{fader.componentMouseEnter(e, fader)})}
+     onmouseleave={(e)=>{refresh(); fader.componentMouseLeave(e, fader)}}
+     onmousemove={refresh}
+     onrefresh={()=>console.log('refresh on dial')}
+     onmouseup={()=>(fader.stateFlags={changing: false, focussed: true, precis: false})}
      style={fader.containerTransform(fader, scale)}
 >
 
@@ -168,11 +191,11 @@ using DOM selectors if needed
                   height={fader.height + fader.rx}
                   rx=4px
                   x=0rem
-                  on:dblclick|preventDefault={(ev)=>{fader.currentValue= fader.height - ev.offsetY}}
+                  ondblclick={preventDefault((ev)=>{fader.currentValue= fader.height - ev.offsetY})}
             />
 <!-- handle -->
             <g id='{id}-handle+readout'
-               on:contextmenu|preventDefault={(e)=>{fader.componentMouseDown(e, fader)} }
+               oncontextmenu={preventDefault((e)=>{fader.componentMouseDown(e, fader)})}
                stroke={C.offWhite}
                transform="translate(0,{fader.height - fader.currentValue}) scale(1.5)">
                 <rect fill={C.whiteBis}
@@ -209,7 +232,7 @@ using DOM selectors if needed
     </svg>
 
 <!-- label -->
-    {#if fader.focussed }
+    {#if fader.focussed}
         <div id='{id}-label'
              class='faderContainer'
              style={'z-index: -1000'}>

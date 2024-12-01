@@ -1,17 +1,19 @@
 <!-- App.svelte -->
 <script>
+    import { preventDefault } from 'svelte/legacy';
+
     import Layout from './components/Layout.svelte'
 
-    let readout = 0, rescaleDials = 0, rescaleFaders = 0
-    let touchedID = 'unknown'
+    let readout = $state(0), rescaleDials = $state(0), rescaleFaders = $state(0)
+    let touchedID = $state('unknown')
 
-    $: logger = `Output from: ${touchedID} - ${readout} rescale: ${rescaleDials} ◌ ${rescaleFaders}`
+    let logger = $derived(`Output from: ${touchedID} - ${readout} rescale: ${rescaleDials} ◌ ${rescaleFaders}`)
 </script>
 
 <!-- prevent default mouse actions but allow key events through -->
 <svelte:body
-        on:mousedown|preventDefault={ ()=>{ window.focus()} }
-        on:contextmenu|preventDefault={ ()=>{window.focus()} }
+        onmousedown={preventDefault(()=>{ window.focus()})}
+        oncontextmenu={preventDefault(()=>{window.focus()})}
 />
 
 <main>

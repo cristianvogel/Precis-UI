@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run, preventDefault } from 'svelte/legacy';
+
 /**
  * Precis-UI © Cristian Vogel 2022
  * No unauthorised use or derivatives!
@@ -17,26 +19,66 @@
 import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-TypeDeclarations';
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
 
-    // ingest props from caller
-    export let
-        min:number = DEFAULT_TAPER.min,
-        max:number = DEFAULT_TAPER.max,
-        fineStep:number = DEFAULT_TAPER.fineStep,
-        taper:Taper = {} as Taper,
-        rect:Rect = {} as Rect,
-        x:number = Default.X,
-        y:number = Default.Y,
-        width:number = Default.SQUARE,
-        height:number = Default.SQUARE,
+    
+    interface Props {
+        // ingest props from caller
+        min?: number;
+        // ingest props from caller
+        max?: number;
+        // ingest props from caller
+        fineStep?: number;
+        // ingest props from caller
+        taper?: Taper;
+        // ingest props from caller
+        rect?: Rect;
+        // ingest props from caller
+        x?: number;
+        // ingest props from caller
+        y?: number;
+        // ingest props from caller
+        width?: number;
+        // ingest props from caller
+        height?: number;
+        // ingest props from caller
+        background?: any;
+        // ingest props from caller
+        scale?: number;
+        // ingest props from caller
+        rx?: number;
+        // ingest props from caller
+        id?: DialTag;
+        // ingest props from caller
+        label?: string;
+        // ingest props from caller
+        value?: number;
+        // ingest props from caller
+        dialPointer?: boolean;
+        // ingest props from caller
+        tickMarks?: boolean;
+        // ingest props from caller
+        animatedReadout?: boolean;
+    }
+
+    let {
+        min = DEFAULT_TAPER.min,
+        max = DEFAULT_TAPER.max,
+        fineStep = DEFAULT_TAPER.fineStep,
+        taper = $bindable({} as Taper),
+        rect = $bindable({} as Rect),
+        x = Default.X,
+        y = Default.Y,
+        width = Default.SQUARE,
+        height = Default.SQUARE,
         background = Default.DIAL_BACKGROUND,
-        scale:number = Default.DIAL_SCALE_FACTOR,
-        rx:number = Default.FADER_rX,
-        id:DialTag = 'dial.0',
-        label:string = '',
-        value:number = 0,
-        dialPointer:boolean = true,
-        tickMarks:boolean = true,
-        animatedReadout:boolean = true;
+        scale = Default.DIAL_SCALE_FACTOR,
+        rx = Default.FADER_rX,
+        id = 'dial.0',
+        label = '',
+        value = 0,
+        dialPointer = true,
+        tickMarks = true,
+        animatedReadout = true
+    }: Props = $props();
 
     // assert that we do actually have a rect and a taper
     rect = {
@@ -67,7 +109,7 @@ import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-
     }
 
     // Construct a new instance of a Radial
-    let dial:Radial = new Radial(settings)
+    let dial:Radial = $state(new Radial(settings))
     BasicController.initialise(dial)
 
     // a Svelte reactive assigment if needed
@@ -100,18 +142,20 @@ import type {DialTag, Rect, Taper, PointsArray, Point} from '../types/Precis-UI-
     let sinMap
     let marks
     let numericalReadout = true
-    let pointerPlot:PointsArray
-    let pointerLength:number
-    let roundedReadout:string
+    let pointerPlot:PointsArray = $derived(dial.radialPoints)
+    let pointerLength:number = $state()
+    let roundedReadout:string = $derived(dial.getRoundedReadout())
     let ovrX:number
     let tip:Point
     let adjust;
 
         // Reactive
-    $:rect , refresh
-    $:pointerPlot =  dial.radialPoints
-    $:roundedReadout = dial.getRoundedReadout()
-    $:registrySize = $WidgetStore.size
+    run(() => {
+        rect , refresh
+    });
+    
+    
+    let registrySize = $derived($WidgetStore.size)
 
 </script>
 
@@ -132,12 +176,12 @@ using DOM selectors if needed
 <!-- container and functionality -->
 <div class='dialContainer'
      id='{dial.id}-container'
-     on:contextmenu|preventDefault={ (e)=>{dial.componentMouseDown(e,dial)} }
-     on:mousedown|preventDefault={ (e)=>{dial.componentMouseDown(e, dial)} }
-     on:mouseenter|preventDefault={ (e)=>{dial.componentMouseEnter(e, dial)} }
-     on:mouseleave={ (e)=>{refresh(); dial.componentMouseLeave(e, dial)} }
-     on:mousemove={addPointerPlotToStore}
-     on:mouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
+     oncontextmenu={preventDefault((e)=>{dial.componentMouseDown(e,dial)})}
+     onmousedown={preventDefault((e)=>{dial.componentMouseDown(e, dial)})}
+     onmouseenter={preventDefault((e)=>{dial.componentMouseEnter(e, dial)})}
+     onmouseleave={(e)=>{refresh(); dial.componentMouseLeave(e, dial)}}
+     onmousemove={addPointerPlotToStore}
+     onmouseup={()=>(dial.stateFlags={changing: false, focussed: true, precis: false})}
      style={dial.containerTransform(dial, scale, rect )}
 >
     <!-- animated numerical readout mojo-->
@@ -247,7 +291,7 @@ using DOM selectors if needed
                     {#if dial.focussed}
                         {@const value = dial.getNormValue()}
                         {@const tip = pointerPlot.at(-6)}
-                        {@const gearedValue = ((value * 100) % 10) - 10 }
+                        {@const gearedValue = ((value * 100) % 10) - 10}
                         <circle cx="80%" cy="80%" r = "4px"
                               stroke={C.cyan}
                                 fill={C.clear}
@@ -258,7 +302,7 @@ using DOM selectors if needed
                 {/each}
                 </g>
     <!-- readouts -->
-            {#if (numericalReadout && !dial.changing) }
+            {#if (numericalReadout && !dial.changing)}
                 <g in:fade|global out:fade|global>
                     <text id='{dial.id}-readout'
                           class={ dial.precis ? 'readout dial precis' : 'readout dial' }

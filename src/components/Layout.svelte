@@ -12,7 +12,12 @@
     import Toggle from './Toggle.svelte'
     import {Dirty} from '../stores/stores'
 
-    export let readout, touchedID, rescaleFaders, rescaleDials
+    let {
+        readout = $bindable(),
+        touchedID = $bindable(),
+        rescaleFaders = $bindable(),
+        rescaleDials = $bindable()
+    } = $props();
 
     function handleOutputValue(ev: CustomEvent) {
         readout = (Number(toFixed(ev.detail.value, 6))) // prettify readout
@@ -109,7 +114,7 @@
             <!-- aesthetically, skip the first dial -->
             {#if (i>0)}
                 {@const posX = 450 + ((i % 2) * 50)}
-                {@const oddEvenSpreadD = rescaleDials * [-1, 1].at(i%2) }
+                {@const oddEvenSpreadD = rescaleDials * [-1, 1].at(i%2)}
                 {@const posY = (((i / 3) % 8) + 1) * 150}
                 {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
                 <Radial id="dial.{i}"
@@ -128,7 +133,7 @@
     <!-- render some vert faders -->
     {#each Array(6) as _, i ('key-f-'+i)}
         {@const posX = 100+(i*50)}
-        {@const oddEvenSpreadF = rescaleFaders * [-1, 1].at(i%2) }
+        {@const oddEvenSpreadF = rescaleFaders * [-1, 1].at(i%2)}
         {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
         <Fader id="fader.{i}"
                rect={{ x: posX,

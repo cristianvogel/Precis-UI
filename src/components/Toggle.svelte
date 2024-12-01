@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run, preventDefault } from 'svelte/legacy';
+
     // Precis-UI © Cristian Vogel 2022
     // No unauthorised use or derivatives!
     // @neverenginelabs
@@ -10,23 +12,57 @@
     import {fade} from 'svelte/transition';
     import type {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
 
-    // ingest props from caller
-    export let
-        graphicStyle: number = 1,
-        min: number = DEFAULT_TAPER.min,
-        max: number = DEFAULT_TAPER.max,
-        taper:Taper = {} as Taper,
-        rect:Rect = {} as Rect,
-        x: number = Default.X,
-        y: number = Default.Y,
-        width: number = Default.BUTTON_WIDTH,
-        height: number = Default.BUTTON_HEIGHT,
-        scale: number = Default.BUTTON_SCALE_FACTOR,
-        rx: number = Default.FADER_rX,
-        id: ToggleTag = 'toggle.0',
-        label: string = 'Toggle',
-        value: number = 0,
+    
+    interface Props {
+        // ingest props from caller
+        graphicStyle?: number;
+        // ingest props from caller
+        min?: number;
+        // ingest props from caller
+        max?: number;
+        // ingest props from caller
+        taper?: Taper;
+        // ingest props from caller
+        rect?: Rect;
+        // ingest props from caller
+        x?: number;
+        // ingest props from caller
+        y?: number;
+        // ingest props from caller
+        width?: number;
+        // ingest props from caller
+        height?: number;
+        // ingest props from caller
+        scale?: number;
+        // ingest props from caller
+        rx?: number;
+        // ingest props from caller
+        id?: ToggleTag;
+        // ingest props from caller
+        label?: string;
+        // ingest props from caller
+        value?: number;
+        // ingest props from caller
+        background?: any;
+    }
+
+    let {
+        graphicStyle = 1,
+        min = DEFAULT_TAPER.min,
+        max = DEFAULT_TAPER.max,
+        taper = $bindable({} as Taper),
+        rect = $bindable({} as Rect),
+        x = Default.X,
+        y = Default.Y,
+        width = Default.BUTTON_WIDTH,
+        height = Default.BUTTON_HEIGHT,
+        scale = Default.BUTTON_SCALE_FACTOR,
+        rx = Default.FADER_rX,
+        id = 'toggle.0',
+        label = 'Toggle',
+        value = 0,
         background = Default.BUTTON_BACKGROUND
+    }: Props = $props();
 
     // assert that we do actually have a rect and a taper
     rect = {
@@ -54,7 +90,7 @@
     }
 
     // Construct a new instance of a  toggle
-    let toggle:Toggle = new Toggle(settings)
+    let toggle:Toggle = $state(new Toggle(settings))
     BasicController.initialise(toggle)
 
     // a Svelte reactive assigment if needed
@@ -64,8 +100,8 @@
     // Don't send out anything on Mount
     })
 
-    let toggleState: number | boolean = 0;
-    let toolTip:boolean
+    let toggleState: number | boolean = $state(0);
+    let toolTip:boolean = $state(false)
     const design = {
         designIndex: ()=>clamp(graphicStyle, [0,1], true),
         trimColour: [ 'coral' , 'green']
@@ -73,17 +109,19 @@
     const {designIndex, trimColour} = design
     let toggleDesign:string|undefined =  [ 'toggle-alt', 'toggle' ].at(designIndex())
 
-    $:toggleState = toggle.state
-    $:toolTip = false
+    run(() => {
+        toggleState = toggle.state
+    });
+    
 
 </script>
 <!-- container and functionality -->
 <div class='toggleContainer'
      id='{toggle.id}-container'
-     on:mouseenter={()=>toolTip = true }
-     on:mouseleave={()=>toolTip = false }
-     on:mousedown|preventDefault={(e)=>{toggle.componentMouseDown(e, toggle)}}
-     on:mouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
+     onmouseenter={()=>toolTip = true}
+     onmouseleave={()=>toolTip = false}
+     onmousedown={preventDefault((e)=>{toggle.componentMouseDown(e, toggle)})}
+     onmouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
      style={toggle.containerTransform(toggle, scale)}
 >
 <!-- led and text -->
@@ -99,7 +137,7 @@
                 </text>
             </g>
 <!-- simple tool tip -->
-            {#if (toolTip) }
+            {#if (toolTip)}
                 <g transform="translate(0, 60)" in:fade|global out:fade|global>
                     <rect  width="{toggle.width}" height="20" fill="antiquewhite" rx="5" />
                     <text textLength="{toggle.width * 0.75}"
