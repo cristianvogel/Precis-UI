@@ -128,7 +128,7 @@ using DOM selectors if needed
         }}
         <div id='{fader.id}-animatedReadout'
              class="animatedReadout" >
-            <svg in:fade out:fade >
+            <svg in:fade|global out:fade|global >
                 <g stroke-width='1px'
                    opacity={adjust.opacity}
                    transform="translate( {adjust.x}, {adjust.y} )
@@ -195,7 +195,7 @@ using DOM selectors if needed
                           y=-0.5rem />
                     {#if (!fader.precis)}
                         <g transform="scale( {fader.precis ? 2 : 1} )"
-                           out:fade >
+                           out:fade|global >
                             <text id='{id}-readout.Text'
                                   class={'readout ' + (upperBand ? 'flipped' : 'rotated') }>
                                     {roundedReadout}
@@ -215,12 +215,12 @@ using DOM selectors if needed
              style={'z-index: -1000'}>
 
 <!-- LED indicator -->
-            <svg in:fade out:fade>
+            <svg in:fade|global out:fade|global>
                 <g id='{id}-LED'
                    stroke="aqua" fill=none stroke-width="2px"
                    transform="translate({fader.width/2})">
                     <line id='{id}-LED' x1="-0.5" x2="-0.5" y1="-5" y2="-25"></line>
-                    <line x1="-20" x2="20" y1="-25" y2="-25" in:fade="{{duration: 2000}}"></line>
+                    <line x1="-20" x2="20" y1="-25" y2="-25" in:fade|global="{{duration: 2000}}"></line>
                     <text id='{id}-label.Text'
                           class='label rotated'
                           textLength={fader.height * 0.25} >

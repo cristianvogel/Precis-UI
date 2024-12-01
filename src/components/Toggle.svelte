@@ -100,7 +100,7 @@
             </g>
 <!-- simple tool tip -->
             {#if (toolTip) }
-                <g transform="translate(0, 60)" in:fade out:fade>
+                <g transform="translate(0, 60)" in:fade|global out:fade|global>
                     <rect  width="{toggle.width}" height="20" fill="antiquewhite" rx="5" />
                     <text textLength="{toggle.width * 0.75}"
                           text-anchor="start"

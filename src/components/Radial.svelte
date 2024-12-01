@@ -155,7 +155,7 @@ using DOM selectors if needed
         <div id='{dial.id}-animatedReadout'
              class="animatedReadout"
              style="transform: translate( 30%, 55%)" >
-            <svg style="position: static;" in:fade out:fade >
+            <svg style="position: static;" in:fade|global out:fade|global >
                 <g stroke-width='1px'
                    opacity={Math.abs(sinMap) + 0.1}
                    transform="translate ( {adjust.x} {adjust.y} )
@@ -259,7 +259,7 @@ using DOM selectors if needed
                 </g>
     <!-- readouts -->
             {#if (numericalReadout && !dial.changing) }
-                <g in:fade out:fade>
+                <g in:fade|global out:fade|global>
                     <text id='{dial.id}-readout'
                           class={ dial.precis ? 'readout dial precis' : 'readout dial' }
                           style={ dial.focussed ? 'fill: aqua;' : '' }>
