@@ -4,11 +4,14 @@
 
     import Layout from './components/Layout.svelte'
 
+
     let readout = $state(0), rescaleDials = $state(0), rescaleFaders = $state(0)
     let touchedID = $state('unknown')
 
     let logger = $derived(`Output from: ${touchedID} - ${readout} rescale: ${rescaleDials} ◌ ${rescaleFaders}`)
 </script>
+
+
 
 <!-- prevent default mouse actions but allow key events through -->
 <svelte:body

@@ -6,8 +6,8 @@
     // @neverenginelabs
 
     import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
-    import {BasicController, Toggle} from '../lib/PrecisControllers';
-    import {clamp, toNumber} from '../lib/Utils';
+    import {BasicController, Toggle} from '../lib/PrecisControllers.svelte';
+    import {clamp, toNumber} from '../lib/Utils.svelte';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
     import type {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations';

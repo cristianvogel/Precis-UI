@@ -4,8 +4,8 @@
 *  @neverenginelabs
 */
 
-import { Palette, type Rect, type Taper } from '../types/Precis-UI-TypeDeclarations';
-import {toNumber} from '../lib/Utils';
+import { Palette, type Rect, type Taper } from '../types/Precis-UI-TypeDeclarations.js';
+import {toNumber} from '../lib/Utils.svelte.js';
 
 /**
  * __Default__

@@ -7,13 +7,13 @@
  *
  * Annotates and implements Base classes and all derived controller classes
  */
-import {asLogicValue, radialPoints, remap, roundTo, toNumber} from './Utils';
-import {createEventDispatcher} from "svelte";
-import {addListeners} from "./Listeners";
-import {Dirty, WidgetRegister, WidgetStore} from '../stores/stores';
-import {get} from 'svelte/store';
-import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
-import {Default, DEFAULT_RECT} from '../components/Precis-UI-Defaults';
+import { asLogicValue, radialPoints, remap, roundTo, toNumber } from './Utils.svelte.js';
+import { createEventDispatcher } from "svelte";
+import { addListeners } from "./Listeners.svelte.js";
+import { Dirty, WidgetRegister, WidgetStore } from '../stores/stores.js';
+import { get } from 'svelte/store';
+import { Palette as C } from "../types/Precis-UI-TypeDeclarations.js";
+import { Default, DEFAULT_RECT } from '../components/Precis-UI-Defaults.js';
 import type {
     PointsArray,
     RoundedReadout,
@@ -26,7 +26,7 @@ import type {
     Tint,
     ToggleTag,
     PositiveNumber
-} from '../types/Precis-UI-TypeDeclarations';
+} from '../types/Precis-UI-TypeDeclarations.js';
 
 
 
@@ -36,24 +36,24 @@ import type {
  *
  * Base class. For layout and global specifications.
  */
- export class PrecisUI  {
-    protected static  dispatch
+export class PrecisUI {
+    protected static dispatch: any;
 
-    protected constructor() {
+    constructor() { 
         PrecisUI.dispatch = createEventDispatcher()
     }
 
-     static dispatchRefresh() {
+    static dispatchRefresh() {
         console.log('layout refresh event')
         PrecisUI.dispatch('refresh')
     }
 
-    static getRegistry():WidgetRegister { return get(WidgetStore) }
-    static getWidgetByTag( tag:string) {return get(WidgetStore).get(tag) || undefined}
-    static scaleAllWidgets( scaleFactor: PositiveNumber) {
-           get(WidgetStore).forEach( (e)=>{
-               e.scale = scaleFactor
-           })
+    static getRegistry(): WidgetRegister { return get(WidgetStore) }
+    static getWidgetByTag(tag: string) { return get(WidgetStore).get(tag) || undefined }
+    static scaleAllWidgets(scaleFactor: PositiveNumber) {
+        get(WidgetStore).forEach((e) => {
+            e.scale = scaleFactor
+        })
         Dirty.trigger()
     }
 
@@ -65,32 +65,32 @@ import type {
  *
  * Dispatcher, geometry, state flags, label etc
  */
-abstract class PrecisController extends PrecisUI{
-    selected: (HTMLElement | null) = null
-    rect: Rect
-    rx: number
-    scale: number
-    label: string
-    background: Tint
-    layer:number
-    private _registryIndex: number
+abstract class PrecisController extends PrecisUI {
+    selected: HTMLElement | null = null;
+    rect: Rect = { x: 0, y: 0, width: 0, height: 0 };
+    rx: number = 0;
+    scale: number = 1;
+    label: string = '';
+    background: Tint = '#000';
+    layer: number = 0;
+    private _registryIndex: number = 0;
 
-    protected _stateFlags: StateFlags = {precis: false, focussed: false, changing: false}
+    protected _stateFlags: StateFlags = { precis: false, focussed: false, changing: false }
 
     protected constructor() {
         super();
     }
 
-    abstract getNormValue():number
-    abstract getMappedValue():number
-    abstract getRoundedReadout():RoundedReadout
+    abstract getNormValue(): number
+    abstract getMappedValue(): number
+    abstract getRoundedReadout(): RoundedReadout
     abstract componentMouseDown(event: Event, caller: BasicController): void
-    abstract componentMouseEnter(event: Event, caller: BasicController):void
-    abstract componentMouseLeave(event: MouseEvent, caller: BasicController):void
-    static dispatchOutput(widget: BasicController): void {}
+    abstract componentMouseEnter(event: Event, caller: BasicController): void
+    abstract componentMouseLeave(event: MouseEvent, caller: BasicController): void
+    static dispatchOutput(widget: BasicController): void { }
 
     set stateFlags(settings: StateFlags) {
-        this._stateFlags = {...settings};
+        this._stateFlags = { ...settings };
     }
     get registryIndex(): number {
         return this._registryIndex;
@@ -126,7 +126,7 @@ abstract class PrecisController extends PrecisUI{
         this.rect.y = number
     }
     get width(): number {
-        return this.rect.width
+        return this.rect.width as number
     }
     set width(w: number) {
         this.rect.width = toNumber(w) + this.rx
@@ -138,16 +138,16 @@ abstract class PrecisController extends PrecisUI{
         this.rect.height = toNumber(h)
     }
 
-    getCSSforRect(xywh:Rect): BoundingRectCSS {
+    getCSSforRect(xywh: Rect): BoundingRectCSS {
         const aRect: BoundingRectCSS =
-            `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width}px;height:${xywh.height}px;`
+            `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width as number}px;height:${xywh.height as number}px;`
         return aRect
     }
     /**
      * add self to a layout group registry
      * @param widget
      */
-    static addSelfToRegistry( widget: BasicController ): void {
+    static addSelfToRegistry(widget: BasicController): void {
         if (!widget) return
         get(WidgetStore).set(widget.id, widget)
         widget._registryIndex = BasicController.getRegistry().size
@@ -159,13 +159,13 @@ abstract class PrecisController extends PrecisUI{
      * @param scale
      * @param newRect  optionally assign to a valid Rect instead of the instanced rect
      */
-    containerTransform(widget:BasicController, scale?:number, newRect?:Rect):string {
-        const rect1 = {...DEFAULT_RECT, ...widget.rect, ...newRect} // really gotta have a rect at this point
+    containerTransform(widget: BasicController, scale?: number, newRect?: Rect): string {
+        const rect1 = { ...DEFAULT_RECT, ...widget.rect, ...newRect } // really gotta have a rect at this point
         const inline =
-                    `${widget.getCSSforRect(rect1)};
-                    transform: scale( ${ scale || widget.scale} );
+            `${widget.getCSSforRect(rect1)};
+                    transform: scale( ${scale || widget.scale} );
                     background: ${widget.background};
-                    z-index: ${widget.layer || 0 };
+                    z-index: ${widget.layer || 0};
                   `
         return inline
     }
@@ -176,9 +176,9 @@ abstract class PrecisController extends PrecisUI{
  * Base controller class implementing widget agnostic events, value methods, state
  */
 export class BasicController extends PrecisController {
-    currentValue: number;
-    taper: Taper
-    id: string
+    currentValue = $state<number>(0);
+    taper: Taper = { min: 0, max: 1, fineStep: 0.01 }
+    id = $state<string>('widget.0')
 
     constructor() {
         super()
@@ -188,7 +188,7 @@ export class BasicController extends PrecisController {
      * then render its container element
      * @param widget
      */
-    static initialise(widget: BasicController){
+    static initialise(widget: BasicController) {
         PrecisController.addSelfToRegistry(widget)
         widget.containerTransform(widget)
     }
@@ -207,7 +207,13 @@ export class BasicController extends PrecisController {
      * fine value updates
      */
     getMappedValue(): number {
-        return remap(this.getNormValue(), 0, 1, this.taper.min, this.taper.max)
+        return remap( {
+            n: this.getNormValue(), 
+            start1: 0, 
+            stop1: 1, 
+            start2: this.taper.min, 
+            stop2: this.taper.max
+        } )
     }
     getNormValue(): number {
         return (this.currentValue / this.height)
@@ -216,7 +222,7 @@ export class BasicController extends PrecisController {
     /**
      * returns a nicely formatted string for displaying the widgets' values
      */
-    getRoundedReadout():RoundedReadout {
+    getRoundedReadout(): RoundedReadout {
         return roundTo(this.getMappedValue(), this.precis ? 1.0e-4 : 1.0e-2)
             .toFixed(this.precis ? 3 : 1);
     };
@@ -239,8 +245,8 @@ export class BasicController extends PrecisController {
         caller.selected = event.target as HTMLElement
         addListeners(caller.selected, caller)
     }
-    componentMouseLeave(event: MouseEvent, caller:BasicController) {
-      //  console.log( 'Mouse leaves -> '+ caller.id)
+    componentMouseLeave(event: MouseEvent, caller: BasicController) {
+        //  console.log( 'Mouse leaves -> '+ caller.id)
         if (caller.changing) return
         caller.focussed = false
     }
@@ -268,12 +274,11 @@ export class Radial extends BasicController {
     pointer = true
     tickMarks = true
     id: DialTag = 'dial.0'
-    radialPoints:PointsArray;
+    radialPoints: PointsArray = $state< PointsArray >( [] );
 
-    constructor(initialSettings) {
+    constructor(initialSettings: any) {
         super();
         Object.assign(this, initialSettings)  // don't do this lazy move on a server, very insecure!
-        super.id = this.id
         console.log('Constructed -> ' + this.id)
     }
     spinPointer() {
@@ -281,7 +286,7 @@ export class Radial extends BasicController {
         return this.radialPoints
     }
     getRadialTrack(): number {
-        return (this.getNormValue() * 270) + 230
+        return ( this.getNormValue() * 270 ) + 230
     }
 }
 
@@ -291,13 +296,12 @@ export class Radial extends BasicController {
  */
 export class Fader extends BasicController {
     background = C.dim
-    id:FaderTag = 'fader.0'
-    _instance
+    id: FaderTag = 'fader.0'
 
-    constructor(initialSettings) {
+
+    constructor(initialSettings: any) {
         super();
-        Object.assign(this, initialSettings)  // don't do this lazy move on a server, very insecure!
-        super.id = this.id
+        Object.assign(this, initialSettings) 
         console.log('Constructed -> ' + this.id)
     }
 }
@@ -314,16 +318,15 @@ export class Fader extends BasicController {
  */
 export class Toggle extends BasicController {
     background = C.clear
-    id:ToggleTag = 'toggle.0'
-    private _state:number|boolean = 0
-    constructor(initialSettings) {
+    id: ToggleTag = 'toggle.0'
+    private _state: number | boolean = 0
+    constructor(initialSettings: any) {
         super();
         Object.assign(this, initialSettings)  // don't do this lazy move on a server, very insecure!
-        super.id = this.id
         console.log('Constructed -> ' + this.id)
     }
 
-    componentMouseDown(event: Event, caller: BasicController): void{
+    componentMouseDown(event: Event, caller: BasicController): void {
         if (!event.target) return
         caller.stateFlags = {
             changing: true,
@@ -337,11 +340,11 @@ export class Toggle extends BasicController {
     getMappedValue(): number {
         return Math.round(((this.state as number | 1) * this.taper.max) + this.taper.min);
     }
-    changeState():number|boolean {
-        this._state = asLogicValue(this._state, 'not')
+    changeState(): number | boolean {
+        this._state = asLogicValue(this._state, false)
         return this._state
     }
-    get state(): number|boolean {
+    get state(): number | boolean {
         return this._state;
     }
 }

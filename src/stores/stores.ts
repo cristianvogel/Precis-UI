@@ -1,14 +1,13 @@
 import { Writable, writable} from 'svelte/store';
-import type {BasicController} from '../lib/PrecisControllers'
-import type {PointsArray} from "../types/Precis-UI-TypeDeclarations";
+import type {BasicController} from '../lib/PrecisControllers.svelte.js'
+import type {PointsArray} from "../types/Precis-UI-TypeDeclarations.js";
 
 export type WidgetRegister = Map<string, BasicController> // widget.id , instance
 export const WidgetStore:Writable<WidgetRegister>  =
     writable( new Map() )
 
-type PointerPlot = Map<string,PointsArray> // widget.id , array of points
-export const PointerPlotStore:Writable<PointerPlot> =
-    writable( new Map() )
+export type PointerPlot = Map<string,PointsArray> // widget.id , array of points
+
 
 export const ListeningWidget:Writable<BasicController> =
     writable()
@@ -26,7 +25,7 @@ function createDirty() {
 
     return {
         subscribe,
-        resetTo: (v)=> {set(v)},
+        resetTo: (v: number)=> {set(v)},
         trigger: ()=> update( n => (n+1) )
     }
 }
