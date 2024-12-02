@@ -7,7 +7,7 @@
      */
     import Radial from "./Radial.svelte";
     import Fader from './Fader.svelte'
-    import {toFixed} from "../lib/Utils";
+    import {toFixed} from "../lib/Utils.svelte";
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
     import Toggle from './Toggle.svelte'
     import {Dirty} from '../stores/stores'

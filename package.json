@@ -20,6 +20,7 @@
     "vite": "^6.0.1"
   },
   "dependencies": {
+    "@tsconfig/node-lts": "^22.0.1",
     "sirv-cli": "^2.0.0"
   }
 }

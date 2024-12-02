@@ -1,6 +1,6 @@
 
-import {Default} from "../components/Precis-UI-Defaults";
-import type {TickMark, PointsArray} from "../types/Precis-UI-TypeDeclarations";
+import {Default} from "../components/Precis-UI-Defaults.js";
+import type {TickMark, PointsArray} from "../types/Precis-UI-TypeDeclarations.js";
 
 
 // Type assert
@@ -19,7 +19,7 @@ export function toNumber( value: string|number): number {
  * @param nPoints Number of points between rMin and rMax to obtain
  * @returns Multidimensional array for nPoints pairs of float coordinates for the points */
 export function radialPoints(
-    angleDegrees,  cx,  cy,  rMin,  rMax,  nPoints ): PointsArray
+    angleDegrees: number,  cx: number,  cy: number,  rMin: number,  rMax: number,  nPoints: number ): PointsArray
 {
     const  angleRadians = degToRad(angleDegrees - 90)
     const  sinV = Math.sin(angleRadians)
@@ -55,29 +55,49 @@ export function radialTickMarkAt( i:number,
     return {x1, x2, y1, y2}
 }
 
-// Kyma influenced
+
 /**
  * returns 1 or true for any positive input or 0 or false for <= 0
  * @param n
  * @param not optionally return the logical NOT
  * @param bool optionally cast result as boolean
  */
-export function asLogicValue( n:number|boolean, not:string = '', bool:boolean = false ):number|boolean
-    {   n = typeof n === 'boolean' ? Boolean(n) : n
-        const r = n > 0 ? (not ? 0 : 1) : (not ? 1 : 0)
-        return (bool ? Boolean(r) : r)
-    }
+export function asLogicValue(n: number | boolean, not: boolean = false, bool: boolean = false): number | boolean {
+    // Convert boolean to number if necessary
+    const value = typeof n === 'boolean' ? (n ? 1 : 0) : n;
+
+    // Apply 'not' logic
+    const result = not ? (value > 0 ? 0 : 1) : (value > 0 ? 1 : 0);
+
+    // Return as boolean if requested
+    return bool ? Boolean(result) : result;
+}
 
 // Thi.ng https://thi.ng/
 export const roundTo = (x: number, prec = 1) => Math.round(x / prec) * prec;
-export const trunc = (x) => (x < 0 ? Math.ceil(x) : Math.floor(x));
-export function lerp(start, stop, amt):number {
-    return amt*(stop-start)+start;
+export const trunc = (x: number) => (x < 0 ? Math.ceil(x) : Math.floor(x));
+
+interface LerpParams {
+    start: number;
+    stop: number;
+    amt: number;
+}
+
+export function lerp({ start, stop, amt }: LerpParams): number {
+    return amt * (stop - start) + start;
 };
-export function remap(n, start1, stop1, start2, stop2):number {
-    return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
+interface RemapParams {
+    n: number;
+    start1: number;
+    stop1: number;
+    start2: number;
+    stop2: number;
+}
+
+export function remap({ n, start1, stop1, start2, stop2 }: RemapParams): number {
+    return ((n - start1) / (stop1 - start1)) * (stop2 - start2) + start2;
 };
-export function degToRad(degrees):number {
+export function degToRad(degrees: number):number {
     return degrees * (Math.PI / 180);
 };
 export function clamp(value:number , range = [0,1], round = false):number {

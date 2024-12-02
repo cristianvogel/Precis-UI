@@ -4,7 +4,7 @@
   *  @neverenginelabs
   */
 
-import type {BasicController} from "../lib/PrecisControllers";
+import type {BasicController} from "../lib/PrecisControllers.svelte.js";
 
 /**
  * __Widget Specific__
