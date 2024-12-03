@@ -5,7 +5,7 @@
    * @neverenginelabs
    */
 
-  import { Default, DEFAULT_TAPER } from "./Precis-UI-Defaults";
+  import { Default, DEFAULT_TAPER } from "./Precis-UI-Defaults.js";
   import { BasicController, Radial } from "../lib/PrecisControllers.svelte";
   import { radialTickMarkAt, remap, toNumber } from "../lib/Utils.svelte";
   import { onMount } from "svelte";
@@ -17,8 +17,8 @@
     Taper,
     PointsArray,
     Point,
-  } from "../types/Precis-UI-TypeDeclarations";
-  import { Palette as C } from "../types/Precis-UI-TypeDeclarations";
+  } from "../types/Precis-UI-TypeDeclarations.js";
+  import { Palette as C } from "../types/Precis-UI-TypeDeclarations.js";
   import { preventDefault } from "svelte/legacy";
 
   interface Props {
@@ -184,7 +184,15 @@ using DOM selectors if needed
   {#if dial.changing && animatedReadout}
     {@const value = dial.getNormValue()}
     {@const gearedValue = (value * -200) % 20}
-    {@const offsetMap = remap(gearedValue, -10, 10, -0.25, 0.25) + 0.5}
+    {@const offsetMap = remap(
+      { 
+        n: gearedValue, 
+        start1: -10,
+        stop1: 10,
+        start2: -0.25,
+        stop2: 0.25,
+      }
+      ) + 0.5}
     {@const sinMap = Math.sin(Math.PI * offsetMap)}
     {@const adjust = {
       x: -dial.width * 0.5,
