@@ -1,4 +1,5 @@
-import { Writable, writable} from 'svelte/store';
+import { writable } from 'svelte/store';
+import type { Writable } from 'svelte/store';
 import type {BasicController} from '../lib/PrecisControllers.svelte.js'
 import type {PointsArray} from "../types/Precis-UI-TypeDeclarations.js";
 

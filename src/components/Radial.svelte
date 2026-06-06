@@ -7,6 +7,7 @@
 
   import { Default, DEFAULT_TAPER } from "./Precis-UI-Defaults.js";
   import { BasicController, Radial } from "../lib/PrecisControllers.svelte";
+  import type { WidgetOutputHandler } from "../lib/PrecisControllers.svelte";
   import { radialTickMarkAt, remap, toNumber } from "../lib/Utils.svelte";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
@@ -19,8 +20,6 @@
     Point,
   } from "../types/Precis-UI-TypeDeclarations.js";
   import { Palette as C } from "../types/Precis-UI-TypeDeclarations.js";
-  import { preventDefault } from "svelte/legacy";
-
   interface Props {
     // ingest props from caller
     min?: number;
@@ -47,7 +46,7 @@
     // ingest props from caller
     rx?: number;
     // ingest props from caller
-    id?: DialTag;
+    id?: string;
     // ingest props from caller
     label?: string;
     // ingest props from caller
@@ -58,6 +57,7 @@
     tickMarks?: boolean;
     // ingest props from caller
     animatedReadout?: boolean;
+    output?: WidgetOutputHandler;
   }
 
   let {
@@ -79,6 +79,7 @@
     dialPointer = true,
     tickMarks = true,
     animatedReadout = true,
+    output,
   }: Props = $props();
 
   // assert that we do actually have a rect and a taper
@@ -111,7 +112,7 @@
 
   // Construct a new instance of a Radial
   let dial: Radial = new Radial(settings)
-   BasicController.initialise(dial)
+   BasicController.initialise(dial, { output })
 
   // Hoisted function: Compute and store radial points for the dial overlays
   dial.radialPoints = addPointerPlotToStore();
@@ -160,21 +161,24 @@ using DOM selectors if needed
 
 <!-- container and functionality -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  class="dialContainer"
-  id="{dial.id}-container"
-  oncontextmenu={preventDefault((e) => {
-    dial.componentMouseDown(e, dial);
-  })}
-  onmousedown={preventDefault((e) => {
-    dial.componentMouseDown(e, dial);
-  })}
-  onmouseenter={preventDefault((e) => {
-    dial.componentMouseEnter(e, dial);
-  })}
-  onmouseleave={(e) => {
-    dial.componentMouseLeave(e, dial);
-  }}
+  <div
+    class="dialContainer"
+    id="{dial.id}-container"
+    oncontextmenu={(e) => {
+      e.preventDefault();
+      dial.componentMouseDown(e, dial);
+    }}
+    onmousedown={(e) => {
+      e.preventDefault();
+      dial.componentMouseDown(e, dial);
+    }}
+    onmouseenter={(e) => {
+      e.preventDefault();
+      dial.componentMouseEnter(e, dial);
+    }}
+    onmouseleave={(e) => {
+      dial.componentMouseLeave(e, dial);
+    }}
   onmousemove={addPointerPlotToStore}
   onmouseup={() =>
     (dial.stateFlags = { changing: false, focussed: true, precis: false })}

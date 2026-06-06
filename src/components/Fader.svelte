@@ -1,14 +1,13 @@
 <script lang="ts">
-  import { preventDefault } from "svelte/legacy";
-
   /**
    * Precis-UI © Cristian Vogel 2022
    * No unauthorised use or derivatives!
    * @neverenginelabs
    */
 
-  import { Default, DEFAULT_TAPER } from "./Precis-UI-Defaults";
+  import { Default, DEFAULT_TAPER } from "./Precis-UI-Defaults.js";
   import { BasicController, Fader } from "../lib/PrecisControllers.svelte";
+  import type { WidgetOutputHandler } from "../lib/PrecisControllers.svelte";
   import { remap, toNumber } from "../lib/Utils.svelte";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
@@ -17,8 +16,8 @@
     FaderTag,
     Rect,
     Taper,
-  } from "../types/Precis-UI-TypeDeclarations";
-  import { Palette as C } from "../types/Precis-UI-TypeDeclarations";
+  } from "../types/Precis-UI-TypeDeclarations.js";
+  import { Palette as C } from "../types/Precis-UI-TypeDeclarations.js";
 
   interface Props {
     min?: number;
@@ -33,11 +32,12 @@
     scale?: number;
     rx?: number;
     background?: any;
-    id?: FaderTag;
+    id?: string;
     tickMarks?: boolean;
     label?: string;
     value?: number;
     animatedReadout?: boolean;
+    output?: WidgetOutputHandler;
   }
 
   let {
@@ -58,6 +58,7 @@
     label = "",
     value = 0,
     animatedReadout = true,
+    output,
   }: Props = $props();
 
   // assert that we do actually have a rect and a taper
@@ -90,7 +91,7 @@
   // Construct a new instance of a vertical fader
   let fader: Fader = new Fader(settings);
 
-    BasicController.initialise(fader);
+    BasicController.initialise(fader, { output });
     // how to use the registry index of this instance
     // to add a unique suffix to the fader's label
     fader.label += fader.registryIndex.toString();
@@ -121,21 +122,23 @@ using DOM selectors if needed
 
 <!-- container and functionality -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  class="faderContainer"
-  id="{fader.id}-container"
-  oncontextmenu={preventDefault((e) => {
-    fader.componentMouseDown(e, fader);
-  })}
-  onmousedown={preventDefault((e) => {
-    fader.componentMouseDown(e, fader);
-  })}
-  onmouseenter={preventDefault((e) => {
-    fader.componentMouseEnter(e, fader);
-  })}
-  onmouseleave={(e) => {
-    fader.componentMouseLeave(e, fader);
-  }}
+  <div
+    class="faderContainer"
+    id="{fader.id}-container"
+    oncontextmenu={(e) => {
+      e.preventDefault();
+      fader.componentMouseDown(e, fader);
+    }}
+    onmousedown={(e) => {
+      e.preventDefault();
+      fader.componentMouseDown(e, fader);
+    }}
+    onmouseenter={(e) => {
+      fader.componentMouseEnter(e, fader);
+    }}
+    onmouseleave={(e) => {
+      fader.componentMouseLeave(e, fader);
+    }}
   onmouseup={() =>
     (fader.stateFlags = { changing: false, focussed: true, precis: false })}
   style={fader.containerTransform(fader, scale)}
@@ -218,16 +221,18 @@ using DOM selectors if needed
         height={fader.height + fader.rx}
         rx="4px"
         x="0rem"
-        ondblclick={preventDefault((ev) => {
+        ondblclick={(ev) => {
+          ev.preventDefault();
           fader.currentValue = fader.height - ev.offsetY;
-        })}
+        }}
       />
       <!-- handle -->
       <g
         id="{id}-handle+readout"
-        oncontextmenu={preventDefault((e) => {
+        oncontextmenu={(e) => {
+          e.preventDefault();
           fader.componentMouseDown(e, fader);
-        })}
+        }}
         stroke={C.offWhite}
         transform="translate(0,{fader.height - fader.currentValue}) scale(1.5)"
       >

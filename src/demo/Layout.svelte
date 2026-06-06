@@ -5,12 +5,13 @@
      * No unauthorised use or derivatives!
      * @neverenginelabs
      */
-    import Radial from "./Radial.svelte";
-    import Fader from './Fader.svelte'
+    import Radial from "../components/Radial.svelte";
+    import Fader from '../components/Fader.svelte'
     import {toFixed} from "../lib/Utils.svelte";
-    import {Palette as C} from "../types/Precis-UI-TypeDeclarations";
-    import Toggle from './Toggle.svelte'
-    import {Dirty} from '../stores/stores'
+    import {Palette as C} from "../types/Precis-UI-TypeDeclarations.js";
+    import Toggle from '../components/Toggle.svelte'
+    import {Dirty} from '../stores/stores.js'
+    import type { WidgetOutput } from '../lib/PrecisControllers.svelte';
 
     let {
         readout = $bindable(),
@@ -19,11 +20,15 @@
         rescaleDials = $bindable()
     } = $props();
 
-    function handleOutputValue(ev: CustomEvent) {
-        readout = (Number(toFixed(ev.detail.value, 6))) // prettify readout
-        touchedID = ev.detail.id
-        if(ev.detail.id==='toggle.1') { Dirty.resetTo(rescaleDials); Dirty.trigger(); return}
-        resizeWidgets(ev)
+    function handleOutputValue(output: WidgetOutput) {
+        readout = Number(toFixed(output.value, 6))
+        touchedID = output.id
+        if (output.id === 'toggle.1') {
+            Dirty.resetTo(rescaleDials)
+            Dirty.trigger()
+            return
+        }
+        resizeWidgets(output)
 
     }
     /**
@@ -35,9 +40,9 @@
      * @param node
      * @param changing
      */
-    function handleRefresh(node, changing) {
+    function handleRefresh(node: HTMLElement, changing: number) {
         return {
-            update(changing) {
+            update(changing: number) {
                 manipulateLayout()
             },
             destroy() {
@@ -51,17 +56,17 @@
         rescaleFaders = (rescaleFaders * -1)
     }
 
-    function resizeWidgets(ev:CustomEvent) {
+    function resizeWidgets(output: WidgetOutput) {
         //rescale/redraw with stepped throttle
         //todo: make this a feature
         const throttle = 10
-        let { id  } = ev.detail
+        let { id } = output
         switch (id) {
             case ('fader.rescale') :
-                rescaleFaders = ((Math.round((ev.detail.value) * throttle)) / throttle)
+                rescaleFaders = ((Math.round(output.value * throttle)) / throttle)
                 break;
             case ('dial.rescale') :
-                rescaleDials = (Math.round((ev.detail.value) * throttle)) / throttle
+                rescaleDials = (Math.round(output.value * throttle)) / throttle
                 break;
             default:
         }
@@ -71,7 +76,7 @@
 
     // Test: Define some dials for scaling the other components
     const dialScaler = {
-        id:"dial.rescale",
+        id:'dial.rescale' as const,
         rect: { x:100, y:600,  width: 100, height: 100},
         background: C.clear,
         scale: 0.5,
@@ -80,7 +85,7 @@
         min:0,
         max:2 }
     const faderScaler = {
-        id:"fader.rescale",
+        id:'fader.rescale' as const,
         rect: { x:300, y:600,  width: 100, height: 100 },
         background: C.clear,
         scale: 0.5,
@@ -99,8 +104,8 @@
 <main use:handleRefresh={$Dirty} >
 
     <!-- render dials to scale the other widgets -->
-    <Radial {...dialScaler} />
-    <Radial {...faderScaler} />
+    <Radial {...dialScaler} output={handleOutputValue} />
+    <Radial {...faderScaler} output={handleOutputValue} />
 
     <!--
         render a group of dials
@@ -114,18 +119,19 @@
             <!-- aesthetically, skip the first dial -->
             {#if (i>0)}
                 {@const posX = 450 + ((i % 2) * 50)}
-                {@const oddEvenSpreadD = rescaleDials * [-1, 1].at(i%2)}
+                {@const oddEvenSpreadD = rescaleDials * ([-1, 1][i % 2] ?? 1)}
                 {@const posY = (((i / 3) % 8) + 1) * 150}
-                {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
+                {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20][i] ?? 1}
                 <Radial id="dial.{i}"
                         rect={{  x: posX + (50 * oddEvenSpreadD),
                              y: posY
-                           }}
+                            }}
                         min={0}
                         max={rangeTest}
                         scale={rescaleDials}
                         dialPointer={true}
                         background='rgba(127,127,127,{i * 0.1})'
+                        output={handleOutputValue}
                 />
             {/if}
         {/each}
@@ -133,8 +139,8 @@
     <!-- render some vert faders -->
     {#each Array(6) as _, i ('key-f-'+i)}
         {@const posX = 100+(i*50)}
-        {@const oddEvenSpreadF = rescaleFaders * [-1, 1].at(i%2)}
-        {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20].at(i)}
+        {@const oddEvenSpreadF = rescaleFaders * ([-1, 1][i % 2] ?? 1)}
+        {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20][i] ?? 1}
         <Fader id="fader.{i}"
                rect={{ x: posX,
                        y: 250 }}
@@ -142,6 +148,7 @@
                max={rangeTest}
                scale={rescaleFaders}
                label={'Precis-UI ◠◡ '}
+               output={handleOutputValue}
         />
     {/each}
 
@@ -157,7 +164,7 @@
                 min={0}
                 max={i+1}
                 id="toggle.{i}"
-                on:output={handleOutputValue}
+                output={handleOutputValue}
         />
     {/each}
 </main>

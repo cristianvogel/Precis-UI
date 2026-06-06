@@ -1,22 +1,22 @@
-<!-- App.svelte -->
-<script>
-    import { preventDefault } from 'svelte/legacy';
-
-    import Layout from './components/Layout.svelte'
+<!-- Demo/App.svelte -->
+<script lang="ts">
+    import Layout from './Layout.svelte'
 
 
     let readout = $state(0), rescaleDials = $state(0), rescaleFaders = $state(0)
     let touchedID = $state('unknown')
 
     let logger = $derived(`Output from: ${touchedID} - ${readout} rescale: ${rescaleDials} ◌ ${rescaleFaders}`)
+
+    function focusWindow(event: MouseEvent) {
+        event.preventDefault();
+        window.focus();
+    }
 </script>
 
-
-
-<!-- prevent default mouse actions but allow key events through -->
 <svelte:body
-        onmousedown={preventDefault(()=>{ window.focus()})}
-        oncontextmenu={preventDefault(()=>{window.focus()})}
+        onmousedown={focusWindow}
+        oncontextmenu={focusWindow}
 />
 
 <main>
@@ -34,8 +34,7 @@
 
     <div class='footer'>
         <svg style="height: 1rem;">
-            <text style="transform:translate(5%, 100%);
-				font-size: xx-small" fill="cyan">
+            <text style="transform:translate(5%, 100%); font-size: xx-small;" fill="cyan">
                 {logger}
             </text>
             <line x1="0.5rem" y1="7.5%" x2="225%" y2="7.5%" stroke='antiqueWhite'/>

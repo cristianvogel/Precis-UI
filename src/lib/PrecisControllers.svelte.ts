@@ -8,12 +8,12 @@
  * Annotates and implements Base classes and all derived controller classes
  */
 import { asLogicValue, radialPoints, remap, roundTo, toNumber } from './Utils.svelte.js';
-import { createEventDispatcher } from "svelte";
 import { addListeners } from "./Listeners.svelte.js";
-import { Dirty, WidgetRegister, WidgetStore } from '../stores/stores.js';
+import { Dirty, WidgetStore } from '../stores/stores.js';
 import { get } from 'svelte/store';
 import { Palette as C } from "../types/Precis-UI-TypeDeclarations.js";
 import { Default, DEFAULT_RECT } from '../components/Precis-UI-Defaults.js';
+import type { WidgetRegister } from '../stores/stores.js';
 import type {
     PointsArray,
     RoundedReadout,
@@ -28,6 +28,14 @@ import type {
     PositiveNumber
 } from '../types/Precis-UI-TypeDeclarations.js';
 
+export type WidgetOutput = {
+    value: number;
+    id: string;
+    widget: BasicController;
+}
+
+export type WidgetOutputHandler = (output: WidgetOutput) => void;
+
 
 
 
@@ -37,15 +45,8 @@ import type {
  * Base class. For layout and global specifications.
  */
 export class PrecisUI {
-    protected static dispatch: any;
-
-    constructor() { 
-        PrecisUI.dispatch = createEventDispatcher()
-    }
-
     static dispatchRefresh() {
-        console.log('layout refresh event')
-        PrecisUI.dispatch('refresh')
+        Dirty.trigger()
     }
 
     static getRegistry(): WidgetRegister { return get(WidgetStore) }
@@ -179,6 +180,7 @@ export class BasicController extends PrecisController {
     currentValue = $state<number>(0);
     taper: Taper = { min: 0, max: 1, fineStep: 0.01 }
     id = $state<string>('widget.0')
+    output?: WidgetOutputHandler;
 
     constructor() {
         super()
@@ -188,13 +190,14 @@ export class BasicController extends PrecisController {
      * then render its container element
      * @param widget
      */
-    static initialise(widget: BasicController) {
+    static initialise(widget: BasicController, callbacks?: { output?: WidgetOutputHandler }) {
         PrecisController.addSelfToRegistry(widget)
+        widget.output = callbacks?.output
         widget.containerTransform(widget)
     }
 
     static dispatchOutput(widget: BasicController): void {
-        PrecisUI.dispatch('output', {
+        widget.output?.({
             value: widget.getMappedValue(),
             id: widget.id,
             widget: widget || undefined
@@ -348,4 +351,3 @@ export class Toggle extends BasicController {
         return this._state;
     }
 }
-

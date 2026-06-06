@@ -1,16 +1,15 @@
 <script lang="ts">
-    import { run, preventDefault } from 'svelte/legacy';
-
     // Precis-UI © Cristian Vogel 2022
     // No unauthorised use or derivatives!
     // @neverenginelabs
 
-    import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults';
+    import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults.js';
     import {BasicController, Toggle} from '../lib/PrecisControllers.svelte';
     import {clamp, toNumber} from '../lib/Utils.svelte';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations';
+    import type {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations.js';
+    import type {WidgetOutputHandler} from '../lib/PrecisControllers.svelte';
 
     
     interface Props {
@@ -37,13 +36,14 @@
         // ingest props from caller
         rx?: number;
         // ingest props from caller
-        id?: ToggleTag;
+        id?: string;
         // ingest props from caller
         label?: string;
         // ingest props from caller
         value?: number;
         // ingest props from caller
         background?: any;
+        output?: WidgetOutputHandler;
     }
 
     let {
@@ -61,7 +61,8 @@
         id = 'toggle.0',
         label = 'Toggle',
         value = 0,
-        background = Default.BUTTON_BACKGROUND
+        background = Default.BUTTON_BACKGROUND,
+        output
     }: Props = $props();
 
     // assert that we do actually have a rect and a taper
@@ -91,12 +92,9 @@
 
     // Construct a new instance of a  toggle
     let toggle:Toggle = $state(new Toggle(settings))
-    $effect ( ()=>
-        {
-            BasicController.initialise(toggle);
-        }
-
-    )
+    onMount(() => {
+        BasicController.initialise(toggle, { output });
+    })
 
 
     let toggleState: number | boolean = $state(0);
@@ -114,12 +112,14 @@
 <!-- container and functionality -->
 <div class='toggleContainer'
      id='{toggle.id}-container'
-     onmouseenter={()=>toolTip = true}
-     onmouseleave={()=>toolTip = false}
-     onmousedown={preventDefault((e)=>{toggle.componentMouseDown(e,toggle)})}
-     onmouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
-     style={toggle.containerTransform(toggle, scale)}
->
+     role='button'
+     tabindex='0'
+      onmouseenter={()=>toolTip = true}
+      onmouseleave={()=>toolTip = false}
+      onmousedown={(e)=>{ e.preventDefault(); toggle.componentMouseDown(e,toggle) }}
+      onmouseup={()=>(toggle.stateFlags={changing: false, focussed: true, precis: false})}
+      style={toggle.containerTransform(toggle, scale)}
+ >
 <!-- led and text -->
         <div class={toggleState ? `${toggleDesign} on` : `${toggleDesign}`}> 
         <div class={toggleState ? `${toggleDesign} led on` : `${toggleDesign} led`}></div>
