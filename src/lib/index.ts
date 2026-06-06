@@ -29,14 +29,6 @@ export type {
 } from './PrecisControllers.svelte.js';
 
 export {
-  PrecisUI,
-  BasicController,
-  Radial as RadialController,
-  Fader as FaderController,
-  Toggle as ToggleController,
-} from './PrecisControllers.svelte.js';
-
-export {
   toNumber,
   radialPoints,
   radialTickMarkAt,

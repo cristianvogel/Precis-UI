@@ -31,7 +31,7 @@ import type {
 export type WidgetOutput = {
     value: number;
     id: string;
-    widget: BasicController;
+    widget: unknown;
 }
 
 export type WidgetOutputHandler = (output: WidgetOutput) => void;
@@ -88,7 +88,7 @@ abstract class PrecisController extends PrecisUI {
     abstract componentMouseDown(event: Event, caller: BasicController): void
     abstract componentMouseEnter(event: Event, caller: BasicController): void
     abstract componentMouseLeave(event: MouseEvent, caller: BasicController): void
-    static dispatchOutput(widget: BasicController): void { }
+    static dispatchOutput(_widget: BasicController): void { }
 
     set stateFlags(settings: StateFlags) {
         this._stateFlags = { ...settings };
@@ -140,9 +140,7 @@ abstract class PrecisController extends PrecisUI {
     }
 
     getCSSforRect(xywh: Rect): BoundingRectCSS {
-        const aRect: BoundingRectCSS =
-            `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width as number}px;height:${xywh.height as number}px;`
-        return aRect
+        return `top:${xywh.y}px;left:${xywh.x}px;width:${xywh.width as number}px;height:${xywh.height as number}px;`
     }
     /**
      * add self to a layout group registry
@@ -162,13 +160,11 @@ abstract class PrecisController extends PrecisUI {
      */
     containerTransform(widget: BasicController, scale?: number, newRect?: Rect): string {
         const rect1 = { ...DEFAULT_RECT, ...widget.rect, ...newRect } // really gotta have a rect at this point
-        const inline =
-            `${widget.getCSSforRect(rect1)};
+        return `${widget.getCSSforRect(rect1)};
                     transform: scale( ${scale || widget.scale} );
                     background: ${widget.background};
                     z-index: ${widget.layer || 0};
                   `
-        return inline
     }
 }
 /**
@@ -189,6 +185,7 @@ export class BasicController extends PrecisController {
      * Add that widget to the widget registry store
      * then render its container element
      * @param widget
+     * @param callbacks output callback hooks
      */
     static initialise(widget: BasicController, callbacks?: { output?: WidgetOutputHandler }) {
         PrecisController.addSelfToRegistry(widget)

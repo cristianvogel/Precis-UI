@@ -6,18 +6,16 @@
    */
 
   import { Default, DEFAULT_TAPER } from "./Precis-UI-Defaults.js";
-  import { BasicController, Radial } from "../lib/PrecisControllers.svelte";
-  import type { WidgetOutputHandler } from "../lib/PrecisControllers.svelte";
-  import { radialTickMarkAt, remap, toNumber } from "../lib/Utils.svelte";
+  import { BasicController, Radial } from "../lib/PrecisControllers.svelte.js";
+  import type { WidgetOutputHandler } from "../lib/PrecisControllers.svelte.js";
+  import { radialTickMarkAt, remap, toNumber } from "../lib/Utils.svelte.js";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { WidgetStore } from "../stores/stores.js";
   import type {
-    DialTag,
     Rect,
     Taper,
     PointsArray,
-    Point,
   } from "../types/Precis-UI-TypeDeclarations.js";
   import { Palette as C } from "../types/Precis-UI-TypeDeclarations.js";
   interface Props {
@@ -83,6 +81,7 @@
   }: Props = $props();
 
   // assert that we do actually have a rect and a taper
+  // svelte-ignore state_referenced_locally
   rect = {
     x: toNumber(rect.x || x),
     y: toNumber(rect.y || y),
@@ -90,6 +89,7 @@
     height: toNumber(rect.height || height),
   };
 
+  // svelte-ignore state_referenced_locally
   taper = {
     min: toNumber(taper.min || min),
     max: toNumber(taper.max || max),
@@ -97,6 +97,7 @@
   };
 
   // initialise with these settings
+  // svelte-ignore state_referenced_locally
   const settings = {
     currentValue: value,
     id,
@@ -112,24 +113,50 @@
 
   // Construct a new instance of a Radial
   let dial: Radial = new Radial(settings)
-   BasicController.initialise(dial, { output })
-
-  // Hoisted function: Compute and store radial points for the dial overlays
-  dial.radialPoints = addPointerPlotToStore();
+  let container: HTMLDivElement | null = null;
+  let overlays: SVGGElement | null = null;
 
   onMount(() => {
+    BasicController.initialise(dial, { output })
+
+    const onMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+      dial.componentMouseDown(e, dial);
+    };
+    const onEnter = (e: MouseEvent) => {
+      dial.componentMouseEnter(e, dial);
+    };
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      dial.componentMouseDown(e, dial);
+    };
+
+    container?.addEventListener("mousedown", onMouseDown);
+    container?.addEventListener("contextmenu", onContextMenu);
+    container?.addEventListener("mouseenter", onEnter);
+    overlays?.addEventListener("mousemove", addPointerPlotToStore);
+
     // set pointer 'length'
     pointerLength = dial.radialPoints.length;
     // send out an initial value message once
     BasicController.dispatchOutput(dial);
+
+    return () => {
+      container?.removeEventListener("mousedown", onMouseDown);
+      container?.removeEventListener("contextmenu", onContextMenu);
+      container?.removeEventListener("mouseenter", onEnter);
+      overlays?.removeEventListener("mousemove", addPointerPlotToStore);
+    };
   });
+
+  // Hoisted function: Compute and store radial points for the dial overlays
+  dial.radialPoints = addPointerPlotToStore();
 
   /** addPointerPlotToStore()
    * compute and store PointsArray used to plot the radial polyline
    */
   function addPointerPlotToStore(): PointsArray {
-    const plotPoints: PointsArray = dial.spinPointer();
-    return plotPoints;
+    return dial.spinPointer();
   }
 
   // initialisations needed for parsing Svelte {@const} assignments
@@ -139,7 +166,6 @@
   let pointerLength: number = $state(10);
   let roundedReadout: string = $derived(dial.getRoundedReadout());
   let ovrX: number;
-  let tip: Point;
   let adjust;
 
   let registrySize = $derived($WidgetStore.size);
@@ -164,26 +190,14 @@ using DOM selectors if needed
   <div
     class="dialContainer"
     id="{dial.id}-container"
-    oncontextmenu={(e) => {
-      e.preventDefault();
-      dial.componentMouseDown(e, dial);
-    }}
-    onmousedown={(e) => {
-      e.preventDefault();
-      dial.componentMouseDown(e, dial);
-    }}
-    onmouseenter={(e) => {
-      e.preventDefault();
-      dial.componentMouseEnter(e, dial);
-    }}
+    bind:this={container}
     onmouseleave={(e) => {
       dial.componentMouseLeave(e, dial);
     }}
-  onmousemove={addPointerPlotToStore}
-  onmouseup={() =>
-    (dial.stateFlags = { changing: false, focussed: true, precis: false })}
-  style={dial.containerTransform(dial, scale, rect)}
->
+    onmouseup={() =>
+      (dial.stateFlags = { changing: false, focussed: true, precis: false })}
+    style={dial.containerTransform(dial, scale, rect)}
+ >
   <!-- animated numerical readout mojo-->
   {#if dial.changing && animatedReadout}
     {@const value = dial.getNormValue()}
@@ -213,10 +227,7 @@ using DOM selectors if needed
         <g
           stroke-width="1px"
           opacity={Math.abs(sinMap) + 0.1}
-          transform="translate ( {adjust.x} {adjust.y} )
-                                scale({adjust.scale.x}, {dial.precis
-            ? 1
-            : adjust.scale.y} )"
+          style={`transform: translate(${adjust.x}px, ${adjust.y}px) scale(${adjust.scale.x}, ${dial.precis ? 1 : adjust.scale.y}); transform-origin: center;`}
         >
           <text fill={C.aquaLight}>{roundedReadout}</text>
         </g>
@@ -225,7 +236,7 @@ using DOM selectors if needed
   {/if}
 
   <!-- SVG with many procedural transformations -->
-  <svg transform="scale(0.9)">
+  <svg style="transform: scale(0.9); transform-origin: center;">
     <!-- slight shrinkage of dial within container -->
 
     <!-- dynamically changing colours defined here -->
@@ -260,7 +271,7 @@ using DOM selectors if needed
     <g
       id="{dial.id}-circleBody"
       stroke-width="8"
-      transform="translate( {dial.width * 0.5} {dial.height * 0.5} )"
+      style={`transform: translate(${dial.width * 0.5}px, ${dial.height * 0.5}px); transform-origin: center;`}
     >
       <circle
         id="{dial.id}-circleFigure"
@@ -292,7 +303,8 @@ using DOM selectors if needed
   <svg transform="scale(0.9)">
     <g
       id="{dial.id}-dialOverlays"
-      transform="scale( {dial.width / (Default.RADIAL_OVERLAY_rX * 2)} )"
+      bind:this={overlays}
+      style={`transform: scale(${dial.width / (Default.RADIAL_OVERLAY_rX * 2)}); transform-origin: center;`}
     >
       <!-- tick marks  -->
       {#if tickMarks}
@@ -330,7 +342,6 @@ using DOM selectors if needed
           <!-- LED indicator-->
           {#if dial.focussed}
             {@const value = dial.getNormValue()}
-            {@const tip = pointerPlot.at(-6)}
             {@const gearedValue = ((value * 100) % 10) - 10}
             <circle
               cx="80%"
@@ -349,7 +360,9 @@ using DOM selectors if needed
         <g in:fade|global out:fade|global>
           <text
             id="{dial.id}-readout"
-            class={dial.precis ? "readout dial precis" : "readout dial"}
+            class="readout"
+            class:dial={true}
+            class:precis={dial.precis}
             style={dial.focussed ? "fill: aqua;" : ""}
           >
             {roundedReadout}

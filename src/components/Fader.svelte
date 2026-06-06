@@ -6,14 +6,13 @@
    */
 
   import { Default, DEFAULT_TAPER } from "./Precis-UI-Defaults.js";
-  import { BasicController, Fader } from "../lib/PrecisControllers.svelte";
-  import type { WidgetOutputHandler } from "../lib/PrecisControllers.svelte";
-  import { remap, toNumber } from "../lib/Utils.svelte";
+  import { BasicController, Fader } from "../lib/PrecisControllers.svelte.js";
+  import type { WidgetOutputHandler } from "../lib/PrecisControllers.svelte.js";
+  import { remap, toNumber } from "../lib/Utils.svelte.js";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { WidgetStore } from "../stores/stores.js";
   import type {
-    FaderTag,
     Rect,
     Taper,
   } from "../types/Precis-UI-TypeDeclarations.js";
@@ -62,6 +61,7 @@
   }: Props = $props();
 
   // assert that we do actually have a rect and a taper
+  // svelte-ignore state_referenced_locally
   rect = {
     x: toNumber(rect.x || x),
     y: toNumber(rect.y || y),
@@ -69,6 +69,7 @@
     height: toNumber(rect.height || height),
   };
 
+  // svelte-ignore state_referenced_locally
   taper = {
     min: toNumber(taper.min || min),
     max: toNumber(taper.max || max),
@@ -76,6 +77,7 @@
   };
 
   // initialise with these settings
+  // svelte-ignore state_referenced_locally
   const settings = {
     currentValue: value,
     id,
@@ -90,16 +92,48 @@
 
   // Construct a new instance of a vertical fader
   let fader: Fader = new Fader(settings);
+  let container: HTMLDivElement | null = null;
+  let track: SVGRectElement | null = null;
+  let handle: SVGGElement | null = null;
 
+  onMount(() => {
     BasicController.initialise(fader, { output });
     // how to use the registry index of this instance
     // to add a unique suffix to the fader's label
     fader.label += fader.registryIndex.toString();
 
+    const onMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+      fader.componentMouseDown(e, fader);
+    };
+    const onEnter = (e: MouseEvent) => {
+      fader.componentMouseEnter(e, fader);
+    };
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      fader.componentMouseDown(e, fader);
+    };
+    const onDoubleClick = (ev: MouseEvent) => {
+      ev.preventDefault();
+      fader.currentValue = fader.height - ev.offsetY;
+    };
 
-  onMount(() => {
+    container?.addEventListener("mousedown", onMouseDown);
+    container?.addEventListener("contextmenu", onContextMenu);
+    container?.addEventListener("mouseenter", onEnter);
+    handle?.addEventListener("contextmenu", onContextMenu);
+    track?.addEventListener("dblclick", onDoubleClick);
+
     // send out an initial value message once
     BasicController.dispatchOutput(fader);
+
+    return () => {
+      container?.removeEventListener("mousedown", onMouseDown);
+      container?.removeEventListener("contextmenu", onContextMenu);
+      container?.removeEventListener("mouseenter", onEnter);
+      handle?.removeEventListener("contextmenu", onContextMenu);
+      track?.removeEventListener("dblclick", onDoubleClick);
+    };
   });
 
   // Reactive
@@ -125,24 +159,14 @@ using DOM selectors if needed
   <div
     class="faderContainer"
     id="{fader.id}-container"
-    oncontextmenu={(e) => {
-      e.preventDefault();
-      fader.componentMouseDown(e, fader);
-    }}
-    onmousedown={(e) => {
-      e.preventDefault();
-      fader.componentMouseDown(e, fader);
-    }}
-    onmouseenter={(e) => {
-      fader.componentMouseEnter(e, fader);
-    }}
+    bind:this={container}
     onmouseleave={(e) => {
       fader.componentMouseLeave(e, fader);
     }}
-  onmouseup={() =>
-    (fader.stateFlags = { changing: false, focussed: true, precis: false })}
-  style={fader.containerTransform(fader, scale)}
->
+    onmouseup={() =>
+      (fader.stateFlags = { changing: false, focussed: true, precis: false })}
+    style={fader.containerTransform(fader, scale)}
+ >
   <!-- animated numerical readout mojo-->
   {#if fader.changing && animatedReadout}
     {@const value = fader.getNormValue()}
@@ -221,18 +245,12 @@ using DOM selectors if needed
         height={fader.height + fader.rx}
         rx="4px"
         x="0rem"
-        ondblclick={(ev) => {
-          ev.preventDefault();
-          fader.currentValue = fader.height - ev.offsetY;
-        }}
+        bind:this={track}
       />
       <!-- handle -->
       <g
         id="{id}-handle+readout"
-        oncontextmenu={(e) => {
-          e.preventDefault();
-          fader.componentMouseDown(e, fader);
-        }}
+        bind:this={handle}
         stroke={C.offWhite}
         transform="translate(0,{fader.height - fader.currentValue}) scale(1.5)"
       >
@@ -247,13 +265,15 @@ using DOM selectors if needed
         <!-- inner readout w/ some procedural transformations -->
         <g
           id="{id}-readout"
-          class="readoutBox rotated"
+          class="readoutBox"
+          class:rotated={true}
           style="opacity:{fader.changing ? 1 : 0.7}"
         >
           <rect
             id="{id}-readout.Box"
-            class={(fader.precis ? "readoutBox zoom " : "readoutBox ") +
-              (upperBand ? "flipped" : "")}
+            class="readoutBox"
+            class:zoom={fader.precis}
+            class:flipped={upperBand}
             height="1.25rem"
             rx="3px"
             width="2.75rem"
@@ -264,7 +284,10 @@ using DOM selectors if needed
             <g transform="scale( {fader.precis ? 2 : 1} )" out:fade|global>
               <text
                 id="{id}-readout.Text"
-                class={"readout " + (upperBand ? "flipped" : "rotated")}
+                class="readout"
+                class:dial={true}
+                class:flipped={upperBand}
+                class:rotated={!upperBand}
               >
                 {roundedReadout}
                 {fader.precis ? "⋯" : " ▹"}

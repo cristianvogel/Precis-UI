@@ -4,12 +4,12 @@
     // @neverenginelabs
 
     import {Default, DEFAULT_TAPER} from './Precis-UI-Defaults.js';
-    import {BasicController, Toggle} from '../lib/PrecisControllers.svelte';
-    import {clamp, toNumber} from '../lib/Utils.svelte';
+    import {BasicController, Toggle} from '../lib/PrecisControllers.svelte.js';
+    import {clamp, toNumber} from '../lib/Utils.svelte.js';
     import {onMount} from 'svelte';
     import {fade} from 'svelte/transition';
-    import type {ToggleTag, Rect, Taper} from '../types/Precis-UI-TypeDeclarations.js';
-    import type {WidgetOutputHandler} from '../lib/PrecisControllers.svelte';
+    import type {Rect, Taper} from '../types/Precis-UI-TypeDeclarations.js';
+    import type {WidgetOutputHandler} from '../lib/PrecisControllers.svelte.js';
 
     
     interface Props {
@@ -66,6 +66,7 @@
     }: Props = $props();
 
     // assert that we do actually have a rect and a taper
+    // svelte-ignore state_referenced_locally
     rect = {
         x: toNumber(rect.x || x),
         y: toNumber(rect.y || y),
@@ -73,6 +74,7 @@
         height: toNumber(rect.height || height)
     }
 
+    // svelte-ignore state_referenced_locally
     taper = {
         min: toNumber( taper.min || min),
         max: toNumber(taper.max || max),
@@ -80,6 +82,7 @@
     }
 
     // initialise with these settings
+    // svelte-ignore state_referenced_locally
     const settings = {
         currentValue: value,
         id,
@@ -121,12 +124,20 @@
       style={toggle.containerTransform(toggle, scale)}
  >
 <!-- led and text -->
-        <div class={toggleState ? `${toggleDesign} on` : `${toggleDesign}`}> 
-        <div class={toggleState ? `${toggleDesign} led on` : `${toggleDesign} led`}></div>
+        <div class="toggleWrap"
+             class:toggle={toggleDesign === 'toggle'}
+             class:toggle-alt={toggleDesign === 'toggle-alt'}
+             class:on={Boolean(toggleState)}>
+        <div class="led"
+             class:toggle={toggleDesign === 'toggle'}
+             class:toggle-alt={toggleDesign === 'toggle-alt'}
+             class:on={Boolean(toggleState)}></div>
 <!-- button text -->
         <svg dominant-baseline="mathematical" text-anchor="middle">
             <g transform="translate({toggle.width/2} {(toggle.height/2) * 0.8})">
-                <text class={`${toggleDesign} text`}
+                <text class="text"
+                      class:toggle={toggleDesign === 'toggle'}
+                      class:toggle-alt={toggleDesign === 'toggle-alt'}
                       fill={toggleState ? trimColour.at(designIndex()): ''}
                 >
                     {label}︎
@@ -161,7 +172,7 @@
         z-index: 0;
     }
 
-    .toggle {
+.toggle {
         position: absolute;
         height: 100%;
         width: 100%;
@@ -172,7 +183,13 @@
         /*background: linear-gradient(#eee 10%, #aaa);*/
         background: darkslategray;
         border: 1px solid #ddd
-    }
+}
+
+.toggleWrap {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
 
     .toggle.on {
         /*background: linear-gradient(#aaa 10%, #eee);*/

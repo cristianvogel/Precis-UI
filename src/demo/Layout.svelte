@@ -11,7 +11,7 @@
     import {Palette as C} from "../types/Precis-UI-TypeDeclarations.js";
     import Toggle from '../components/Toggle.svelte'
     import {Dirty} from '../stores/stores.js'
-    import type { WidgetOutput } from '../lib/PrecisControllers.svelte';
+    import type { WidgetOutput } from '../lib/index.js';
 
     let {
         readout = $bindable(),
@@ -40,9 +40,9 @@
      * @param node
      * @param changing
      */
-    function handleRefresh(node: HTMLElement, changing: number) {
+    function handleRefresh(node: HTMLElement) {
         return {
-            update(changing: number) {
+            update() {
                 manipulateLayout()
             },
             destroy() {
@@ -101,7 +101,7 @@
     let oddEvenSpreadD;
 
 </script>
-<main use:handleRefresh={$Dirty} >
+<main use:handleRefresh>
 
     <!-- render dials to scale the other widgets -->
     <Radial {...dialScaler} output={handleOutputValue} />
@@ -139,7 +139,6 @@
     <!-- render some vert faders -->
     {#each Array(6) as _, i ('key-f-'+i)}
         {@const posX = 100+(i*50)}
-        {@const oddEvenSpreadF = rescaleFaders * ([-1, 1][i % 2] ?? 1)}
         {@const rangeTest = [1, 10, 100, 16000, 0.1, 1000, 50, 20][i] ?? 1}
         <Fader id="fader.{i}"
                rect={{ x: posX,
